@@ -43,32 +43,31 @@ export const useAuthStore = create<AuthStore>()(
       setUser: (user) => set({ user, quota: user.quota, isAuthenticated: true }),
       updateQuota: (quota) => set({ quota }),
       logout: async () => {
-        // 1. Reset local state và xóa localStorage ngay lập tức
+        // 1. Reset local state ngay lập tức
         set({ user: null, quota: null, isAuthenticated: false });
+        localStorage.removeItem('mindex-auth-storage');
         
         if (typeof window !== 'undefined') {
-          try {
-            // 2. Xóa sạch cookies ở phía Client bằng js-cookie (Chống lỗi cross-domain)
-            Cookies.remove('access_token', { path: '/' });
-            Cookies.remove('refresh_token', { path: '/' });
+          // 2. Chuyển hướng ngay lập tức (Fast Logout) - không đợi API
+          // Việc xóa cookie sẽ chạy ngầm, middleware sẽ lo phần còn lại ở lần load trang sau
+          const domain = window.location.hostname.endsWith('mindex.io.vn') ? '.mindex.io.vn' : undefined;
+          
+          const performLogout = async () => {
+            try {
+              Cookies.remove('access_token', { path: '/', domain });
+              Cookies.remove('refresh_token', { path: '/', domain });
 
-            // 3. Gọi đồng thời cả API Backend và API nội bộ Next.js để xóa HttpOnly Cookies
-            await Promise.allSettled([
-              fetch(`${API_BASE_URL}/auth/logout`, { 
-                method: 'POST',
-                credentials: 'include'
-              }),
-              fetch('/api/auth/logout', { 
-                method: 'POST'
-              })
-            ]);
-          } catch (e) {
-            console.error("Logout process partial failure:", e);
-          } finally {
-            // 4. Dọn dẹp cuối cùng và cưỡng chế chuyển hướng
-            localStorage.removeItem('mindex-auth-storage');
-            window.location.href = '/login';
-          }
+              await Promise.allSettled([
+                fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }),
+                fetch('/api/auth/logout', { method: 'POST' })
+              ]);
+            } catch (e) {
+              console.error("Background logout failed:", e);
+            }
+          };
+
+          performLogout();
+          window.location.href = '/login';
         }
       },
     }),
