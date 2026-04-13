@@ -12,6 +12,7 @@ interface ConfirmOptions {
   cancelLabel?: string;
   onConfirm: () => void | Promise<void>;
   onCancel?: () => void;
+  hideCancel?: boolean;
 }
 
 interface ConfirmStore {

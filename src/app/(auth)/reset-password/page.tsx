@@ -205,9 +205,12 @@ export default function ResetPasswordPage() {
               <h3 className="text-xl font-bold text-white mb-2">Thành công!</h3>
               <p className="text-sm text-white/50">Mật khẩu của bạn đã được khôi phục. Đang chuyển hướng về trang đăng nhập...</p>
             </div>
-            <Button asChild className="w-full btn-primary h-12">
-              <Link href="/login">Đến trang đăng nhập</Link>
-            </Button>
+            <Link 
+              href="/login" 
+              className="inline-flex h-12 w-full items-center justify-center rounded-lg bg-white/90 px-4 text-sm font-bold text-black hover:bg-white transition-all shadow-md"
+            >
+              Đến trang đăng nhập
+            </Link>
           </div>
         )}
       </div>

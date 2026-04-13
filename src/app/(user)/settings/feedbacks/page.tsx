@@ -21,6 +21,7 @@ interface FeedbackSession {
   created_at: string;
   last_message: string;
   last_message_at: string;
+  admin_id: string | null;
 }
 
 interface FeedbackMessage {

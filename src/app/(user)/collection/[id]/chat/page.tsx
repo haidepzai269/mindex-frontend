@@ -67,7 +67,7 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
     async function restoreSession() {
       if (!id) return;
       try {
-        let sid = localStorage.getItem(`mindex_col_session_${id}`);
+        const sid = localStorage.getItem(`mindex_col_session_${id}`);
         
         if (!sid) {
           // Ask backend for active session (Logic này giả định backend có endpoint tương tự cho collection)

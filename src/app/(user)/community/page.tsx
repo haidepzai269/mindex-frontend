@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useCallback } from "react";
 import {
@@ -149,7 +149,11 @@ export default function CommunityPage() {
   const setLoading = useCallback((docId: string, loading: boolean) => {
     setLoadingDocs((prev) => {
       const next = new Set(prev);
-      loading ? next.add(docId) : next.delete(docId);
+      if (loading) {
+        next.add(docId);
+      } else {
+        next.delete(docId);
+      }
       return next;
     });
   }, []);
@@ -481,7 +485,7 @@ export default function CommunityPage() {
                            </div>
                            
                            <button 
-                             onClick={(e) => { e.stopPropagation(); !isVoted && handleUpvote(doc.id); }}
+                             onClick={(e) => { e.stopPropagation(); if (!isVoted) handleUpvote(doc.id); }}
                              className={cn(
                                "flex flex-col md:items-center gap-0.5 transition-all group/v",
                                isVoted ? "text-primary" : "text-muted-foreground/50 hover:text-primary"

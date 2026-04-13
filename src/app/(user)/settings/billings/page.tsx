@@ -19,7 +19,7 @@ import {
 export default function UserBillingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data, isLoading } = useSWR<{ success: boolean; data: any }>("/billings/packages", fetcher);
+  const { data, isLoading } = useSWR<{ success: boolean; data: any }>("/billings/packages", fetcher as any);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState(false);
   const user = useAuthStore((state) => state.user);

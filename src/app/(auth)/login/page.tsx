@@ -108,7 +108,7 @@ export default function LoginPage() {
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
               <label className="text-xs font-semibold uppercase text-white/60">Mật khẩu</label>
-              <Link href="/reset-password" name="forgot-password-link" className="text-xs text-primary hover:text-white transition-colors">Quên mật khẩu?</Link>
+              <Link href="/reset-password" className="text-xs text-primary hover:text-white transition-colors">Quên mật khẩu?</Link>
             </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />

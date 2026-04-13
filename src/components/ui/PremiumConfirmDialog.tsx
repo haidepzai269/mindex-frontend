@@ -66,13 +66,15 @@ export const PremiumConfirmDialog: React.FC = () => {
               </p>
 
               <div className="flex gap-3">
-                <button
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                  className="flex-1 h-12 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-sm transition-all border border-white/5 active:scale-95 disabled:opacity-50"
-                >
-                  {options.cancelLabel || "Hủy"}
-                </button>
+                {!options.hideCancel && (
+                  <button
+                    onClick={handleCancel}
+                    disabled={isLoading}
+                    className="flex-1 h-12 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold text-sm transition-all border border-white/5 active:scale-95 disabled:opacity-50"
+                  >
+                    {options.cancelLabel || "Hủy"}
+                  </button>
+                )}
                 <button
                   onClick={handleConfirm}
                   disabled={isLoading}

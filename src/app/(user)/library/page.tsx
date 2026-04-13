@@ -500,7 +500,7 @@ function DocCard({
                    size="sm"
                    variant="ghost" 
                    disabled={isExpired}
-                   onClick={(e) => { e.stopPropagation(); !isExpired && router.push(`/doc/${id}/summary`); }} 
+                   onClick={(e) => { e.stopPropagation(); if (!isExpired) router.push(`/doc/${id}/summary`); }} 
                    className="h-8 w-8 md:w-auto md:px-3 p-0 text-white/40 hover:text-white hover:bg-white/5 flex items-center gap-2"
                    title={isExpired ? "Đã hết hạn" : "Tóm tắt"}
                  >
@@ -510,7 +510,7 @@ function DocCard({
                  <Button 
                     size="sm"
                     disabled={isExpired}
-                    onClick={(e) => { e.stopPropagation(); !isExpired && router.push(`/doc/${id}/chat`); }} 
+                    onClick={(e) => { e.stopPropagation(); if (!isExpired) router.push(`/doc/${id}/chat`); }} 
                     className={cn(
                       "h-8 px-2 md:px-4 border text-[10px] md:text-xs font-bold transition-all",
                       isExpired 
@@ -614,7 +614,7 @@ function DocCard({
            <Button 
               size="sm"
               disabled={isExpired}
-              onClick={(e) => { e.stopPropagation(); !isExpired && router.push(`/doc/${id}/chat`); }}
+              onClick={(e) => { e.stopPropagation(); if (!isExpired) router.push(`/doc/${id}/chat`); }}
               className="flex-1 bg-white text-black font-bold h-9 text-xs"
            >
              Vào Chat
@@ -623,7 +623,7 @@ function DocCard({
               size="sm"
               variant="outline"
               disabled={isExpired}
-              onClick={(e) => { e.stopPropagation(); !isExpired && router.push(`/doc/${id}/summary`); }}
+              onClick={(e) => { e.stopPropagation(); if (!isExpired) router.push(`/doc/${id}/summary`); }}
               className="flex-1 bg-white/10 border-white/10 text-white h-9 text-xs"
            >
              Tóm tắt
@@ -647,7 +647,7 @@ function DocCard({
                <div className="w-full flex flex-col gap-3 pointer-events-auto">
                  <Button 
                    disabled={isExpired}
-                   onClick={(e) => { e.stopPropagation(); !isExpired && router.push(`/doc/${id}/chat`); }} 
+                   onClick={(e) => { e.stopPropagation(); if (!isExpired) router.push(`/doc/${id}/chat`); }} 
                    className={cn(
                      "w-full border-none h-10 font-bold hover:scale-[1.02] active:scale-[0.98] transition-all",
                      isExpired ? "bg-white/5 text-white/20" : "bg-white text-black"
@@ -657,7 +657,7 @@ function DocCard({
                  </Button>
                  <Button 
                    disabled={isExpired}
-                   onClick={(e) => { e.stopPropagation(); !isExpired && router.push(`/doc/${id}/summary`); }} 
+                   onClick={(e) => { e.stopPropagation(); if (!isExpired) router.push(`/doc/${id}/summary`); }} 
                    variant="outline" 
                    className="w-full h-10 bg-white/10 border-white/20 hover:bg-white/20 text-white font-medium backdrop-blur-md hover:scale-105 transition-transform disabled:opacity-50"
                  >
@@ -665,7 +665,7 @@ function DocCard({
                  </Button>
                  <Button
                    disabled={isExpired}
-                   onClick={(e) => { e.stopPropagation(); !isExpired && setShowShareDialog(true); }}
+                   onClick={(e) => { e.stopPropagation(); if (!isExpired) setShowShareDialog(true); }}
                    variant="outline"
                    className={cn(
                      "w-full h-10 font-medium backdrop-blur-md hover:scale-105 transition-transform flex items-center gap-2 disabled:opacity-50",

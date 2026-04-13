@@ -8,9 +8,10 @@ interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
   isLoading?: boolean;
+  placeholder?: string;
 }
 
-export function ChatInput({ onSendMessage, disabled, isLoading }: ChatInputProps) {
+export function ChatInput({ onSendMessage, disabled, isLoading, placeholder }: ChatInputProps) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -48,7 +49,7 @@ export function ChatInput({ onSendMessage, disabled, isLoading }: ChatInputProps
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Hỏi bất cứ điều gì về tài liệu này..."
+          placeholder={placeholder || "Hỏi bất cứ điều gì về tài liệu này..."}
           disabled={disabled || isLoading}
           className="w-full max-h-32 py-2 px-4 bg-transparent border-none focus:ring-0 text-[14px] font-medium resize-none overflow-y-auto scrollbar-hide text-zinc-200 placeholder:text-zinc-600 leading-normal outline-none"
         />

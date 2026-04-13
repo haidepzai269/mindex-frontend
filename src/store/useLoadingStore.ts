@@ -3,7 +3,7 @@ import { create } from 'zustand';
 interface LoadingState {
   isLoading: boolean;
   message: string | null;
-  startLoading: (message?: string) => void;
+  startLoading: (message?: string | null) => void;
   stopLoading: () => void;
 }
 

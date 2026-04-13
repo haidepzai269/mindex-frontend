@@ -125,7 +125,7 @@ export default function AboutPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Accordion type="single" className="w-full">
+            <Accordion className="w-full">
               {faqItems.map((item) => (
                 <AccordionItem
                   key={item.value}
