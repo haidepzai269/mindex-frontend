@@ -9,6 +9,7 @@ import { fetchApi } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
 import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
+import Cookies from "js-cookie";
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
@@ -32,6 +33,15 @@ export default function RegisterPage() {
 
       if (response.success) {
         toast.success("Đăng ký thành công!");
+        
+        const { access_token, refresh_token } = response.data;
+        // Save tokens to cookies for middleware access
+        if (access_token) {
+          Cookies.set("access_token", access_token, { expires: 1/24, secure: true, sameSite: 'lax' });
+        }
+        if (refresh_token) {
+          Cookies.set("refresh_token", refresh_token, { expires: 7, secure: true, sameSite: 'lax' });
+        }
         
         // Update store
         setUser({

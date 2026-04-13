@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useState } from "react";
 
+import Cookies from "js-cookie";
+
 interface GoogleLoginButtonProps {
   intent: "login" | "register";
 }
@@ -28,7 +30,15 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
       });
 
       if (response.success) {
-        const userData = response.data.user;
+        const { access_token, refresh_token, user: userData } = response.data;
+        
+        // Save tokens to cookies for middleware access
+        if (access_token) {
+          Cookies.set("access_token", access_token, { expires: 1/24, secure: true, sameSite: 'lax' });
+        }
+        if (refresh_token) {
+          Cookies.set("refresh_token", refresh_token, { expires: 7, secure: true, sameSite: 'lax' });
+        }
         
         // Cập nhật thông tin user vào store
         setUser({
