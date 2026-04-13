@@ -35,14 +35,12 @@ export default function RegisterPage() {
         toast.success("Đăng ký thành công!");
         
         const { access_token, refresh_token } = response.data;
-        // Save tokens to cookies for middleware access
-        const cookieOptions = { expires: 7, path: '/', sameSite: 'Lax' as const, secure: true, domain: '.mindex.io.vn' };
-        if (access_token) {
-          Cookies.set("access_token", access_token, cookieOptions);
-        }
-        if (refresh_token) {
-          Cookies.set("refresh_token", refresh_token, cookieOptions);
-        }
+        // Save tokens to cookies via internal API for better reliability on Cloudflare
+        await fetch('/api/auth/set-tokens', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ access_token, refresh_token }),
+        });
         
         // Update store
         setUser({

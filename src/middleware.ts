@@ -17,41 +17,60 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
 
-  // 1. Admin route logic (DEBUG MODE)
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_jwt_key_change_me');
+
+  // 1. Admin route: verify JWT role = 'admin'
   if (isAdminRoute) {
     if (!token && !refreshToken) {
-      const response = NextResponse.redirect(new URL('/login?next=' + pathname, request.url));
-      response.headers.set('x-mw-debug', 'admin-no-tokens');
-      return response;
+      return NextResponse.redirect(new URL('/login?next=' + pathname, request.url));
     }
-    
-    // Nếu có bất kỳ token nào, cho qua để kiểm chứng middleware có thấy cookie không
-    const res = NextResponse.next();
-    res.headers.set('x-mw-debug', `admin-token-found-len-${token?.length || 0}`);
-    return res;
+
+    if (token) {
+      try {
+        const { payload } = await jwtVerify(token, secret);
+        if (payload.role !== 'admin') {
+          return NextResponse.redirect(new URL('/?error=no_access', request.url));
+        }
+        return NextResponse.next();
+      } catch (err) {
+        // Token invalid/expired, handle with refresh token if exists
+        if (refreshToken) return NextResponse.next();
+        return NextResponse.redirect(new URL('/login?next=' + pathname, request.url));
+      }
+    } else {
+      // Only refresh token exists, allow to proceed for client-side refresh
+      return NextResponse.next();
+    }
   }
 
-  // 2. Protected routes logic (DEBUG MODE)
-  if (isProtectedRoute && !token && !refreshToken) {
-    const response = NextResponse.redirect(new URL('/login', request.url));
-    response.headers.set('x-mw-debug', 'protected-no-tokens');
-    return response;
+  // 2. Protected routes logic
+  if (isProtectedRoute) {
+    if (!token && !refreshToken) {
+      return NextResponse.redirect(new URL('/login?next=' + pathname, request.url));
+    }
+
+    if (token) {
+      try {
+        await jwtVerify(token, secret);
+      } catch (err) {
+        if (!refreshToken) {
+          return NextResponse.redirect(new URL('/login?next=' + pathname, request.url));
+        }
+      }
+    }
   }
-
-
 
   // 3. Redirect to library if accessing login/register while ALREADY having access_token
   if (isAuthRoute && token) {
-    return NextResponse.redirect(new URL('/library', request.url));
+    try {
+      await jwtVerify(token, secret);
+      return NextResponse.redirect(new URL('/library', request.url));
+    } catch (err) {
+      // Token is invalid/expired, let them stay on login/register to re-auth
+    }
   }
 
-  // 4. Allow and add debug header
-  const response = NextResponse.next();
-  if (isProtectedRoute) {
-    response.headers.set('x-middleware-auth', token ? 'at-present' : (refreshToken ? 'rt-present' : 'none'));
-  }
-  
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
