@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { fetcher, fetchApi } from "@/lib/api";
 import { Input } from "@/components/ui/input";
@@ -12,17 +12,19 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 
 export default function AdminBillingsPage() {
-  const { data, mutate, isLoading } = useSWR<{ success: boolean; data: any }>("/admin/billings", fetcher);
+  const { data, mutate, isLoading } = useSWR<{ success: boolean; data: any }>("/admin/billings", fetcher as any);
   
   const [proPrice, setProPrice] = useState("");
   const [ultraPrice, setUltraPrice] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Khởi tạo state giá khi tải xong data
-  if (data?.data?.packages && !proPrice && !ultraPrice) {
-    setProPrice(data.data.packages.PRO.toString());
-    setUltraPrice(data.data.packages.ULTRA.toString());
-  }
+  useEffect(() => {
+    if (data?.data?.packages && !proPrice && !ultraPrice) {
+      setProPrice(data.data.packages.PRO.toString());
+      setUltraPrice(data.data.packages.ULTRA.toString());
+    }
+  }, [data, proPrice, ultraPrice]);
 
   const handleUpdatePrices = async () => {
     try {
