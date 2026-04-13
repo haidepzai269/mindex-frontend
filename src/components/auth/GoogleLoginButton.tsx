@@ -29,15 +29,25 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
         }),
       });
 
-      if (response.success) {
+      if (response.success && response.data) {
         const { access_token, refresh_token, user: userData } = response.data;
         
-        await fetch('/api/auth/set-tokens', {
+        if (!access_token) {
+          throw new Error("Không nhận được access_token từ Backend");
+        }
+
+        // Đảm bảo set-tokens hoàn tất trước khi chuyển hướng
+        const setTokensRes = await fetch('/api/auth/set-tokens', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ access_token, refresh_token }),
         });
+
+        if (!setTokensRes.ok) {
+          throw new Error("Lỗi khi lưu phiên đăng nhập vào trình duyệt");
+        }
         
+        // Cập nhật thông tin user vào store
         setUser({
           id: userData.id,
           email: userData.email,
@@ -50,7 +60,13 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
         });
 
         toast.success("Đăng nhập bằng Google thành công!");
-        router.push("/library");
+        
+        // Trì hoãn một chút để đảm bảo State và Cookie đã ổn định
+        setTimeout(() => {
+            router.push("/library");
+        }, 100);
+      } else {
+        throw new Error(response.message || "Phản hồi từ server không hợp lệ");
       }
     } catch (error: any) {
       if (error.error === "ACCOUNT_EXISTS_WITH_PASSWORD") {
