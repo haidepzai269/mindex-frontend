@@ -149,7 +149,7 @@ export default function AdminFeedbacksPage() {
 
   return (
     <div className="h-[calc(100vh-140px)] border border-white/10 rounded-2xl overflow-hidden bg-[#0a0a0a] shadow-2xl flex flex-col">
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
+      <ResizablePanelGroup direction="horizontal" className="flex-1" {...({} as any)}>
         {/* Sidebar Mini */}
         <ResizablePanel defaultSize={15} minSize={10} maxSize={20} className="border-r border-white/10 bg-[#080808]">
           <div className="p-4 flex flex-col h-full">
