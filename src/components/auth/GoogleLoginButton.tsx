@@ -33,11 +33,12 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
         const { access_token, refresh_token, user: userData } = response.data;
         
         // Save tokens to cookies for middleware access
+        const cookieOptions = { expires: 7, path: '/', sameSite: 'Lax', secure: true, domain: window.location.hostname };
         if (access_token) {
-          Cookies.set("access_token", access_token, { expires: 1/24, secure: true, sameSite: 'lax' });
+          Cookies.set("access_token", access_token, cookieOptions);
         }
         if (refresh_token) {
-          Cookies.set("refresh_token", refresh_token, { expires: 7, secure: true, sameSite: 'lax' });
+          Cookies.set("refresh_token", refresh_token, cookieOptions);
         }
         
         // Cập nhật thông tin user vào store

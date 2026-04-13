@@ -40,11 +40,12 @@ export default function LoginPage() {
         const userRole = userData.role || 'user';
 
         // Save tokens to cookies for middleware access
+        const cookieOptions = { expires: 7, path: '/', sameSite: 'Lax', secure: process.env.NODE_ENV === 'production', domain: window.location.hostname };
         if (access_token) {
-          Cookies.set("access_token", access_token, { expires: 1/24, secure: true, sameSite: 'lax' });
+          Cookies.set("access_token", access_token, cookieOptions);
         }
         if (refresh_token) {
-          Cookies.set("refresh_token", refresh_token, { expires: 7, secure: true, sameSite: 'lax' });
+          Cookies.set("refresh_token", refresh_token, cookieOptions);
         }
 
         // Update user info in store
