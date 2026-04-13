@@ -10,8 +10,8 @@ const adminRoutes = ['/admin'];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  const token = request.cookies.get('access_token')?.value;
-  const refreshToken = request.cookies.get('refresh_token')?.value;
+  const token = request.cookies.get('access_token')?.value || request.headers.get('cookie')?.split('access_token=')[1]?.split(';')[0];
+  const refreshToken = request.cookies.get('refresh_token')?.value || request.headers.get('cookie')?.split('refresh_token=')[1]?.split(';')[0];
 
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
   const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));

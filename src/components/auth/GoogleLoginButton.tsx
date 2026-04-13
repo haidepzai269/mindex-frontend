@@ -33,7 +33,7 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
         const { access_token, refresh_token, user: userData } = response.data;
         
         // Save tokens to cookies for middleware access
-        const cookieOptions = { expires: 7, path: '/', sameSite: 'Lax' as const, secure: true, domain: window.location.hostname };
+        const cookieOptions = { expires: 7, path: '/', sameSite: 'Lax' as const, secure: true, domain: '.mindex.io.vn' };
         if (access_token) {
           Cookies.set("access_token", access_token, cookieOptions);
         }
