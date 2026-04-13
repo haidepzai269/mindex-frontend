@@ -53,8 +53,22 @@ export async function middleware(request: NextRequest) {
 
   // 2. Redirect to login if accessing a protected route without ANY token
   if (isProtectedRoute && !token && !refreshToken) {
-    console.log(`[Middleware] No tokens found for ${pathname}, redirecting to /login`);
-    return NextResponse.redirect(new URL('/login', request.url));
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.headers.set('x-middleware-debug', 'no-tokens');
+    return response;
+  }
+
+  // Debug JWT payload if token exists
+  if (token && (isProtectedRoute || isAdminRoute)) {
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_jwt_key_change_me');
+      await jwtVerify(token, secret);
+    } catch (err: any) {
+      console.log(`[Middleware] JWT Verification failed: ${err.message}`);
+      const response = NextResponse.redirect(new URL('/login?error=invalid_token', request.url));
+      response.headers.set('x-middleware-debug', `jwt-failed-${err.code || 'unknown'}`);
+      return response;
+    }
   }
 
   // 3. Redirect to library if accessing login/register while ALREADY having access_token
