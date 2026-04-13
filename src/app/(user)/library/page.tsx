@@ -84,16 +84,17 @@ export default function LibraryPage() {
       {/* TOPBAR */}
       <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-white/5 bg-black/10 backdrop-blur-md sticky top-0 z-10 w-full">
         <div className="flex-1 max-w-xl relative">
-           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
-           <Input 
-             placeholder="Tìm kiếm tài liệu..." 
-             className="pl-10 glass-input bg-white/5 border-white/5"
-             value={searchQuery}
-             onChange={(e) => setSearchQuery(e.target.value)}
-           />
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+          <Input 
+            placeholder="Tìm kiếm tài liệu..." 
+            className="pl-10 glass-input bg-white/5 border-white/5 h-10 md:h-11"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         
-        <div className="flex items-center gap-4 ml-4">
+        <div className="flex items-center gap-2 md:gap-4 ml-4">
+          <NotificationBell />
           <div className="flex items-center bg-white/5 p-1 rounded-lg border border-white/10">
             <button 
               onClick={() => handleUpdateViewMode("grid")}

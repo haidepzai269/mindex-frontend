@@ -136,8 +136,8 @@ export function NotificationBell() {
             </div>
 
             {/* List */}
-            <ScrollArea className="flex-1 min-h-0 relative z-10">
-              <div className="flex flex-col pb-10">
+            <ScrollArea className="flex-1 overflow-y-auto min-h-0 relative z-10">
+              <div className="flex flex-col pb-4">
                 <AnimatePresence initial={false}>
                     {notifications.length === 0 ? (
                     <div className="py-20 flex flex-col items-center justify-center text-zinc-600 italic">
