@@ -1,0 +1,141 @@
+"use client";
+
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { cn } from "@/lib/utils";
+import { ChatMessage as ChatMessageType } from "@/store/useChatStore";
+import { User, Zap, ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { useState } from "react";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+
+interface ChatMessageProps {
+  message: ChatMessageType;
+  isStreaming?: boolean;
+}
+
+export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
+  const isUser = message.role === "user";
+  const [showSources, setShowSources] = useState(false);
+
+  return (
+    <div className={cn(
+      "group flex w-full flex-col gap-4 py-8 animate-in fade-in duration-700",
+      isUser ? "items-end" : "items-start border-b border-zinc-900/50"
+    )}>
+      <div className={cn(
+        "flex max-w-[90%] gap-6",
+        isUser ? "flex-row-reverse" : "flex-row"
+      )}>
+        {/* Avatar Section */}
+        <div className="flex flex-col items-center gap-2">
+            <div className={cn(
+            "flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-xl border transition-all duration-500",
+            isUser 
+                ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.1)]" 
+                : "bg-zinc-900 text-primary border-zinc-800 shadow-[0_0_20px_rgba(184,41,255,0.05)]"
+            )}>
+            {isUser ? <User size={20} /> : <Zap size={20} className="fill-primary" />}
+            </div>
+        </div>
+
+        {/* Content Section */}
+        <div className={cn(
+          "flex flex-col gap-3.5",
+          isUser ? "items-end" : "items-start pt-1"
+        )}>
+          {/* Header Metadata */}
+          <div className={cn("flex items-center gap-3 px-1", isUser && "flex-row-reverse")}>
+            <span className="text-[12px] font-black text-white tracking-tight uppercase">
+              {isUser ? "BẠN" : "MINDEX AI"}
+            </span>
+            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
+              {message.timestamp ? format(new Date(message.timestamp), "HH:mm") : ""}
+            </span>
+          </div>
+
+          {/* Message Content */}
+          <div className={cn(
+            "text-[15.5px] leading-[1.6] transition-all duration-500",
+            isUser 
+                ? "bg-zinc-900 text-white px-7 py-4.5 rounded-[2.5rem] rounded-tr-sm border border-zinc-800 shadow-2xl" 
+                : "text-zinc-300 w-full"
+          )}>
+            {isStreaming && !message.content ? (
+              <div className="flex gap-1.5 items-center py-2 px-1">
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                <span className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                <span className="w-1.5 h-1.5 bg-primary/30 rounded-full animate-bounce"></span>
+              </div>
+            ) : (
+                <div className="prose prose-invert prose-zinc max-w-none prose-p:leading-[1.7] prose-p:mb-5 prose-pre:bg-black prose-pre:border prose-pre:border-zinc-800 prose-pre:rounded-2xl prose-pre:p-6 prose-code:text-primary prose-strong:text-white prose-table:border prose-table:border-zinc-800 shadow-sm">
+                    <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            table: ({node, ...props}) => <div className="my-8 overflow-x-auto rounded-2xl border border-zinc-900"><table className="w-full text-sm" {...props} /></div>,
+                            th: ({node, ...props}) => <th className="bg-zinc-900 px-5 py-4 text-left font-black text-white uppercase tracking-tighter" {...props} />,
+                            td: ({node, ...props}) => <td className="border-t border-zinc-900 px-5 py-4 text-zinc-400 font-medium" {...props} />,
+                            code: ({node, inline, ...props}: any) => 
+                                inline 
+                                ? <code className="bg-zinc-900 text-primary px-2 py-0.5 rounded-md font-bold text-[13px] border border-zinc-800/50" {...props} />
+                                : <code className="block font-mono text-[13.5px] leading-relaxed" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-5 last:mb-0" {...props} />
+                        }}
+                    >
+                        {message.content}
+                    </ReactMarkdown>
+                </div>
+            )}
+          </div>
+
+          {/* Sources Section (Assistant only) */}
+          {!isUser && message.sources && message.sources.length > 0 && (
+            <div className="mt-6 w-full group/sources">
+                <button 
+                  onClick={() => setShowSources(!showSources)}
+                  className="flex items-center gap-2.5 px-4 py-2 bg-zinc-900/50 hover:bg-zinc-900 border border-zinc-800/50 rounded-2xl text-[12px] font-black text-zinc-500 hover:text-white transition-all duration-300"
+                >
+                  <FileText size={14} className="group-hover/sources:text-primary transition-colors" />
+                  Nguồn dữ liệu trích dẫn ({message.sources.length})
+                  {showSources ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+
+                {showSources && (
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                        {message.sources.map((source, i) => (
+                            <div 
+                            key={i} 
+                            className="flex flex-col p-6 bg-zinc-900/20 border border-zinc-900 rounded-[2rem] hover:bg-zinc-900/40 hover:border-zinc-800 transition-all cursor-default group/src"
+                            >
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-xl bg-zinc-950 flex items-center justify-center border border-zinc-800 group-hover/src:border-primary/50 transition-all">
+                                        <span className="text-[11px] font-black text-primary uppercase">P{source.page_number}</span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[13px] font-black text-zinc-300">Đoạn #{source.chunk_index}</span>
+                                        {source.doc_title && (
+                                            <span className="text-[10px] text-zinc-500 font-bold truncate max-w-[150px] uppercase tracking-tighter">
+                                                {source.doc_title}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <Badge variant="outline" className="bg-emerald-500/5 text-emerald-400 border-emerald-500/20 text-[10px] font-black px-2 mt-0.5">
+                                    {Math.round(source.similarity * 100)}% Match
+                                </Badge>
+                            </div>
+                            <p className="text-[12.5px] text-zinc-500 leading-relaxed italic font-medium group-hover/src:text-zinc-400 transition-colors">
+                                "{source.content}"
+                            </p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
