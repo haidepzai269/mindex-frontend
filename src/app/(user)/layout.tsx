@@ -22,6 +22,7 @@ import { NotificationBell } from "@/components/user/NotificationBell";
 import { MobileNavigation } from "@/components/user/MobileNavigation";
 import { MobileHeader } from "@/components/user/MobileHeader";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatTimeAgo } from "@/lib/time";
 
 export default function UserLayout({ children }: { children: ReactNode }) {
   useNotifications(); // Kích hoạt SSE Notifications toàn cục
@@ -159,7 +160,13 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                 <div className="space-y-1 overflow-y-auto pr-1 flex-1 custom-scrollbar pb-4 min-h-0">
                    {recentDocs.length > 0 ? (
                      recentDocs.map((doc) => (
-                       <RecentDoc key={doc.id} id={doc.id} title={doc.title} expiring={!!doc.expired_at} />
+                       <RecentDoc 
+                        key={doc.id} 
+                        id={doc.id} 
+                        title={doc.title} 
+                        expiring={!!doc.expired_at} 
+                        time={doc.shared_at || doc.created_at} 
+                       />
                      ))
                    ) : (
                      <div className="px-4 py-2 text-[10px] text-white/20 italic">Chưa có tài liệu nào</div>
@@ -337,12 +344,19 @@ function NavItem({ href, icon, label, active = false, collapsed = false }: { hre
   );
 }
 
-function RecentDoc({ id, title, expiring = false }: { id: string; title: string; expiring?: boolean }) {
+function RecentDoc({ id, title, expiring = false, time }: { id: string; title: string; expiring?: boolean; time?: string }) {
   return (
-    <Link href={`/doc/${id}/chat`} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-white/50 hover:bg-white/5 hover:text-white/90 transition-all group w-full">
-      <FileText size={16} className="text-white/20 group-hover:text-secondary/60 transition-colors shrink-0" />
-      <span className="truncate flex-1 font-normal tracking-tight">{title}</span>
-      {expiring && <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] animate-pulse shrink-0"></div>}
+    <Link href={`/doc/${id}/chat`} className="flex flex-col gap-1 px-4 py-2 rounded-lg hover:bg-white/5 transition-all group w-full">
+      <div className="flex items-center gap-3">
+        <FileText size={14} className="text-white/20 group-hover:text-secondary/60 transition-colors shrink-0" />
+        <span className="truncate flex-1 text-sm text-white/50 group-hover:text-white/90 font-normal tracking-tight">{title}</span>
+        {expiring && <div className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse shrink-0"></div>}
+      </div>
+      {time && (
+        <div className="pl-6 text-[10px] text-white/20 group-hover:text-white/40 italic">
+          {formatTimeAgo(time)}
+        </div>
+      )}
     </Link>
   );
 }

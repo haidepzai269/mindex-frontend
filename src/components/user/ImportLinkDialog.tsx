@@ -32,42 +32,41 @@ export function ImportLinkDialog({ open, onOpenChange }: ImportLinkDialogProps) 
       return;
     }
 
-    // Trích xuất link_id từ URL
-    // Format dự kiến: .../shared/[uuid]
-    let linkId = "";
-    try {
-      if (shareUrl.includes("/shared/")) {
-        const parts = shareUrl.split("/shared/");
-        linkId = parts[parts.length - 1].split(/[?#]/)[0]; // Lấy phần UUID, bỏ query/hash
-      } else {
-        // Nếu chỉ dán mỗi ID
-        linkId = shareUrl.trim();
-      }
+    // Sử dụng Regex linh hoạt hơn để bắt UUID từ URL hoặc chuỗi ròng
+    const uuidPattern = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+    const match = shareUrl.match(uuidPattern);
+    const id = match ? match[1] : shareUrl.trim();
 
-      if (!linkId || linkId.length < 10) {
-        throw new Error("Link không đúng định dạng");
-      }
-    } catch (err) {
-      toast.error("Link chia sẻ không hợp lệ. Vui lòng kiểm tra lại.");
+    if (!id || id.length < 10) {
+      toast.error("Link hoặc ID không hợp lệ. Vui lòng kiểm tra lại.");
       return;
     }
 
     setIsLoading(true);
     try {
-      // Gọi API public để kiểm tra link và lấy document_id
-      const res: any = await fetchApi(`/public/shared/${linkId}`);
-
-      if (res.success && res.data) {
-        const docId = res.data.document_id;
-        toast.success("Link hợp lệ! Đang chuyển hướng...");
-        
-        // Chuyển hướng tới trang chat với tham số fork để backend tự động add vào library
-        router.push(`/doc/${docId}/chat?fork=${linkId}`);
-        onOpenChange(false);
-        setShareUrl("");
-      } else {
-        throw new Error(res.message || "Link không tồn tại hoặc đã hết hạn");
+      // Bất kể link gì, ưu tiên dùng API "nhận" tài liệu (ID là chìa khóa)
+      try {
+        const useRes: any = await fetchApi(`/community/documents/${id}/use`, { method: "POST" });
+        if (useRes.success) {
+          if (!useRes.data.is_duplicate) {
+            toast.success("Đã thêm tài liệu mới vào thư viện!");
+          }
+          router.push(`/doc/${id}/chat`);
+          onOpenChange(false);
+          setShareUrl("");
+          return;
+        }
+      } catch (useErr) {
+        // Nếu không phải link tài liệu hoặc đã có quyền, cứ tiếp tục để xử lý link hội thoại
+        console.log("Not a direct doc or already owned");
       }
+
+      // TRƯỜNG HỢP 2: Link Chia sẻ (/shared/UUID)
+      // Chuyển hướng tới trang public VIEW
+      toast.success("Link hợp lệ! Đang mở trang xem trước...");
+      router.push(`/shared/${id}`);
+      onOpenChange(false);
+      setShareUrl("");
     } catch (err: any) {
       toast.error(err.message || "Không thể thực thi link này");
     } finally {

@@ -57,6 +57,8 @@ import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuthStore } from "@/store/useAuthStore";
 
+import { formatTimeAgo } from "@/lib/time";
+
 const PERSONA_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
   student:    { label: "Sinh viên",  emoji: "🎓", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
   doctor:     { label: "Y tế",       emoji: "🏥", color: "text-rose-400 bg-rose-500/10 border-rose-500/20" },
@@ -109,15 +111,7 @@ function PersonaBadge({ persona, isOwner, onEdit }: { persona: string; isOwner?:
 }
 
 function TimeAgo({ dateStr }: { dateStr: string }) {
-  if (!dateStr) return <span>Không rõ</span>;
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return <span>Không rõ</span>;
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return <span>Hôm nay</span>;
-  if (diffDays === 1) return <span>Hôm qua</span>;
-  if (diffDays < 30) return <span>{diffDays} ngày trước</span>;
-  return <span>{date.toLocaleDateString("vi-VN")}</span>;
+  return <span>{formatTimeAgo(dateStr)}</span>;
 }
 
 import { NotificationBell } from "@/components/user/NotificationBell";
@@ -441,7 +435,7 @@ export default function CommunityPage() {
                            )}
                         </div>
                         <div className="flex items-center gap-2 text-[10px] md:text-[11px] text-muted-foreground/60">
-                           <TimeAgo dateStr={doc.created_at} />
+                           <TimeAgo dateStr={doc.display_date || doc.created_at} />
                            {doc.contributor_name && (
                              <>
                                <span className="w-1 h-1 rounded-full bg-white/10" />

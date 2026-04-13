@@ -22,6 +22,7 @@ import { FolderPlus, ChevronRight, Link as LinkIcon } from "lucide-react";
 import { ImportLinkDialog } from "@/components/user/ImportLinkDialog";
 import { NotificationBell } from "@/components/user/NotificationBell";
 import { useAuthStore } from "@/store/useAuthStore";
+import { formatTimeAgo, formatTimeLeft } from "@/lib/time";
 
 interface ApiResponse {
   success: boolean;
@@ -314,6 +315,8 @@ export default function LibraryPage() {
                       status={doc.status}
                       chunks={doc.chunk_count} 
                       expiredAt={doc.expired_at}
+                      sharedAt={doc.shared_at}
+                      createdAt={doc.created_at}
                       pinned={doc.pinned}
                       isPublic={doc.is_public}
                       viewMode={viewMode}
@@ -347,6 +350,8 @@ function DocCard({
   status,
   chunks, 
   expiredAt, 
+  sharedAt,
+  createdAt,
   pinned,
   isPublic,
   viewMode,
@@ -356,7 +361,9 @@ function DocCard({
   title: string; 
   status: string; 
   chunks?: number; 
-  expiredAt?: string | null; 
+  expiredAt?: string | null;
+  sharedAt?: string | null;
+  createdAt?: string | null;
   pinned?: boolean;
   isPublic?: boolean;
   viewMode: "grid" | "list";
@@ -375,23 +382,9 @@ function DocCard({
   const isProcessing = status === 'processing' || status === 'queued';
   const isError = status === 'error';
 
-  const getTimeLeft = () => {
-    if (!expiredAt) return "Vĩnh viễn";
-    const now = new Date();
-    const exp = new Date(expiredAt);
-    const diff = exp.getTime() - now.getTime();
-    if (diff <= 0) return "Đã hết hạn";
-    
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days} ngày`;
-    if (hours > 0) return `${hours} giờ`;
-    return `${minutes} phút`;
-  };
-
-  const timeLeft = getTimeLeft();
+  const timeLeft = formatTimeLeft(expiredAt);
+  const interactionTime = formatTimeAgo(sharedAt || expiredAt); // Nếu chưa share thì dùng ngày tạo/hết hạn làm mốc
+  
   const isExpired = timeLeft === "Đã hết hạn";
   const isExpiring = !isExpired && timeLeft !== "Vĩnh viễn" && !timeLeft.includes("ngày");
 
@@ -630,12 +623,18 @@ function DocCard({
            </Button>
         </div>
         
-        <div className="mt-4 md:mt-4 pt-4 border-t border-white/10 flex justify-between items-center text-xs text-white/40">
-           <span>{chunks ? `${chunks} chunks` : '--'}</span>
-           <span className={isExpiring ? 'text-red-400 flex items-center gap-1 font-medium' : ''}>
-             {isExpiring && <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>}
-             ⏱ {timeLeft}
-           </span>
+        <div className="mt-4 md:mt-4 pt-4 border-t border-white/10 flex justify-between items-center text-[10px] text-white/30 italic">
+           <div className="flex flex-col gap-0.5">
+              <span>{chunks ? `${chunks} chunks` : '--'}</span>
+              <span>{sharedAt ? `Chia sẻ: ${formatTimeAgo(sharedAt)}` : `Tạo: ${formatTimeAgo(createdAt || "")}`}</span>
+           </div>
+           <div className="flex flex-col items-end gap-0.5">
+             <span className={isExpiring ? 'text-red-400 flex items-center gap-1 font-medium' : ''}>
+               {isExpiring && <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>}
+               ⏱ {timeLeft}
+             </span>
+             <span className="opacity-50 NOT-ITALIC">{interactionTime.includes("trước") ? interactionTime : ""}</span>
+           </div>
         </div>
 
         <div className={cn(

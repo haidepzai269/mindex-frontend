@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
 
     const isProd = process.env.NODE_ENV === 'production';
-    const domain = isProd ? '.mindex.io.vn' : undefined;
+    const domain = isProd ? 'mindex.io.vn' : undefined;
 
     if (access_token) {
       cookieStore.set('access_token', access_token, {
