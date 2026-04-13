@@ -43,22 +43,31 @@ export const useAuthStore = create<AuthStore>()(
       setUser: (user) => set({ user, quota: user.quota, isAuthenticated: true }),
       updateQuota: (quota) => set({ quota }),
       logout: async () => {
-        // 1. Reset local state ngay lập tức để UI phản hồi nhanh
+        // 1. Reset local state và xóa localStorage ngay lập tức
         set({ user: null, quota: null, isAuthenticated: false });
         
         if (typeof window !== 'undefined') {
           try {
-            // 2. Gọi API logout - Backend sẽ chịu trách nhiệm xóa HttpOnly Cookies
-            await fetch(`${API_BASE_URL}/auth/logout`, { 
-              method: 'POST',
-              credentials: 'include' // Quan trọng: Để trình duyệt gửi kèm cookies lên server xóa
-            });
+            // 2. Xóa sạch cookies ở phía Client bằng js-cookie (Chống lỗi cross-domain)
+            Cookies.remove('access_token', { path: '/' });
+            Cookies.remove('refresh_token', { path: '/' });
+
+            // 3. Gọi đồng thời cả API Backend và API nội bộ Next.js để xóa HttpOnly Cookies
+            await Promise.allSettled([
+              fetch(`${API_BASE_URL}/auth/logout`, { 
+                method: 'POST',
+                credentials: 'include'
+              }),
+              fetch('/api/auth/logout', { 
+                method: 'POST'
+              })
+            ]);
           } catch (e) {
-            console.error("Logout API failed:", e);
+            console.error("Logout process partial failure:", e);
           } finally {
-            // 3. Xóa sạch localStorage và chuyển hướng
+            // 4. Dọn dẹp cuối cùng và cưỡng chế chuyển hướng
             localStorage.removeItem('mindex-auth-storage');
-            window.location.replace('/login');
+            window.location.href = '/login';
           }
         }
       },
