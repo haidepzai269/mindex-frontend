@@ -9,6 +9,15 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mon
 export const metadata: Metadata = {
   title: "Mindex",
   description: "AI Document Assistant for Students",
+  icons: {
+    icon: "/logo.png?v=1",
+    apple: "/logo.png?v=1",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Mindex",
+  },
 };
 
 import { Toaster } from "@/components/ui/sonner";

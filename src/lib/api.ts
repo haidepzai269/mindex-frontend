@@ -36,9 +36,7 @@ export async function handleRefreshToken(): Promise<string> {
         const data = await refreshRes.json();
         const newToken = data.data.access_token;
         
-        console.log("[API] Token refresh successful.");
-        // Lưu ý: Backend đã tự set access_token cookie, 
-        // dòng dưới đây chỉ dành cho trường hợp muốn dùng cả Authorization header
+        console.log("[API] Token refresh successful. New token received.");
         return newToken || "";
       } else {
         const errorData = await refreshRes.json().catch(() => ({}));
