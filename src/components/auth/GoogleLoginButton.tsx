@@ -77,7 +77,7 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
         </div>
       </div>
       
-      <div className="w-full flex justify-center google-btn-container">
+      <div className="w-full flex justify-center google-btn-container overflow-hidden rounded-full max-w-[400px] mx-auto">
         <GoogleLogin
           onSuccess={handleSuccess}
           onError={() => {
@@ -86,19 +86,27 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
           use_fedcm_for_prompt={false}
           theme="filled_black"
           shape="pill"
-          width="100%"
+          width="320px"
           text="continue_with"
+          logo_alignment="left"
         />
       </div>
 
       <style jsx global>{`
+        .google-btn-container {
+          background-color: transparent !important;
+          color-scheme: dark !important;
+        }
         .google-btn-container > div {
           width: 100% !important;
           display: flex !important;
           justify-content: center !important;
+          background-color: transparent !important;
         }
         .google-btn-container iframe {
           margin: 0 auto !important;
+          border-radius: 9999px !important;
+          color-scheme: dark !important;
         }
       `}</style>
     </div>
