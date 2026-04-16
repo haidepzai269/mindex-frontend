@@ -1,18 +1,10 @@
-User-agent: Googlebot
-Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /login
-Disallow: /register
-Disallow: /settings
-
 User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /api/
-Disallow: /login
-Disallow: /register
 Disallow: /settings
+Disallow: /doc/
 
 Sitemap: https://mindex.io.vn/sitemap.xml
+
 
