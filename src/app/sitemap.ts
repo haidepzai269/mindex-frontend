@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://mindex.vn' // Thay đổi thành URL thực tế của bạn
+  const baseUrl = 'https://mindex.io.vn' // Thay đổi thành URL thực tế của bạn
   
   return [
     {

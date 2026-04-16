@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin/', '/api/', '/login', '/register', '/settings'],
     },
-    sitemap: 'https://mindex.vn/sitemap.xml',
+    sitemap: 'https://mindex.io.vn/sitemap.xml',
   }
 }

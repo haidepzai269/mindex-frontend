@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://mindex.vn"),
+  metadataBase: new URL("https://mindex.io.vn"),
   alternates: {
     canonical: "/",
   },
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     title: "Mindex - AI Document Assistant for Students",
     description:
       "Trợ lý AI giúp tối ưu hóa việc học tập và quản lý tài liệu cho sinh viên.",
-    url: "https://mindex.vn",
+    url: "https://mindex.io.vn",
     siteName: "Mindex",
     locale: "vi_VN",
     type: "website",

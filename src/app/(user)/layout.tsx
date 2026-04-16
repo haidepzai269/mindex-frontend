@@ -242,7 +242,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                {!isCollapsed && (
                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col flex-1 min-w-0 relative z-10">
                    <span className={cn("text-sm font-semibold truncate", user?.tier === "PRO" ? "text-yellow-400" : user?.tier === "ULTRA" ? "text-rose-400 drop-shadow-[0_0_5px_rgba(225,29,72,0.8)]" : "text-white")}>{user?.name || "Sinh viên Mindex"}</span>
-                   <span className="text-[10px] text-white/40 truncate font-medium">{user?.email || "user@mindex.vn"}</span>
+                   <span className="text-[10px] text-white/40 truncate font-medium">{user?.email || "user@mindex.io.vn"}</span>
                  </motion.div>
                )}
                
