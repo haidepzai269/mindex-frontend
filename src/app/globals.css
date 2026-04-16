@@ -75,7 +75,8 @@
     @apply border-border outline-none;
   }
   body {
-    @apply bg-background text-foreground overflow-hidden h-screen w-screen flex flex-col;
+    @apply bg-background text-foreground flex flex-col min-h-screen;
+    overflow-x: hidden;
   }
 }
 
