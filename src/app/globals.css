@@ -13,60 +13,60 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
  
-    --primary: 221 83% 24%;
+    --primary: 0 0% 0%;
     --primary-foreground: 0 0% 100%;
  
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
  
-    --muted: 220 14% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
  
-    --accent: 38 95% 47%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
  
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221 83% 24%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
  
     --radius: 0.5rem;
 
-    --sidebar-bg: 222 47% 11%;
+    --sidebar-bg: 0 0% 0%;
     --sidebar-fg: 0 0% 100%;
-    --sidebar-active: 221 83% 50%;
+    --sidebar-active: 0 0% 100%;
   }
  
   .dark {
-    --background: 240 10% 4%; /* zinc-950 */
+    --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
  
-    --card: 240 10% 4%;
+    --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
  
-    --popover: 240 10% 4%;
+    --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
  
-    --primary: 270 70% 50%; /* Dịu hơn một chút so với #b829ff */
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
  
-    --secondary: 240 5% 10%; /* zinc-900 */
+    --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
  
-    --muted: 240 5% 15%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
  
-    --accent: 240 5% 15%;
+    --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
  
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
  
-    --border: 240 5% 12%;
-    --input: 240 5% 12%;
-    --ring: 240 5% 85%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
   }
 }
  
@@ -111,11 +111,9 @@
   display: none;
 }
 
-
-
 @layer utilities {
   .bg-primary-gradient {
-    background: linear-gradient(135deg, #b829ff 0%, #7c3aed 100%); /* Thay teal bằng purple đậm hơn */
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
   }
   .bg-mystic-dark {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
@@ -137,8 +135,26 @@
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(0.95); }
 }
+
 @keyframes shimmer {
   0% { transform: translateX(-150%) skewX(-20deg); }
   100% { transform: translateX(250%) skewX(-20deg); }
+}
+
+@keyframes appear {
+  0% {
+    opacity: 0;
+    transform: translateY(1rem);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.animate-appear {
+  animation: appear 0.5s ease-out forwards;
 }
 

@@ -117,8 +117,8 @@ export default function UserLayout({ children }: { children: ReactNode }) {
             "h-20 flex items-center transition-all duration-300",
             isCollapsed ? "justify-center px-0" : "px-6 gap-3"
           )}>
-            <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-center shadow-2xl flex-shrink-0">
-               <BookOpen className="w-6 h-6 text-white/90" />
+            <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center flex-shrink-0 transition-colors group-hover:bg-secondary/80">
+               <BookOpen className="w-6 h-6 text-muted-foreground" />
             </div>
             {!isCollapsed && (
               <motion.span 

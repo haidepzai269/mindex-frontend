@@ -96,8 +96,8 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md p-8 glass-card relative z-10 mx-4">
         
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-primary-gradient flex items-center justify-center shadow-[0_0_20px_rgba(184,41,255,0.4)] mb-4">
-            <BookOpen className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-xl bg-secondary border border-border flex items-center justify-center mb-4 transition-all group-hover:bg-secondary/80">
+            <BookOpen className="w-6 h-6 text-muted-foreground" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Khôi phục mật khẩu</h1>
           <p className="text-sm text-white/50 mt-1 text-center">

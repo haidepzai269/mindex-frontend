@@ -20,8 +20,8 @@ export function MobileHeader() {
   return (
     <header className="md:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-white/5 px-4 h-14 flex items-center justify-between">
       <div className="flex items-center gap-2">
-         <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
-            <BookOpen className="w-4 h-4 text-primary" />
+         <div className="w-8 h-8 rounded-lg bg-secondary border border-border flex items-center justify-center">
+            <BookOpen className="w-4 h-4 text-muted-foreground" />
          </div>
          <span className="font-bold text-lg tracking-tight text-white/90">Mindex</span>
       </div>
