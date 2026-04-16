@@ -12,9 +12,11 @@ export function useChatSSE() {
     setCurrentStreamText, 
     appendStreamText, 
     addMessage,
+    updateLastAssistantLogId,
     sessionId,
     setSessionId,
   } = useChatStore();
+
 
   const sendMessage = useCallback(async (targetId: string, question: string, forkId?: string, isCollection: boolean = false) => {
     if (!targetId || !question) return;
@@ -156,7 +158,8 @@ export function useChatSSE() {
                         role: 'assistant',
                         content: fullAnswerText,
                         sources: parsed.sources || [],
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        log_id: parsed.log_id || undefined, // Gắn log_id để thumbs rating UI
                     });
                     setIsStreaming(false);
                     setCurrentStreamText('');
@@ -183,7 +186,8 @@ export function useChatSSE() {
       }
       setIsStreaming(false);
     }
-  }, [addMessage, setIsStreaming, setCurrentStreamText, appendStreamText, sessionId, setSessionId]);
+  }, [addMessage, updateLastAssistantLogId, setIsStreaming, setCurrentStreamText, appendStreamText, sessionId, setSessionId]);
+
 
   const stopStreaming = useCallback(() => {
     if (abortControllerRef.current) {

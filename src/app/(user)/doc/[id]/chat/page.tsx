@@ -40,6 +40,8 @@ import { useConfirmStore } from "@/store/useConfirmStore";
 import { ShareDialog } from "@/components/user/ShareDialog";
 import { useSearchParams } from "next/navigation";
 import { NotificationBell } from "@/components/user/NotificationBell";
+import { StudyHubWidget } from "@/components/user/StudyHubWidget";
+
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -334,6 +336,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                     )}
                 </div>
             </ScrollArea>
+
+            {/* Study Hub Widget */}
+            <StudyHubWidget docId={id} />
 
             {/* Footer sync stats */}
             <div className="mt-6 p-4 bg-black/40 rounded-2xl border border-white/5">

@@ -10,15 +10,19 @@ import {
   Activity,
   LogOut,
   Shield,
+  ThumbsDown,
 } from 'lucide-react'
 
+
 const navItems = [
-  { href: '/admin/system', label: 'System Health', icon: LayoutDashboard },
-  { href: '/admin/tokens', label: 'Token Monitor', icon: Zap },
-  { href: '/admin/feedbacks', label: 'User Feedbacks', icon: MessageSquare },
-  { href: '/admin/chats', label: 'Chat Audit', icon: MessageSquare },
-  { href: '/admin/queue', label: 'Queue Health', icon: Activity },
+  { href: '/admin/system',   label: 'System Health',   icon: LayoutDashboard },
+  { href: '/admin/tokens',   label: 'Token Monitor',   icon: Zap },
+  { href: '/admin/quality',  label: 'AI Quality',      icon: ThumbsDown },
+  { href: '/admin/feedbacks',label: 'User Feedbacks',  icon: MessageSquare },
+  { href: '/admin/chats',    label: 'Chat Audit',      icon: MessageSquare },
+  { href: '/admin/queue',    label: 'Queue Health',    icon: Activity },
 ]
+
 
 export function AdminSidebar() {
   const pathname = usePathname()
