@@ -15,13 +15,22 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function ChatMockup() {
+export function ChatMockup({ lang = 'en' }: { lang?: 'en' | 'vi' }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const DEMO_SCENARIO = [
+  const DEMO_SCENARIO = lang === 'en' ? [
+    { 
+      question: "How to start the server and access the website?", 
+      answer: "To start, run `node server.js`. Then access `http://localhost:3000` in your browser. Good luck!" 
+    },
+    { 
+      question: "How can Mindex help with my studies?", 
+      answer: "Mindex helps you summarize documents, extract key points, and create automatic study questions from PDFs/Slides, saving up to 70% of research time." 
+    }
+  ] : [
     { 
       question: "Cách khởi động server và truy cập website?", 
       answer: "Để khởi động, bạn chạy lệnh `node server.js`. Sau đó truy cập `http://localhost:3000` trên trình duyệt. Chúc bạn thành công!" 
