@@ -59,8 +59,8 @@ const t = {
         title: "Simple, Transparent Pricing.",
         description: "Choose the plan that fits your academic goals. No hidden fees.",
         p1: { title: "Free", desc: "Perfect for casual learners getting started.", price: "0đ", features: ["Basic AI Document Analysis", "Limited Document Pins", "Community Library Access", "Standard Response Time"], btn: "Get Started" },
-        p2: { title: "PRO", desc: "Enhanced productivity for serious students.", price: "5.000đ", features: ["Ghim tối đa 5 tài liệu quan trọng", "Chia sẻ template 5 tài liệu", "Biểu tượng Vàng Gold VIP", "Prioritized Response AI (Tốc độ x2)", "No distractions (Ad-free)"], btn: "Upgrade to PRO" },
-        p3: { title: "ULTRA", desc: "The ultimate academic power-up.", price: "10.000đ", features: ["Ghim tối đa 10 tài liệu quan trọng", "Chia sẻ template 10 tài liệu", "Biểu tượng Neon Đỏ Đẳng Cấp", "Premium AI Model (Cerebras, Groq...)", "Dedicated 1-1 Support", "Export & Analyze All Formats"], btn: "Go ULTRA" }
+        p2: { title: "PRO", desc: "Enhanced productivity for serious students.", price: "5.000đ", features: ["Pin up to 5 key documents", "Share templates for 5 documents", "Exclusive Gold VIP Badge", "Prioritized AI Speed (2x Faster)", "No distractions (Ad-free)"], btn: "Upgrade to PRO" },
+        p3: { title: "ULTRA", desc: "The ultimate academic power-up.", price: "10.000đ", features: ["Pin up to 10 key documents", "Share templates for 10 documents", "Elite Neon Red Badge", "Premium AI Models (Cerebras, Groq...)", "Dedicated 1-1 Support", "Export & Analyze All Formats"], btn: "Go ULTRA" }
     },
     cta: {
         title: "Ready to transform your study routine?",
