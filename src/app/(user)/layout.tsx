@@ -105,11 +105,11 @@ export default function UserLayout({ children }: { children: ReactNode }) {
           {/* Nút Toggle Sidebar (Nằm ở giữa border) */}
           <button
             onClick={toggleSidebar}
-            className="absolute -right-3 top-10 w-6 h-6 bg-[#1A1B23] border border-white/10 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-primary transition-all shadow-xl z-50 group"
+            className="absolute -right-3 top-10 w-6 h-6 bg-[#1A1B23] border border-white/10 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-[#2A2B35] transition-all shadow-xl z-50 group"
             title={isCollapsed ? "Mở rộng" : "Thu gọn"}
           >
             {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-            <div className="absolute inset-0 rounded-full bg-primary/20 scale-0 group-hover:scale-150 transition-transform duration-500 blur-md opacity-0 group-hover:opacity-100" />
+            <div className="absolute inset-0 rounded-full bg-white/10 scale-0 group-hover:scale-150 transition-transform duration-500 blur-md opacity-0 group-hover:opacity-100" />
           </button>
           
           {/* LOGO AREA */}
@@ -277,7 +277,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.01 }}
               transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="flex-1 flex flex-col h-full w-full"
+              className="flex-1 flex flex-col h-full w-full pb-20 md:pb-0"
             >
               {children}
             </motion.div>

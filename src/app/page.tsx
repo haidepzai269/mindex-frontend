@@ -138,11 +138,13 @@ const t = {
 
 export default function Home() {
   const [lang, setLang] = useState<'en' | 'vi'>('en');
+  const [mounted, setMounted] = useState(false);
 
   // Load language from localStorage
   useEffect(() => {
     const savedLang = localStorage.getItem("mindex_lang") as 'en' | 'vi';
     if (savedLang) setLang(savedLang);
+    setMounted(true);
   }, []);
 
   const toggleLang = () => {
@@ -152,6 +154,10 @@ export default function Home() {
   };
 
   const cur = t[lang];
+
+  if (!mounted) {
+    return <div className="min-h-screen bg-background" />; // Prevent hydration mismatch
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground">

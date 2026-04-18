@@ -37,6 +37,7 @@ export default function LibraryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedCollection, setSelectedCollection] = useState<any>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   
   const { data, error, isLoading } = useSWR<ApiResponse>("/documents", fetcher as any);
@@ -94,7 +95,9 @@ export default function LibraryPage() {
         </div>
         
         <div className="flex items-center gap-2 md:gap-4 ml-4">
-          <NotificationBell />
+          <div className="hidden md:block">
+            <NotificationBell />
+          </div>
           <div className="flex items-center bg-white/5 p-1 rounded-lg border border-white/10">
             <button 
               onClick={() => handleUpdateViewMode("grid")}
@@ -202,10 +205,14 @@ export default function LibraryPage() {
                       }
                     }}
                     onEdit={(id) => {
-                      toast.info("Tính năng chỉnh sửa đang được hoàn thiện");
+                      const col = collectionsData.data.find((c: any) => c.id === id);
+                      setSelectedCollection(col);
+                      setIsCreateModalOpen(true);
                     }}
                     onAddDoc={(id) => {
-                      toast.info("Tính năng thêm tài liệu đang được hoàn thiện");
+                      const col = collectionsData.data.find((c: any) => c.id === id);
+                      setSelectedCollection(col);
+                      setIsCreateModalOpen(true);
                     }}
                   />
                 ))}
@@ -229,10 +236,14 @@ export default function LibraryPage() {
                       }
                     }}
                     onEdit={(id) => {
-                      toast.info("Tính năng chỉnh sửa đang được hoàn thiện");
+                      const col = collectionsData.data.find((c: any) => c.id === id);
+                      setSelectedCollection(col);
+                      setIsCreateModalOpen(true);
                     }}
                     onAddDoc={(id) => {
-                      toast.info("Tính năng thêm tài liệu đang được hoàn thiện");
+                      const col = collectionsData.data.find((c: any) => c.id === id);
+                      setSelectedCollection(col);
+                      setIsCreateModalOpen(true);
                     }}
                   />
                 ))}
@@ -332,7 +343,11 @@ export default function LibraryPage() {
 
         <CreateCollectionModal 
           open={isCreateModalOpen}
-          onOpenChange={setIsCreateModalOpen}
+          onOpenChange={(open) => {
+            setIsCreateModalOpen(open);
+            if (!open) setSelectedCollection(null);
+          } }
+          collection={selectedCollection}
           onSuccess={() => mutateCollections()}
         />
 

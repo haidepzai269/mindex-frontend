@@ -131,13 +131,13 @@ export function CollectionCard({
                 </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="glass-card border-white/10 text-white/80">
-                  <DropdownMenuItem onClick={() => onAddDoc(collection.id)} className="flex gap-2">
+                  <DropdownMenuItem onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddDoc(collection.id); }} className="flex gap-2">
                       <Plus size={14} /> Thêm tài liệu
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onEdit(collection.id)} className="flex gap-2">
+                  <DropdownMenuItem onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(collection.id); }} className="flex gap-2">
                       <Edit3 size={14} /> Chỉnh sửa
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onDelete(collection.id)} className="flex gap-2 text-red-400 focus:text-red-400">
+                  <DropdownMenuItem onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(collection.id); }} className="flex gap-2 text-red-400 focus:text-red-400">
                       <Trash2 size={14} /> Xóa bộ
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -165,13 +165,13 @@ export function CollectionCard({
                 </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="glass-card border-white/10 text-white/80">
-                <DropdownMenuItem onClick={() => onAddDoc(collection.id)} className="flex gap-2">
+                <DropdownMenuItem onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddDoc(collection.id); }} className="flex gap-2">
                     <Plus size={14} /> Thêm tài liệu
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(collection.id)} className="flex gap-2">
+                <DropdownMenuItem onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(collection.id); }} className="flex gap-2">
                     <Edit3 size={14} /> Đổi tên/Emoji
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onDelete(collection.id)} className="flex gap-2 text-red-400 focus:text-red-400">
+                <DropdownMenuItem onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(collection.id); }} className="flex gap-2 text-red-400 focus:text-red-400">
                     <Trash2 size={14} /> Xóa bộ
                 </DropdownMenuItem>
                 </DropdownMenuContent>

@@ -25,7 +25,8 @@ import { ChatMessage } from "@/components/user/ChatMessage";
 import { ChatInput } from "@/components/user/ChatInput";
 import { useChatStore } from "@/store/useChatStore";
 import { useChatSSE } from "@/hooks/useChatSSE";
-import useSWR from "swr";
+import { CreateCollectionModal } from "@/components/user/CreateCollectionModal";
+import useSWR, { useSWRConfig } from "swr";
 import { fetcher, fetchApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -37,6 +38,8 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
   const { id } = use(params);
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { mutate } = useSWRConfig();
   
   const { 
     messages, 
@@ -189,6 +192,7 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
                 
                 <Button 
                     variant="outline" 
+                    onClick={() => setIsEditModalOpen(true)}
                     className="mt-6 w-full border-white/5 bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-2xl h-10 text-xs font-bold"
                 >
                     Quản lý tài liệu
@@ -196,6 +200,17 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
             </div>
         </div>
       </aside>
+
+      <CreateCollectionModal 
+        open={isEditModalOpen}
+        onOpenChange={(open) => {
+          setIsEditModalOpen(open);
+        }}
+        collection={collection}
+        onSuccess={() => {
+          mutate(`/collections/${id}`);
+        }}
+      />
 
       {/* PANEL 2: CHAT AREA (MIDDLE) */}
       <main className="flex-1 h-full bg-white/[0.01] rounded-[40px] border border-white/5 flex flex-col relative overflow-hidden items-center shadow-inner">

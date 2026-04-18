@@ -31,11 +31,11 @@ export function MobileHeader() {
          
          <Sheet>
             <SheetTrigger className="relative outline-none focus:outline-none">
-                 <Avatar className={cn("w-8 h-8 border shadow-lg transition-transform hover:scale-105", 
+                 <Avatar className={cn("w-8 h-8 border shadow-lg transition-transform hover:scale-105 overflow-hidden", 
                    user?.tier === "PRO" ? "border-yellow-400" : user?.tier === "ULTRA" ? "border-rose-400" : "border-white/20"
                  )}>
                    {user?.avatar_url ? (
-                     <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                     <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover rounded-full" />
                    ) : (
                      <AvatarFallback className="bg-primary/20 text-primary-foreground font-bold text-xs">
                        {user?.name?.substring(0, 2).toUpperCase() || "SV"}

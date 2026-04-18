@@ -426,11 +426,11 @@ export default function CommunityPage() {
                   <div key={doc.id} className="flex flex-col md:grid md:grid-cols-[1fr_150px_100px_140px_120px] gap-3 md:gap-4 px-4 md:px-6 py-4 md:items-center bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.05] hover:border-white/10 transition-all group shadow-sm">
                      {/* Column: Info */}
                      <div className="min-w-0 md:pr-4">
-                        <div className="font-bold text-sm md:text-base text-white/90 group-hover:text-primary transition-colors mb-1.5 md:mb-1 flex items-start md:items-center gap-2">
+                        <div className="font-bold text-xs md:text-base text-white/90 group-hover:text-primary transition-colors mb-1 md:mb-1 flex items-start md:items-center gap-2">
                            <span className="truncate flex-1">{doc.title}</span>
                            {doc.hybrid_score > 0.8 && (
-                             <Badge className="h-4 px-1.5 text-[8px] md:text-[9px] bg-brand-primary/20 text-brand-primary border-brand-primary/20 flex items-center gap-1 shrink-0 mt-0.5 md:mt-0">
-                               <Zap size={8} className="fill-brand-primary" /> BEST
+                             <Badge className="h-3.5 px-1 text-[7px] md:text-[9px] bg-brand-primary/20 text-brand-primary border-brand-primary/20 flex items-center gap-1 shrink-0 mt-0.5 md:mt-0">
+                               <Zap size={6} className="fill-brand-primary" /> BEST
                              </Badge>
                            )}
                         </div>
@@ -471,10 +471,10 @@ export default function CommunityPage() {
                      <div className="flex items-center justify-between gap-4 border-t border-white/5 pt-3 mt-1 md:border-none md:pt-0 md:mt-0 md:justify-center">
                         <div className="flex items-center gap-4 md:gap-6">
                            <div className="flex flex-col md:items-center gap-0.5" title="Lượt dùng">
-                             <span className="text-[8px] md:hidden uppercase font-black text-white/20">Dùng</span>
-                             <div className="flex items-center gap-1.5 text-xs text-white/40">
-                               <Search size={12} className="opacity-40" />
-                               <span>{doc.query_count || 0}</span>
+                             <span className="text-[7px] md:hidden uppercase font-black text-white/20">Dùng</span>
+                             <div className="flex items-center gap-1.5 text-[11px] md:text-xs text-white/60">
+                               <Search size={10} className="opacity-40" />
+                               <span className="font-bold">{doc.query_count || 0}</span>
                              </div>
                            </div>
                            
@@ -486,10 +486,10 @@ export default function CommunityPage() {
                              )}
                              disabled={isLoading_}
                            >
-                             <span className="text-[8px] md:hidden uppercase font-black opacity-30 group-hover/v:opacity-100">Vote</span>
-                             <div className="flex items-center gap-1.5 text-xs">
-                               <ThumbsUp size={12} className={cn(isVoted ? "fill-primary" : "group-hover/v:scale-110 transition-transform")} />
-                               <span>{(doc.upvote_count || 0) + (isVoted && !doc.upvote_count ? 1 : 0)}</span>
+                             <span className="text-[7px] md:hidden uppercase font-black opacity-30 group-hover/v:opacity-100">Vote</span>
+                             <div className="flex items-center gap-1.5 text-[11px] md:text-xs">
+                               <ThumbsUp size={10} className={cn(isVoted ? "fill-primary" : "group-hover/v:scale-110 transition-transform")} />
+                               <span className="font-bold">{(doc.upvote_count || 0) + (isVoted && !doc.upvote_count ? 1 : 0)}</span>
                              </div>
                            </button>
                         </div>
@@ -500,7 +500,7 @@ export default function CommunityPage() {
                               size="sm"
                               variant={isUsed ? "ghost" : "default"}
                               className={cn(
-                                 "h-9 px-4 rounded-xl transition-all shadow-md text-[11px] font-black uppercase tracking-tight",
+                                 "h-7 px-3 rounded-lg transition-all shadow-md text-[9px] font-black uppercase tracking-tight",
                                  isUsed 
                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                                  : "bg-white text-black border-none hover:bg-white/90"

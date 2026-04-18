@@ -43,17 +43,21 @@ export function useChatSSE() {
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
+            const payload = {
+                ...(isCollection ? { collection_id: targetId } : { document_id: targetId }),
+                session_id: sessionId,
+                question: question,
+                ...(forkId ? { fork_id: forkId } : {}),
+            };
+
+            console.log(`[SSE] Sending request to ${API_BASE_URL}/chat/message:`, payload);
+
             const response = await fetch(`${API_BASE_URL}/chat/message`, {
                 method: 'POST',
                 signal: abortController.signal,
                 headers,
                 credentials: 'include',
-                body: JSON.stringify({
-                    ...(isCollection ? { collection_id: targetId } : { document_id: targetId }),
-                    session_id: sessionId,
-                    question: question,
-                    ...(forkId ? { fork_id: forkId } : {}),
-                })
+                body: JSON.stringify(payload)
             });
 
             if (response.status === 401 && retryCount < 1) {

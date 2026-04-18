@@ -41,6 +41,7 @@ import { ShareDialog } from "@/components/user/ShareDialog";
 import { useSearchParams } from "next/navigation";
 import { NotificationBell } from "@/components/user/NotificationBell";
 import { StudyHubWidget } from "@/components/user/StudyHubWidget";
+import { CreateCollectionModal } from "@/components/user/CreateCollectionModal";
 
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
@@ -55,6 +56,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [isPinning, setIsPinning] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   const confirm = useConfirmStore((state) => state.confirm);
   const { mutate } = useSWRConfig();
 
@@ -340,6 +342,14 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             {/* Study Hub Widget */}
             <StudyHubWidget docId={id} />
 
+            <Button 
+                variant="outline" 
+                onClick={() => setIsCollectionModalOpen(true)}
+                className="mt-4 w-full border-white/5 bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-2xl h-10 text-xs font-bold gap-2"
+            >
+                <Plus size={14} /> Thêm vào bộ tài liệu
+            </Button>
+
             {/* Footer sync stats */}
             <div className="mt-6 p-4 bg-black/40 rounded-2xl border border-white/5">
                <div className="flex items-center justify-between mb-2">
@@ -515,6 +525,17 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         }}
         sessionId={sessionId}
         documentExpiredAt={doc.expired_at || null}
+      />
+      <CreateCollectionModal 
+        open={isCollectionModalOpen}
+        onOpenChange={setIsCollectionModalOpen}
+        defaultDocId={id}
+        onSuccess={() => {
+            mutate("/collections");
+            toast.success("Đã cập nhật bộ tài liệu");
+        }}
+        // Truyền initial document nếu muốn tự động tích chọn doc này
+        // (Cần cập nhật CreateCollectionModal nếu muốn docId truyền vào tự được tích)
       />
     </div>
   );

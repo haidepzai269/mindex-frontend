@@ -68,7 +68,7 @@ export function MobileNavigation() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-[env(safe-area-inset-bottom,16px)] pt-2 bg-gradient-to-t from-[#0A0B10] via-background/95 to-background/80 backdrop-blur-xl border-t border-white/5 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"
+            className="md:hidden fixed bottom-4 left-4 right-4 z-[100] px-3 pb-[env(safe-area-inset-bottom,4px)] pt-2 bg-[#0A0B10]/90 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
           >
             <div className="flex items-center justify-between relative px-2">
               {/* Thư viện */}
@@ -81,9 +81,9 @@ export function MobileNavigation() {
 
               {/* Floating Action Button (Center) */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="relative -top-6 w-14 h-14 outline-none rounded-full bg-primary flex items-center justify-center text-white shadow-[0_0_20px_rgba(184,41,255,0.4)] hover:scale-105 active:scale-95 transition-transform">
+                <DropdownMenuTrigger className="relative -top-6 w-14 h-14 outline-none rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-white/70 shadow-2xl hover:scale-105 active:scale-95 transition-all">
                     <Plus size={28} className="drop-shadow-lg" />
-                    <div className="absolute inset-0 rounded-full border border-white/20 animate-pulse pointer-events-none" />
+                    <div className="absolute inset-0 rounded-full border border-white/5 animate-pulse pointer-events-none" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 
                   align="center" 
