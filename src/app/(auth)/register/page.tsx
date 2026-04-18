@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BookOpen, UserPlus, Mail, Lock, User } from "lucide-react";
+import { BookOpen, UserPlus, Mail, Lock, User, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { fetchApi } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
 import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
+import { cn } from "@/lib/utils";
 import Cookies from "js-cookie";
 
 export default function RegisterPage() {
@@ -20,6 +21,53 @@ export default function RegisterPage() {
   });
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
+  
+  // Real-time email check states
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [emailError, setEmailError] = useState("");
+
+  const checkEmail = useCallback(async (email: string) => {
+    if (!email) {
+      setEmailStatus('idle');
+      return;
+    }
+
+    // Basic regex check before API call
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailStatus('invalid');
+      setEmailError("Email không hợp lệ");
+      return;
+    }
+
+    setEmailStatus('checking');
+    try {
+      const response: any = await fetchApi(`/auth/check-email?email=${encodeURIComponent(email)}`);
+      if (response.success) {
+        if (response.data.available) {
+          setEmailStatus('available');
+          setEmailError("");
+        } else {
+          setEmailStatus('taken');
+          setEmailError("Email này đã được sử dụng");
+        }
+      }
+    } catch (err) {
+      setEmailStatus('error' as any);
+      console.error("Check email failed", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (formData.email) {
+      const timer = setTimeout(() => {
+        checkEmail(formData.email);
+      }, 600);
+      return () => clearTimeout(timer);
+    } else {
+      setEmailStatus('idle');
+    }
+  }, [formData.email, checkEmail]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,17 +142,38 @@ export default function RegisterPage() {
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase text-white/60">Email sinh viên</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <div className="relative group">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-primary transition-colors" />
               <Input 
                 type="email" 
                 placeholder="2112xxxx@student.hcmus.edu.vn" 
-                className="glass-input pl-10" 
+                className={CheckCircle2 ? cn(
+                  "glass-input pl-10 pr-10 transition-all duration-300",
+                  emailStatus === 'available' && "border-emerald-500/50 bg-emerald-500/5",
+                  emailStatus === 'taken' && "border-red-500/50 bg-red-500/5",
+                  emailStatus === 'invalid' && "border-amber-500/50 bg-amber-500/5"
+                ) : "glass-input pl-10"} 
                 required 
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
               />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                {emailStatus === 'checking' && <Loader2 className="w-4 h-4 text-primary animate-spin" />}
+                {emailStatus === 'available' && <CheckCircle2 className="w-4 h-4 text-emerald-500 animate-in zoom-in duration-300" />}
+                {emailStatus === 'taken' && <AlertCircle className="w-4 h-4 text-red-500 animate-in zoom-in duration-300" />}
+                {emailStatus === 'invalid' && <AlertCircle className="w-4 h-4 text-amber-500 animate-in zoom-in duration-300" />}
+              </div>
             </div>
+            {emailError && (
+              <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">
+                {emailError}
+              </p>
+            )}
+            {emailStatus === 'available' && (
+              <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider animate-in fade-in slide-in-from-top-1">
+                Email khả dụng
+              </p>
+            )}
           </div>
           
           <div className="space-y-1.5">
@@ -122,7 +191,11 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <Button type="submit" disabled={loading} className="w-full btn-primary h-12 mt-2">
+          <Button 
+            type="submit" 
+            disabled={loading || emailStatus === 'taken' || emailStatus === 'checking' || emailStatus === 'invalid'} 
+            className="w-full btn-primary h-12 mt-2"
+          >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (

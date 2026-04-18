@@ -500,7 +500,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               </ScrollArea>
 
               {/* Input: Cố định độ rộng và căn giữa cùng khung chat */}
-              <div className="w-full max-w-3xl absolute bottom-0 px-4 md:px-6 py-4 md:py-8 pb-[env(safe-area-inset-bottom,16px)] md:pb-8 bg-gradient-to-t from-[#050505] via-[#050505]/95 to-transparent pt-20 z-40 pointer-events-none">
+              <div className="w-full max-w-3xl absolute bottom-0 px-4 md:px-6 py-2 md:py-3 pb-[env(safe-area-inset-bottom,4px)] md:pb-3 bg-gradient-to-t from-[#050505] via-[#050505]/95 to-transparent pt-20 z-40 pointer-events-none">
                   <div className="bg-zinc-900/50 backdrop-blur-xl rounded-2xl md:rounded-[28px] border border-white/5 p-1 shadow-2xl pointer-events-auto">
                     <ChatInput 
                         onSendMessage={handleSendMessage} 

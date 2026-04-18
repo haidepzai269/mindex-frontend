@@ -1,11 +1,11 @@
 "use client";
 
+import React, { useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 import { ChatMessage as ChatMessageType } from "@/store/useChatStore";
-import { User, Zap, ChevronDown, ChevronUp, FileText, ThumbsUp, ThumbsDown } from "lucide-react";
-import { useState, useCallback } from "react";
+import { User, Zap, ChevronDown, ChevronUp, FileText, ThumbsUp, ThumbsDown, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { fetchApi } from "@/lib/api";
@@ -128,6 +128,42 @@ function ResponseRating({ logId }: { logId: string }) {
   );
 }
 
+function extractText(children: any): string {
+  return React.Children.toArray(children)
+    .map((child: any) => {
+      if (typeof child === "string") return child;
+      if (typeof child === "number") return child.toString();
+      if (child.props?.children) return extractText(child.props.children);
+      if (Array.isArray(child)) return extractText(child);
+      return "";
+    })
+    .join("");
+}
+
+function CopyButton({ content }: { content: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy!", err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="absolute right-3 top-3 p-2 rounded-lg bg-zinc-900/80 border border-white/10 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all z-10 opacity-0 group-hover:opacity-100 shadow-xl backdrop-blur-sm"
+      title="Sao chép"
+    >
+      {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+    </button>
+  );
+}
+
 export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
   const isUser = message.role === "user";
   const [showSources, setShowSources] = useState(false);
@@ -193,7 +229,26 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
                     <ReactMarkdown 
                         remarkPlugins={[remarkGfm]}
                         components={{
-                            table: ({node, ...props}) => <div className="my-8 overflow-x-auto rounded-2xl border border-zinc-900"><table className="w-full text-sm" {...props} /></div>,
+                            pre: ({node, children, ...props}: any) => {
+                                const content = extractText(children);
+                                return (
+                                    <div className="relative group">
+                                        <CopyButton content={content} />
+                                        <pre {...props}>{children}</pre>
+                                    </div>
+                                );
+                            },
+                            table: ({node, children, ...props}: any) => {
+                                const content = extractText(children);
+                                return (
+                                    <div className="relative group my-8">
+                                        <CopyButton content={content} />
+                                        <div className="overflow-x-auto rounded-2xl border border-zinc-900">
+                                            <table className="w-full text-sm" {...props}>{children}</table>
+                                        </div>
+                                    </div>
+                                );
+                            },
                             th: ({node, ...props}) => <th className="bg-zinc-900 px-5 py-4 text-left font-black text-white uppercase tracking-tighter" {...props} />,
                             td: ({node, ...props}) => <td className="border-t border-zinc-900 px-5 py-4 text-zinc-400 font-medium" {...props} />,
                             code: ({node, inline, ...props}: any) => 
