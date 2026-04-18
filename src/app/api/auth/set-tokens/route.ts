@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     if (access_token) {
       cookieStore.set('access_token', access_token, {
         httpOnly: false, // Cần cho Frontend đọc để gửi Authorization header tới Backend (khác domain)
-        secure: true,
+        secure: isProd,
         sameSite: 'lax',
         path: '/',
         domain: domain,
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     if (refresh_token) {
       cookieStore.set('refresh_token', refresh_token, {
         httpOnly: false,
-        secure: true,
+        secure: isProd,
         sameSite: 'lax',
         path: '/',
         domain: domain,

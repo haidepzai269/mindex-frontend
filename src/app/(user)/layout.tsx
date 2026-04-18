@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Library, Upload, Globe, Settings, FileText, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, Library, Upload, Globe, Settings, FileText, LogOut, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
@@ -23,6 +23,7 @@ import { MobileNavigation } from "@/components/user/MobileNavigation";
 import { MobileHeader } from "@/components/user/MobileHeader";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatTimeAgo } from "@/lib/time";
+import { Button } from "@/components/ui/button";
 
 export default function UserLayout({ children }: { children: ReactNode }) {
   useNotifications(); // Kích hoạt SSE Notifications toàn cục
@@ -149,14 +150,15 @@ export default function UserLayout({ children }: { children: ReactNode }) {
             )}>
               <NavItem href="/library" icon={<Library size={20} />} label="Thư viện của tôi" active={pathname === '/library'} collapsed={isCollapsed} />
               <NavItem href="/upload" icon={<Upload size={20} />} label="Tài liệu mới" active={pathname.startsWith('/upload')} collapsed={isCollapsed} />
+              <NavItem href="/rooms" icon={<Users size={20} />} label="Phòng học nhóm" active={pathname.startsWith('/rooms')} collapsed={isCollapsed} />
               <NavItem href="/community" icon={<Globe size={20} />} label="Thư viện chung" active={pathname === '/community'} collapsed={isCollapsed} />
               <NavItem href="/settings" icon={<Settings size={20} />} label="Cài đặt" active={pathname === '/settings'} collapsed={isCollapsed} />
             </div>
 
             {!isCollapsed && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full flex flex-col flex-1 overflow-hidden min-h-0">
-                <Separator className="my-2 bg-white/5 shrink-0" />
-                <div className="px-3 mb-3 mt-4 text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden shrink-0">Tài liệu gần đây</div>
+                <Separator className="my-4 bg-white/5 shrink-0" />
+                <div className="px-3 mb-3 mt-2 text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] whitespace-nowrap overflow-hidden shrink-0">Tài liệu gần đây</div>
                 <div className="space-y-1 overflow-y-auto pr-1 flex-1 custom-scrollbar pb-4 min-h-0">
                    {recentDocs.length > 0 ? (
                      recentDocs.map((doc) => (
@@ -287,6 +289,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
         <MobileNavigation />
         <PremiumConfirmDialog />
         <UpgradeNotification />
+        
       </div>
     </TooltipProvider>
   );
@@ -360,3 +363,4 @@ function RecentDoc({ id, title, expiring = false, time }: { id: string; title: s
     </Link>
   );
 }
+

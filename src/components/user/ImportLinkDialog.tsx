@@ -37,8 +37,19 @@ export function ImportLinkDialog({ open, onOpenChange }: ImportLinkDialogProps) 
     const match = shareUrl.match(uuidPattern);
     const id = match ? match[1] : shareUrl.trim();
 
-    if (!id || id.length < 10) {
+    if (!id || id.length < 5) {
       toast.error("Link hoặc ID không hợp lệ. Vui lòng kiểm tra lại.");
+      return;
+    }
+
+    // TRƯỜNG HỢP ĐẶC BIỆT: Link mời phòng chat (có ?code= hoặc /rooms/join)
+    if (shareUrl.includes("code=") || shareUrl.includes("/rooms/join")) {
+      const codeMatch = shareUrl.match(/code=([A-Z0-9]+)/i);
+      const inviteCode = codeMatch ? codeMatch[1] : id;
+      toast.success("Đã nhận diện mã mời phòng!");
+      router.push(`/rooms/join?code=${inviteCode}`);
+      onOpenChange(false);
+      setShareUrl("");
       return;
     }
 
