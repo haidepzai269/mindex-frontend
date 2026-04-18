@@ -20,8 +20,18 @@ import {
   Sparkles,
   Loader2,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Smile,
+  Reply as ReplyIcon,
+  Flag,
+  Plus,
+  X,
+  MessageSquareShare,
+  CornerDownRight,
+  CornerDownLeft,
+  Trash2
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -41,6 +51,8 @@ interface RoomMessage {
   timestamp: string;
   is_ai: boolean;
   mentions_ai: boolean;
+  reactions?: Record<string, string[]>;
+  reply_to_id?: string;
 }
 
 export default function RoomPage() {
@@ -70,6 +82,7 @@ export default function RoomPage() {
   const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  const [replyingTo, setReplyingTo] = useState<RoomMessage | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -193,6 +206,11 @@ export default function RoomPage() {
         }]);
         setAiStreamingText("");
         break;
+      case "message_reaction":
+        setMessages(prev => prev.map(m => 
+          m.id === event.payload.id ? event.payload : m
+        ));
+        break;
       case "user_joined":
       case "user_left":
       case "host_changed":
@@ -252,9 +270,20 @@ export default function RoomPage() {
     
     ws.current.send(JSON.stringify({
       type: "chat_message",
-      text: inputText
+      text: inputText,
+      reply_to_id: replyingTo?.id
     }));
     setInputText("");
+    setReplyingTo(null);
+  };
+
+  const sendReaction = (msgId: string, emoji: string) => {
+    if (!ws.current) return;
+    ws.current.send(JSON.stringify({
+      type: "message_reaction",
+      message_id: msgId,
+      emoji: emoji
+    }));
   };
 
   const leaveRoom = async () => {
@@ -404,35 +433,137 @@ export default function RoomPage() {
                 const isMe = msg.user_id === user?.id;
                 return (
                   <div key={msg.id} className={cn(
-                    "flex gap-4 group",
+                    "flex gap-3 group w-full",
                     isMe ? "flex-row-reverse" : "flex-row"
                   )}>
-                    <Avatar className={cn(
-                      "w-9 h-9 shrink-0", 
-                      msg.is_ai ? "bg-primary/20 p-1" : isMe ? "bg-secondary/20" : "bg-white/10"
-                    )}>
-                      {msg.is_ai ? <Sparkles className="text-primary" /> : <AvatarFallback>{msg.user_name.substring(0,2)}</AvatarFallback>}
-                    </Avatar>
-                    <div className={cn(
-                      "flex flex-col gap-1 min-w-0 flex-1",
-                      isMe ? "items-end text-right" : "items-start text-left"
-                    )}>
-                      <div className="flex items-center gap-2">
-                        {!isMe && <span className={cn("text-sm font-bold", msg.is_ai ? "text-primary" : "text-white/80")}>{msg.user_name}</span>}
-                        <span className="text-[10px] text-white/20">{format(new Date(msg.timestamp), 'HH:mm', { locale: vi })}</span>
-                        {isMe && <span className="text-sm font-bold text-secondary">Bạn</span>}
-                      </div>
-                      <div className={cn(
-                        "text-sm leading-relaxed whitespace-pre-wrap p-3 px-4 rounded-[20px] max-w-[85%]",
-                        isMe ? "bg-zinc-800 text-white rounded-tr-none" : "bg-white/10 text-white/90 rounded-tl-none",
-                        msg.is_ai ? "bg-primary/10 border border-primary/20 text-white p-4" : ""
+                    {/* AVATAR - Only show for others */}
+                    {!isMe && (
+                      <Avatar className={cn(
+                        "w-9 h-9 shrink-0 shadow-lg self-end mb-1", 
+                        msg.is_ai ? "bg-primary/20 p-1" : "bg-white/10"
                       )}>
-                        {msg.text}
+                        {msg.is_ai ? <Sparkles className="text-primary" /> : <AvatarFallback>{msg.user_name.substring(0,2)}</AvatarFallback>}
+                      </Avatar>
+                    )}
+
+                    <div className={cn(
+                      "flex flex-col min-w-0 max-w-[80%]",
+                      isMe ? "items-end" : "items-start"
+                    )}>
+                      {/* NAME & TIME ABOVE BUBBLE */}
+                      <div className={cn(
+                        "flex items-center gap-2 mb-1 px-1",
+                        isMe ? "flex-row-reverse" : "flex-row"
+                      )}>
+                        <span className={cn("text-[11px] font-bold", isMe ? "text-secondary" : msg.is_ai ? "text-primary" : "text-white/60")}>
+                          {isMe ? "Bạn" : msg.user_name}
+                        </span>
+                        <span className="text-[9px] text-white/20">{format(new Date(msg.timestamp), 'HH:mm', { locale: vi })}</span>
+                      </div>
+
+                      {/* QUOTED MESSAGE */}
+                      {msg.reply_to_id && (
+                        <div className={cn(
+                          "flex items-center gap-1.5 text-[10px] text-white/30 mb-0.5 px-1",
+                          isMe ? "flex-row justify-start" : "flex-row-reverse justify-start"
+                        )}>
+                          {isMe ? (
+                            <CornerDownRight size={10} className="shrink-0" />
+                          ) : (
+                            <CornerDownLeft size={10} className="shrink-0" />
+                          )}
+                          <span className="truncate max-w-[150px]">
+                             {messages.find(m => m.id === msg.reply_to_id)?.text || "Tin nhắn đã bị xóa"}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className={cn(
+                        "flex items-end gap-2",
+                        isMe ? "flex-row-reverse" : "flex-row"
+                      )}>
+                        <div className="relative w-fit">
+                          <div className={cn(
+                            "text-sm leading-relaxed whitespace-pre-wrap p-3 px-4 rounded-[20px] shadow-sm",
+                            isMe ? "bg-zinc-800 text-white rounded-tr-none" : "bg-white/10 text-white/90 rounded-tl-none",
+                            msg.is_ai ? "bg-primary/10 border border-primary/20 text-white p-4" : ""
+                          )}>
+                            {msg.text}
+                          </div>
+
+                          {/* DISPLAY REACTIONS */}
+                          {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                            <div className={cn(
+                              "absolute -bottom-2 flex items-center gap-0.5 bg-[#2A2B33] border border-white/20 rounded-full p-0.5 px-1 shadow-xl z-10 hover:scale-110 transition-transform cursor-pointer",
+                              isMe ? "-left-2" : "-right-2"
+                            )}
+                            onClick={() => sendReaction(msg.id, Object.keys(msg.reactions)[0])}
+                            >
+                              <div className="flex -space-x-1 items-center">
+                                {Object.entries(msg.reactions).slice(0, 2).map(([emoji]) => (
+                                  <span key={emoji} className="text-[14px] leading-none">{emoji}</span>
+                                ))}
+                              </div>
+                              {Object.values(msg.reactions).reduce((acc, curr) => acc + curr.length, 0) > 1 && (
+                                <span className="text-[10px] font-bold text-white/80 pr-0.5">
+                                  {Object.values(msg.reactions).reduce((acc, curr) => acc + curr.length, 0)}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* HOVER ACTIONS */}
+                        <div className={cn(
+                          "flex items-center gap-0.5 p-1 bg-[#1A1B23] border border-white/10 rounded-full shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-[-5px]",
+                          isMe ? "mr-1" : "ml-1"
+                        )}>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="icon" className="w-7 h-7 rounded-full hover:bg-white/10 text-white/40 hover:text-white">
+                                <Smile size={14} />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="w-auto p-1 bg-[#1A1B23]/90 backdrop-blur-xl border-white/10 rounded-full flex items-center gap-1 shadow-2xl z-50">
+                               {["👍", "👎", "❤️", "🎉", "🔥", "🤔", "😂", "🤯"].map(emoji => (
+                                 <button
+                                   key={emoji}
+                                   className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors text-lg"
+                                   onClick={() => sendReaction(msg.id, emoji)}
+                                 >
+                                   {emoji}
+                                 </button>
+                               ))}
+                               <div className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors cursor-pointer text-white/40">
+                                 <Plus size={14} />
+                               </div>
+                            </PopoverContent>
+                          </Popover>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="w-7 h-7 rounded-full hover:bg-white/10 text-white/40 hover:text-white"
+                            onClick={() => setReplyingTo(msg)}
+                          >
+                            <ReplyIcon size={14} />
+                          </Button>
+                          {!isMe && !msg.is_ai && (
+                            <Button variant="ghost" size="icon" className="w-7 h-7 rounded-full hover:bg-red-400/10 text-white/40 hover:text-red-400">
+                              <Flag size={14} />
+                            </Button>
+                          )}
+                          {isMe && (
+                            <Button variant="ghost" size="icon" className="w-7 h-7 rounded-full hover:bg-red-400/10 text-white/40 hover:text-red-400">
+                              <Trash2 size={14} />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 );
               })}
+
 
               {(isAiTyping || aiStreamingText) && (
                 <div className="flex gap-4">
@@ -456,6 +587,22 @@ export default function RoomPage() {
 
           {/* INPUT AREA */}
           <div className="p-6 shrink-0 bg-[#0A0B0F] border-t border-white/5 relative z-20">
+            {/* REPLY PREVIEW */}
+            {replyingTo && (
+              <div className="max-w-3xl mx-auto mb-2 flex items-center justify-between bg-[#1A1B23] border border-white/5 p-2 px-4 rounded-xl text-xs animate-in slide-in-from-bottom-2 duration-200">
+                 <div className="flex items-center gap-2 text-white/60">
+                    <div className="w-1 h-8 bg-primary/40 rounded-full" />
+                    <div className="flex flex-col">
+                       <span className="font-bold text-[10px] text-primary">Đang trả lời {replyingTo.user_name}</span>
+                       <span className="truncate max-w-[300px] italic">"{replyingTo.text}"</span>
+                    </div>
+                 </div>
+                 <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-white/10" onClick={() => setReplyingTo(null)}>
+                    <X size={14} />
+                 </Button>
+              </div>
+            )}
+            
             <input 
               type="file" 
               ref={fileInputRef} 
