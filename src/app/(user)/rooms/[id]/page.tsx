@@ -60,8 +60,8 @@ export default function RoomPage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   
-  const { data: roomData, error: roomError, mutate: mutateRoom } = useSWR(`/rooms/${id}`, fetcher, { refreshInterval: 5000 });
-  const { data: docsData, mutate: mutateDocs } = useSWR(`/rooms/${id}/docs`, fetcher, { refreshInterval: 10000 });
+  const { data: roomData, error: roomError, mutate: mutateRoom } = useSWR(`/rooms/${id}`, fetcher, { revalidateOnFocus: false });
+  const { data: docsData, mutate: mutateDocs } = useSWR(`/rooms/${id}/docs`, fetcher, { revalidateOnFocus: false });
 
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const [inputText, setInputText] = useState("");
