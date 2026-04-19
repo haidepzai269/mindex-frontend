@@ -23,7 +23,7 @@ function JoinRoomContent() {
 
     const autoJoin = async () => {
       try {
-        const res = await fetchApi("/rooms/join", {
+        const res: any = await fetchApi("/rooms/join", {
           method: "POST",
           body: JSON.stringify({ invite_code: code }),
         });
