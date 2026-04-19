@@ -147,12 +147,13 @@ export default function RegisterPage() {
               <Input 
                 type="email" 
                 placeholder="2112xxxx@student.hcmus.edu.vn" 
-                className={CheckCircle2 ? cn(
-                  "glass-input pl-10 pr-10 transition-all duration-300",
+                className={cn(
+                  "glass-input pl-10 transition-all duration-300",
+                  emailStatus !== 'idle' && "pr-10",
                   emailStatus === 'available' && "border-emerald-500/50 bg-emerald-500/5",
                   emailStatus === 'taken' && "border-red-500/50 bg-red-500/5",
                   emailStatus === 'invalid' && "border-amber-500/50 bg-amber-500/5"
-                ) : "glass-input pl-10"} 
+                )} 
                 required 
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
