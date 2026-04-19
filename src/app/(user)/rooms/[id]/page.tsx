@@ -519,21 +519,21 @@ export default function RoomPage() {
                           </div>
 
                           {/* DISPLAY REACTIONS */}
-                          {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                          {msg.reactions && Object.keys(msg.reactions || {}).length > 0 && (
                             <div className={cn(
                               "absolute -bottom-2 flex items-center gap-0.5 bg-[#2A2B33] border border-white/20 rounded-full p-0.5 px-1 shadow-xl z-10 hover:scale-110 transition-transform cursor-pointer",
                               isMe ? "-left-2" : "-right-2"
                             )}
-                            onClick={() => sendReaction(msg.id, Object.keys(msg.reactions)[0])}
+                            onClick={() => sendReaction(msg.id, Object.keys(msg.reactions || {})[0])}
                             >
                               <div className="flex -space-x-1 items-center">
-                                {Object.entries(msg.reactions).slice(0, 2).map(([emoji]) => (
+                                {Object.entries(msg.reactions || {}).slice(0, 2).map(([emoji]) => (
                                   <span key={emoji} className="text-[14px] leading-none">{emoji}</span>
                                 ))}
                               </div>
-                              {Object.values(msg.reactions).reduce((acc, curr) => acc + curr.length, 0) > 1 && (
+                              {Object.values(msg.reactions || {}).reduce((acc, curr) => acc + curr.length, 0) > 1 && (
                                 <span className="text-[10px] font-bold text-white/80 pr-0.5">
-                                  {Object.values(msg.reactions).reduce((acc, curr) => acc + curr.length, 0)}
+                                  {Object.values(msg.reactions || {}).reduce((acc, curr) => acc + curr.length, 0)}
                                 </span>
                               )}
                             </div>
