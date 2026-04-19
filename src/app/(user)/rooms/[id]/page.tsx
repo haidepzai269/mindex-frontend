@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
-import { fetchApi, fetcher, handleRefreshToken } from "@/lib/api";
+import { API_BASE_URL, fetchApi, fetcher, handleRefreshToken } from "@/lib/api";
 import useSWR from "swr";
 import { 
   Users, 
@@ -137,8 +137,8 @@ export default function RoomPage() {
   useEffect(() => {
     if (!id || !user) return;
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.host.includes("localhost") ? "localhost:8080" : window.location.host;
+    // Xác định WebSocket URL dựa trên API_BASE_URL thay vì window.location.host
+    const wsBaseUrl = API_BASE_URL.replace(/^http/, "ws");
 
     const connectWS = async () => {
       let token = Cookies.get("access_token");
@@ -159,7 +159,7 @@ export default function RoomPage() {
         return;
       }
 
-      const wsUrl = `${protocol}//${host}/api/v1/rooms/${id}/ws?token=${token}`;
+      const wsUrl = `${wsBaseUrl}/rooms/${id}/ws?token=${token}`;
       const socket = new WebSocket(wsUrl);
       ws.current = socket;
 
