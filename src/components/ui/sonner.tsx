@@ -11,9 +11,6 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
-      containerStyle={{
-        zIndex: 100000,
-      }}
       icons={{
         success: (
           <CircleCheckIcon className="size-4" />
@@ -33,6 +30,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       style={
         {
+          zIndex: 100000,
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
