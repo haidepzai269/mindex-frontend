@@ -87,8 +87,8 @@ export default function RoomPage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   
-  const { data: roomData, error: roomError, mutate: mutateRoom } = useSWR<ApiResponse<Room>>(`/rooms/${id}`, fetcher, { revalidateOnFocus: false });
-  const { data: docsData, mutate: mutateDocs } = useSWR<ApiResponse<RoomDoc[]>>(`/rooms/${id}/docs`, fetcher, { revalidateOnFocus: false });
+  const { data: roomData, error: roomError, mutate: mutateRoom } = useSWR<ApiResponse<Room>>(`/rooms/${id}`, fetcher as any, { revalidateOnFocus: false });
+  const { data: docsData, mutate: mutateDocs } = useSWR<ApiResponse<RoomDoc[]>>(`/rooms/${id}/docs`, fetcher as any, { revalidateOnFocus: false });
 
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const [inputText, setInputText] = useState("");
