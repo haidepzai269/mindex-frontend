@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { API_BASE_URL, fetchApi, fetcher, handleRefreshToken } from "@/lib/api";
 import useSWR from "swr";
@@ -39,7 +40,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import Cookies from "js-cookie";
 
@@ -60,6 +61,7 @@ interface RoomMember {
   name: string;
   is_online: boolean;
   doc_count: number;
+  last_seen?: string;
 }
 
 interface Room {
@@ -110,6 +112,7 @@ export default function RoomPage() {
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
   const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
   const [replyingTo, setReplyingTo] = useState<RoomMessage | null>(null);
+  const [activeTab, setActiveTab] = useState<'chat' | 'docs' | 'members'>('chat');
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -240,6 +243,8 @@ export default function RoomPage() {
         break;
       case "user_joined":
       case "user_left":
+      case "user_online":
+      case "user_offline":
       case "host_changed":
         mutateRoom();
         if (event.type === "host_changed") {
@@ -341,8 +346,11 @@ export default function RoomPage() {
     <div className="flex flex-col h-full max-h-full bg-[#020205] text-white overflow-hidden">
       {/* HEADER */}
       <header className="h-16 border-b border-white/5 bg-[#0A0B10]/80 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-10">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+        <div className="flex items-center gap-2 md:gap-4">
+          <Link href="/rooms" className="md:hidden p-2 -ml-2 text-white/40 hover:text-white transition-colors">
+            <ChevronLeft size={24} />
+          </Link>
+          <div className="hidden md:flex w-10 h-10 rounded-xl bg-primary/20 items-center justify-center">
             <Users className="w-5 h-5 text-primary" />
           </div>
           <div>
@@ -358,29 +366,68 @@ export default function RoomPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="text-white/40 hover:text-white" onClick={() => {
-            navigator.clipboard.writeText(room.invite_code);
-            toast.success("Đã copy mã mời");
-          }}>
-            <UserPlus size={16} className="mr-2" />
-            Mời bạn
-          </Button>
-          <Separator orientation="vertical" className="h-6 bg-white/10" />
-          {isHost && (
-            <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={async () => {
-              if (confirm("Đóng phòng sẽ mời tất cả mọi người ra ngoài. Bạn chắc chứ?")) {
-                await fetchApi(`/rooms/${id}/close`, { method: 'POST' });
-                router.push("/library");
-              }
+        <div className="flex items-center gap-2">
+          {/* Mobile Dropdown Actions */}
+          <div className="flex md:hidden">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-white/40">
+                  <MoreVertical size={20} />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-48 bg-[#1A1B23] border-white/10 p-1 shadow-2xl">
+                <div className="flex flex-col gap-1">
+                  <Button variant="ghost" size="sm" className="justify-start text-xs text-white/60" onClick={() => {
+                    const inviteLink = `${window.location.origin}/rooms/join?code=${room.invite_code}`;
+                    navigator.clipboard.writeText(inviteLink);
+                    toast.success("Đã copy link mời tham gia");
+                  }}>
+                    <UserPlus size={14} className="mr-2" /> Mời bạn
+                  </Button>
+                  {isHost && (
+                    <Button variant="ghost" size="sm" className="justify-start text-xs text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={async () => {
+                      if (confirm("Đóng phòng sẽ mời tất cả mọi người ra ngoài. Bạn chắc chứ?")) {
+                        await fetchApi(`/rooms/${id}/close`, { method: 'POST' });
+                        router.push("/library");
+                      }
+                    }}>
+                      <X size={14} className="mr-2" /> Đóng phòng
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="sm" className="justify-start text-xs text-white/60 hover:text-red-400" onClick={leaveRoom}>
+                    <LogOut size={14} className="mr-2" /> Rời phòng
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-3">
+            <Button variant="ghost" size="sm" className="text-white/40 hover:text-white" onClick={() => {
+              const inviteLink = `${window.location.origin}/rooms/join?code=${room.invite_code}`;
+              navigator.clipboard.writeText(inviteLink);
+              toast.success("Đã copy link mời tham gia");
             }}>
-               Đóng phòng
+              <UserPlus size={16} className="mr-2" />
+              Mời bạn
             </Button>
-          )}
-          <Button variant="ghost" size="sm" className="text-white/40 hover:text-red-300" onClick={leaveRoom}>
-            <LogOut size={16} className="mr-2" />
-            Rời phòng
-          </Button>
+            <Separator orientation="vertical" className="h-6 bg-white/10" />
+            {isHost && (
+              <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-400/10" onClick={async () => {
+                if (confirm("Đóng phòng sẽ mời tất cả mọi người ra ngoài. Bạn chắc chứ?")) {
+                  await fetchApi(`/rooms/${id}/close`, { method: 'POST' });
+                  router.push("/library");
+                }
+              }}>
+                Đóng phòng
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" className="text-white/40 hover:text-red-300" onClick={leaveRoom}>
+              <LogOut size={16} className="mr-2" />
+              Rời phòng
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -388,8 +435,9 @@ export default function RoomPage() {
       <div className="flex-1 flex overflow-hidden relative min-h-0">
         {/* LEFT SIDEBAR: MEMBERS */}
         <aside className={cn(
-          "border-r border-white/5 bg-[#0A0B10]/50 transition-all duration-300 flex flex-col",
-          leftSidebarOpen ? "w-64" : "w-0 overflow-hidden"
+          "border-r border-white/5 bg-[#0A0B10]/50 transition-all duration-300 flex flex-col shrink-0",
+          leftSidebarOpen ? "md:w-64" : "md:w-0",
+          activeTab === 'members' ? "w-full flex" : "hidden md:flex overflow-hidden"
         )}>
           <div className="p-4 flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Thành viên ({members.length}/5)</span>
@@ -417,7 +465,13 @@ export default function RoomPage() {
                       {m.user_id === room.host_id && <Crown size={12} className="text-yellow-500 shrink-0" />}
                     </span>
                     <span className="text-[10px] text-white/30 truncate">
-                      {m.doc_count} tài liệu đã chia sẻ
+                      {m.is_online ? (
+                        `${m.doc_count} tài liệu đã chia sẻ`
+                      ) : m.last_seen ? (
+                        `Hoạt động ${formatDistanceToNow(new Date(m.last_seen), { addSuffix: true, locale: vi })}`
+                      ) : (
+                        `${m.doc_count} tài liệu đã chia sẻ`
+                      )}
                     </span>
                   </div>
                 </div>
@@ -427,7 +481,10 @@ export default function RoomPage() {
         </aside>
 
         {/* CHAT AREA */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#0A0B0F] relative overflow-hidden min-h-0">
+        <div className={cn(
+          "flex-1 flex flex-col min-w-0 bg-[#0A0B0F] relative overflow-hidden min-h-0",
+          activeTab === 'chat' ? "flex" : "hidden md:flex"
+        )}>
           <div className="absolute top-1/2 -left-3 -translate-y-1/2 z-20">
              <Button 
                variant="secondary" 
@@ -613,7 +670,7 @@ export default function RoomPage() {
           </ScrollArea>
 
           {/* INPUT AREA */}
-          <div className="p-6 shrink-0 bg-[#0A0B0F] border-t border-white/5 relative z-20">
+          <div className="p-4 md:p-6 shrink-0 bg-[#0A0B0F] border-t border-white/5 relative z-20">
             {/* REPLY PREVIEW */}
             {replyingTo && (
               <div className="max-w-3xl mx-auto mb-2 flex items-center justify-between bg-[#1A1B23] border border-white/5 p-2 px-4 rounded-xl text-xs animate-in slide-in-from-bottom-2 duration-200">
@@ -729,8 +786,9 @@ export default function RoomPage() {
 
         {/* RIGHT SIDEBAR: DOCUMENTS */}
         <aside className={cn(
-          "border-l border-white/5 bg-[#0A0B10]/50 transition-all duration-300 flex flex-col",
-          rightSidebarOpen ? "w-80" : "w-0 overflow-hidden"
+          "border-l border-white/5 bg-[#0A0B10]/50 transition-all duration-300 flex flex-col shrink-0",
+          rightSidebarOpen ? "md:w-80" : "md:w-0",
+          activeTab === 'docs' ? "w-full flex" : "hidden md:flex overflow-hidden"
         )}>
           <div className="p-4 flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Tài liệu chia sẻ ({docs.length})</span>
@@ -773,6 +831,45 @@ export default function RoomPage() {
              </Button>
           </div>
         </aside>
+      </div>
+
+      {/* MOBILE TAB NAVIGATION */}
+      <div className="md:hidden h-16 border-t border-white/5 bg-[#0A0B10] flex items-center justify-around px-2 shrink-0 z-50">
+        <button 
+          onClick={() => setActiveTab('members')}
+          className={cn(
+            "flex flex-col items-center gap-1 transition-colors",
+            activeTab === 'members' ? "text-primary" : "text-white/40"
+          )}
+        >
+          <Users size={20} />
+          <span className="text-[10px] font-medium">Thành viên</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('chat')}
+          className={cn(
+            "flex flex-col items-center gap-1 transition-colors relative",
+            activeTab === 'chat' ? "text-primary" : "text-white/40"
+          )}
+        >
+          <div className={cn(
+            "p-3 rounded-2xl -mt-8 border-t border-white/10 shadow-2xl transition-all",
+            activeTab === 'chat' ? "bg-zinc-800 text-white scale-110 border border-white/20" : "bg-[#1A1B23] text-white/40"
+          )}>
+            <MessageSquare size={24} />
+          </div>
+          <span className="text-[10px] font-medium">Thảo luận</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('docs')}
+          className={cn(
+            "flex flex-col items-center gap-1 transition-colors",
+            activeTab === 'docs' ? "text-primary" : "text-white/40"
+          )}
+        >
+          <FileText size={20} />
+          <span className="text-[10px] font-medium">Tài liệu</span>
+        </button>
       </div>
     </div>
   );

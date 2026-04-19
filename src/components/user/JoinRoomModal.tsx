@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,14 +13,22 @@ import { useRouter } from "next/navigation";
 interface JoinRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialCode?: string;
 }
 
-export function JoinRoomModal({ isOpen, onClose }: JoinRoomModalProps) {
-  const [code, setCode] = useState("");
+export function JoinRoomModal({ isOpen, onClose, initialCode = "" }: JoinRoomModalProps) {
+  const [code, setCode] = useState(initialCode);
   const [step, setStep] = useState(1); // 1: Input, 2: Info & Consent
   const [isLoading, setIsLoading] = useState(false);
   const [roomInfo, setRoomInfo] = useState<any>(null);
   const router = useRouter();
+
+  // Cập nhật code khi initialCode thay đổi
+  useEffect(() => {
+    if (initialCode) {
+      setCode(initialCode);
+    }
+  }, [initialCode]);
 
   const handleCheck = async () => {
     setIsLoading(true);
@@ -99,7 +107,7 @@ export function JoinRoomModal({ isOpen, onClose }: JoinRoomModalProps) {
               <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1">Bạn đang vào phòng</span>
               <h3 className="text-lg font-bold text-white">{roomInfo.name}</h3>
               <p className="text-xs text-white/40 mt-1">Chủ phòng: {roomInfo.host_name}</p>
-              <div className="flex items-center gap-2 mt-3 px-3 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-[10px] text-secondary font-bold">
+              <div className="flex items-center gap-2 mt-3 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-white/60 font-bold">
                 {roomInfo.member_count} / 5 Thành viên
               </div>
             </div>
@@ -121,7 +129,7 @@ export function JoinRoomModal({ isOpen, onClose }: JoinRoomModalProps) {
         <DialogFooter className="gap-2 sm:gap-0">
           {step === 1 && (
             <Button 
-              className="w-full h-12 rounded-xl font-bold bg-secondary hover:bg-secondary/90 text-black" 
+              className="w-full h-12 rounded-xl font-bold bg-white hover:bg-zinc-200 text-black transition-all" 
               disabled={code.length < 6 || isLoading}
               onClick={handleCheck}
             >
@@ -133,7 +141,7 @@ export function JoinRoomModal({ isOpen, onClose }: JoinRoomModalProps) {
             <>
               <Button variant="ghost" className="flex-1 h-12 rounded-xl text-white/40" onClick={() => setStep(1)}>Quay lại</Button>
               <Button 
-                className="flex-[2] h-12 rounded-xl font-bold bg-secondary hover:bg-secondary/90 text-black" 
+                className="flex-[2] h-12 rounded-xl font-bold bg-white hover:bg-zinc-200 text-black transition-all shadow-lg shadow-white/5" 
                 onClick={handleJoin}
                 disabled={isLoading}
               >

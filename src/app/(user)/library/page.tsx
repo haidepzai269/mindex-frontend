@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, Grid, List, Plus, FileText, MoreVertical, Loader2, Star, Trash2, Globe, GlobeLock } from "lucide-react";
+import { Search, Grid, List, Plus, FileText, MoreVertical, Loader2, Star, Trash2, Globe, GlobeLock, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -83,22 +84,22 @@ export default function LibraryPage() {
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px] -z-10 pointer-events-none"></div>
 
       {/* TOPBAR */}
-      <header className="h-16 flex items-center justify-between px-4 md:px-8 border-b border-white/5 bg-black/10 backdrop-blur-md sticky top-0 z-10 w-full">
+      <header className="h-14 md:h-16 flex items-center justify-between px-4 md:px-8 border-b border-white/5 bg-black/10 backdrop-blur-md sticky top-0 z-10 w-full shrink-0">
         <div className="flex-1 max-w-xl relative">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
           <Input 
             placeholder="Tìm kiếm tài liệu..." 
-            className="pl-10 glass-input bg-white/5 border-white/5 h-10 md:h-11"
+            className="pl-9 glass-input bg-white/5 border-white/5 h-9 md:h-11 text-sm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
-        <div className="flex items-center gap-2 md:gap-4 ml-4">
-          <div className="hidden md:block">
-            <NotificationBell />
-          </div>
-          <div className="flex items-center bg-white/5 p-1 rounded-lg border border-white/10">
+        <div className="flex items-center gap-2 md:gap-4 ml-3 md:ml-4">
+          <Link href="/rooms" className="p-2 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all" title="Phòng học nhóm">
+            <Users size={20} />
+          </Link>
+          <div className="hidden md:flex items-center bg-white/5 p-1 rounded-lg border border-white/10">
             <button 
               onClick={() => handleUpdateViewMode("grid")}
               className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white/10 text-white border border-white/5' : 'text-white/40 hover:text-white'}`}
@@ -135,19 +136,19 @@ export default function LibraryPage() {
       </header>
 
       {/* CONTENT */}
-      <main className="flex-1 p-4 md:p-8 pb-28 md:pb-8 overflow-y-auto">
-        <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <main className="flex-1 p-4 md:p-8 pb-32 md:pb-8 overflow-y-auto">
+        <div className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
            <div>
-             <h1 className="text-2xl font-bold tracking-tight">Thư viện cá nhân</h1>
-             <p className="text-white/50 text-sm mt-1">Quản lý và trò chuyện với các tài liệu học tập của bạn.</p>
+             <h1 className="text-xl md:text-2xl font-bold tracking-tight">Thư viện cá nhân</h1>
+             <p className="text-white/50 text-xs mt-1 hidden md:block">Quản lý và trò chuyện với các tài liệu học tập của bạn.</p>
            </div>
            
-           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto overflow-x-auto hide-scrollbar">
-             <TabsList className="bg-white/5 border border-white/10 p-1 flex w-max">
-               <TabsTrigger value="all" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Tất cả</TabsTrigger>
-               <TabsTrigger value="pinned" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-500">Đã ghim ⭐</TabsTrigger>
-               <TabsTrigger value="public" className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-500">Công khai 🌐</TabsTrigger>
-               <TabsTrigger value="expiring" className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-500">Sắp hết hạn ⚠</TabsTrigger>
+           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto overflow-x-auto hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+             <TabsList className="bg-white/5 border border-white/10 p-1 flex w-max md:w-auto">
+               <TabsTrigger value="all" className="text-xs data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Tất cả</TabsTrigger>
+               <TabsTrigger value="pinned" className="text-xs data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-500">Đã ghim ⭐</TabsTrigger>
+               <TabsTrigger value="public" className="text-xs data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-500">Công khai 🌐</TabsTrigger>
+               <TabsTrigger value="expiring" className="text-xs data-[state=active]:bg-red-500/20 data-[state=active]:text-red-500">Sắp hết hạn ⚠</TabsTrigger>
              </TabsList>
            </Tabs>
         </div>

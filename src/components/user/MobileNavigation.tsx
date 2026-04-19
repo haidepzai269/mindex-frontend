@@ -57,7 +57,11 @@ export function MobileNavigation() {
     };
   }, []);
 
-  if (pathname.startsWith("/doc/")) return null;
+  // Ẩn thanh điều hướng khi ở trong trang tài liệu hoặc trong phòng chat cụ thể
+  const isDocPage = pathname.startsWith("/doc/");
+  const isRoomPage = pathname.startsWith("/rooms/") && pathname !== "/rooms";
+  
+  if (isDocPage || isRoomPage) return null;
 
   return (
     <>

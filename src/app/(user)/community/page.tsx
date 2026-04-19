@@ -21,6 +21,7 @@ import {
   X,
   Info,
 } from "lucide-react";
+import Link from "next/link";
 import {
   Dialog,
   DialogContent,
@@ -246,13 +247,13 @@ export default function CommunityPage() {
   return (
     <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
       {/* ── HEADER (Compact) ── */}
-      <div className="px-4 md:px-8 pt-4 md:pt-8 pb-4 shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="px-4 md:px-8 pt-4 md:pt-8 pb-3 md:pb-4 shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-bold tracking-tight">Thư viện chung</h1>
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight">Thư viện chung</h1>
             <Dialog>
               <DialogTrigger className="text-muted-foreground hover:text-white transition-colors">
-                <Info size={18} />
+                <Info size={16} />
               </DialogTrigger>
               <DialogContent className="bg-zinc-950 border-white/10 text-white max-w-md rounded-2xl">
                 <DialogHeader>
@@ -281,35 +282,37 @@ export default function CommunityPage() {
               </DialogContent>
             </Dialog>
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs hidden md:block">
             Khám phá kiến thức từ cộng đồng Mindex.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 md:gap-6 mb-1">
-           <div className="hidden md:block"><NotificationBell /></div>
+        <div className="flex flex-wrap items-center gap-2 md:gap-6 mb-1">
+           <Link href="/rooms" className="p-1.5 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all" title="Phòng học nhóm">
+             <Users size={18} />
+           </Link>
            {communityData?.data?.search_mode === "hybrid" && (
-             <div className="flex items-center gap-1.5 bg-brand-primary/10 px-3 py-1.5 rounded-full border border-brand-primary/20 animate-pulse">
-               <Zap size={14} className="text-brand-primary fill-brand-primary" />
-               <span className="text-[10px] font-bold text-brand-primary uppercase tracking-tight">AI Smart Search Active</span>
+             <div className="flex items-center gap-1 bg-brand-primary/10 px-2.5 py-1 rounded-full border border-brand-primary/20 animate-pulse">
+               <Zap size={12} className="text-brand-primary fill-brand-primary" />
+               <span className="text-[9px] font-bold text-brand-primary uppercase tracking-tight">AI Smart Search</span>
              </div>
            )}
-           <div className="flex items-center gap-1.5 bg-secondary/20 px-3 py-1.5 rounded-full border border-secondary/20">
-             <BookOpen size={14} className="text-secondary" />
-             <span className="font-bold text-white/80 text-xs">{total} tài liệu</span>
+           <div className="flex items-center gap-1.5 bg-secondary/20 px-2.5 py-1 rounded-full border border-secondary/20">
+             <BookOpen size={12} className="text-secondary" />
+             <span className="font-bold text-white/80 text-[10px] md:text-xs">{total} tài liệu</span>
            </div>
         </div>
       </div>
 
       {/* ── TOOLBAR ── */}
       <div className="px-4 md:px-8 py-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shrink-0 border-b border-white/5 bg-white/[0.01]">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 flex-1">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 flex-1">
            <Popover open={showHistory && history.length > 0} onOpenChange={setShowHistory}>
              <PopoverTrigger asChild>
-               <div className="relative w-full md:max-w-[400px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={16} />
+               <div className="relative w-full md:max-w-[320px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={14} />
                   <Input
                     placeholder="Tìm tài liệu..."
-                    className="h-10 md:h-9 pl-9 bg-white/5 border-white/10 hover:bg-white/[0.08] transition-colors focus-visible:ring-1 focus-visible:ring-white/20 rounded-xl md:rounded-lg"
+                    className="h-9 pl-9 bg-white/5 border-white/10 hover:bg-white/[0.08] transition-colors focus-visible:ring-1 focus-visible:ring-white/20 rounded-xl md:rounded-lg text-sm"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     onFocus={() => setShowHistory(true)}
@@ -318,7 +321,7 @@ export default function CommunityPage() {
                </div>
              </PopoverTrigger>
              <PopoverContent 
-                 className="w-[calc(100vw-32px)] md:w-[400px] p-0 bg-zinc-900 border-white/10 shadow-2xl overflow-hidden rounded-2xl md:rounded-xl z-[100]" 
+                 className="w-[calc(100vw-32px)] md:w-[320px] p-0 bg-zinc-900 border-white/10 shadow-2xl overflow-hidden rounded-2xl md:rounded-xl z-[100]" 
                  align="start"
                  sideOffset={8}
                  onOpenAutoFocus={(e) => e.preventDefault()}
@@ -357,7 +360,7 @@ export default function CommunityPage() {
            </Popover>
            
            <Select value={subject} onValueChange={(val) => setSubject(val ?? "all")}>
-              <SelectTrigger className="h-10 md:h-9 w-full md:w-[180px] border-white/10 bg-white/5 text-xs hover:bg-white/[0.08] transition-all rounded-xl md:rounded-lg">
+              <SelectTrigger className="h-9 w-full md:w-[160px] border-white/10 bg-white/5 text-[11px] hover:bg-white/[0.08] transition-all rounded-xl md:rounded-lg">
                 <div className="flex items-center gap-2">
                   <Filter size={14} className="text-muted-foreground" />
                   <span className="truncate">{subject === 'all' ? 'Tất cả lĩnh vực' : PERSONA_LABELS[subject]?.label}</span>
@@ -378,7 +381,7 @@ export default function CommunityPage() {
               <Button
                 variant="ghost"
                 onClick={() => { setSearch(""); setSubject("all"); }}
-                className="h-9 px-3 text-[11px] text-muted-foreground hover:text-white"
+                className="h-8 px-2 text-[10px] text-muted-foreground hover:text-white"
               >
                 Xóa lọc ×
               </Button>
@@ -398,7 +401,7 @@ export default function CommunityPage() {
       </div>
 
       {/* ── CONTENT AREA ── */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 pb-28 md:pb-6">
+      <div className="flex-1 overflow-y-auto px-4 md:px-8 py-4 md:py-6 pb-32 md:pb-6">
         {isLoading ? (
           <div className="space-y-4">
              {[1,2,3,4,5,6].map(i => (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BookOpen, KeyRound, Mail, Lock } from "lucide-react";
@@ -19,11 +19,20 @@ export default function LoginPage() {
     email: "",
     password: "",
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
   
   const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [pendingUser, setPendingUser] = useState<any>(null);
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    const hasRefreshToken = Cookies.get('refresh_token');
+    if (hasRefreshToken) {
+      router.push('/library');
+    }
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +41,7 @@ export default function LoginPage() {
     try {
       const response: any = await fetchApi("/auth/login", {
         method: "POST",
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, remember_me: rememberMe }),
       });
 
       if (response.success) {
@@ -43,7 +52,7 @@ export default function LoginPage() {
         await fetch('/api/auth/set-tokens', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ access_token, refresh_token }),
+          body: JSON.stringify({ access_token, refresh_token, remember_me: rememberMe }),
         });
 
         // Update user info in store
@@ -128,6 +137,19 @@ export default function LoginPage() {
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
               />
             </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input 
+              type="checkbox" 
+              id="remember" 
+              className="w-4 h-4 rounded border-white/20 bg-white/5 accent-primary cursor-pointer"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <label htmlFor="remember" className="text-xs text-white/60 cursor-pointer select-none">
+              Duy trì đăng nhập (10 ngày)
+            </label>
           </div>
 
           <Button type="submit" disabled={loading} className="w-full btn-primary h-12 mt-2">
