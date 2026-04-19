@@ -55,13 +55,40 @@ interface RoomMessage {
   reply_to_id?: string;
 }
 
+interface RoomMember {
+  user_id: string;
+  name: string;
+  is_online: boolean;
+  doc_count: number;
+}
+
+interface Room {
+  id: string;
+  name: string;
+  invite_code: string;
+  host_id: string;
+  members: RoomMember[];
+}
+
+interface RoomDoc {
+  id: string;
+  title: string;
+  owner_name: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
 export default function RoomPage() {
   const { id } = useParams();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   
-  const { data: roomData, error: roomError, mutate: mutateRoom } = useSWR(`/rooms/${id}`, fetcher, { revalidateOnFocus: false });
-  const { data: docsData, mutate: mutateDocs } = useSWR(`/rooms/${id}/docs`, fetcher, { revalidateOnFocus: false });
+  const { data: roomData, error: roomError, mutate: mutateRoom } = useSWR<ApiResponse<Room>>(`/rooms/${id}`, fetcher, { revalidateOnFocus: false });
+  const { data: docsData, mutate: mutateDocs } = useSWR<ApiResponse<RoomDoc[]>>(`/rooms/${id}/docs`, fetcher, { revalidateOnFocus: false });
 
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const [inputText, setInputText] = useState("");
@@ -305,7 +332,7 @@ export default function RoomPage() {
 
   const mentionOptions = [
     { id: "ai", name: "MindexAI", is_ai: true },
-    ...(room?.members || []).map((m: any) => ({ id: m.user_id, name: m.name, is_ai: false }))
+    ...(room?.members || []).map((m) => ({ id: m.user_id, name: m.name, is_ai: false }))
   ].filter(opt => opt.name.toLowerCase().includes(mentionSearch.toLowerCase()));
   const docs = docsData?.data || [];
   const isHost = room.host_id === user?.id;
@@ -369,7 +396,7 @@ export default function RoomPage() {
           </div>
           <ScrollArea className="flex-1 px-2">
             <div className="space-y-1">
-              {members.map((m: any) => (
+              {members.map((m) => (
                 <div 
                   key={m.user_id} 
                   className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors group cursor-pointer"
@@ -710,7 +737,7 @@ export default function RoomPage() {
           </div>
           <ScrollArea className="flex-1 px-4">
             <div className="space-y-3">
-               {docs.map((doc: any) => (
+               {docs.map((doc) => (
                  <div key={doc.id} className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition-all group">
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
