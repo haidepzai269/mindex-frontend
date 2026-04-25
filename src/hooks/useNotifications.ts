@@ -53,6 +53,7 @@ export function useNotifications() {
       es.addEventListener('notification', (event) => {
         try {
           const notification = JSON.parse(event.data);
+          const docId = notification?.data?.doc_id as string | undefined;
           addNotification(notification);
           
           // Toast mượt mà
@@ -63,6 +64,11 @@ export function useNotifications() {
 
           // Nếu là sự kiện xóa tài liệu, hiển thị Dialog thông báo dọn dẹp
           if (notification.type === 'document_deleted') {
+              mutate("/documents");
+              mutate("/collections");
+              if (docId) {
+                mutate(`/documents/${docId}`);
+              }
               confirm({
                   title: "Dọn dẹp hệ thống",
                   message: "Tài liệu của bạn đã được dọn dẹp sau khi hết hạn.",
@@ -72,9 +78,19 @@ export function useNotifications() {
               });
           }
 
+          if (notification.type === 'document_expired') {
+              mutate("/documents");
+              mutate("/collections");
+              if (docId) {
+                mutate(`/documents/${docId}`);
+              }
+          }
+
           // Case: Quota update (pinned docs) - Silent update
           if (notification.type === 'quota_update') {
               console.log("🔄 SSE: Quota updated, refreshing user data...");
+              mutate("/documents");
+              mutate("/collections");
               mutate('/auth/me');
               return; // Tránh hiển thị thông báo ghim trùng lặp nếu không cần
           }
