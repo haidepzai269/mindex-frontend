@@ -17,14 +17,14 @@ export default function AccountForm() {
     old_password: "",
     new_password: "",
     confirm_password: "",
-    otp_code: ""
+    otp_code: "",
   });
 
   const handleSendOtp = async () => {
     setSendingOtp(true);
     try {
       const res = await fetchApi<{ success: boolean; message: string }>("/auth/me/send-otp", {
-        method: "POST"
+        method: "POST",
       });
       if (res.success) {
         toast.success("Mã xác thực đã được gửi tới Email của bạn");
@@ -64,8 +64,8 @@ export default function AccountForm() {
         body: JSON.stringify({
           old_password: formData.old_password,
           new_password: formData.new_password,
-          otp_code: formData.otp_code
-        })
+          otp_code: formData.otp_code,
+        }),
       });
       if (res.success) {
         toast.success(res.message);
@@ -79,112 +79,112 @@ export default function AccountForm() {
   };
 
   return (
-    <Card className="bg-white/5 border-white/10 backdrop-blur-xl">
+    <Card className="border-border/70 bg-card/95 shadow-sm backdrop-blur">
       <CardHeader>
-        <CardTitle className="text-xl font-bold flex items-center gap-2">
-          <Key className="text-secondary" size={20} />
+        <CardTitle className="flex items-center gap-2 text-xl font-bold">
+          <Key className="text-primary" size={20} />
           Bảo mật tài khoản
         </CardTitle>
-        <CardDescription className="text-white/50">
-          Hãy thay đổi mật khẩu định kỳ để bảo vệ tài khoản của bạn.
-        </CardDescription>
+        <CardDescription>Hãy thay đổi mật khẩu định kỳ để bảo vệ tài khoản của bạn.</CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         <form id="account-form" onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-white/70 ml-1">Mật khẩu cũ</label>
+          <Field label="Mật khẩu cũ">
             <div className="relative">
-              <Input 
+              <Input
                 type={showPassword ? "text" : "password"}
                 value={formData.old_password}
                 onChange={(e) => setFormData({ ...formData, old_password: e.target.value })}
-                className="bg-white/5 border-white/10 h-11 pr-10"
+                className="h-11 border-border bg-background pr-10"
                 required
               />
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+          </Field>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field label="Mật khẩu mới">
+              <Input
+                type="password"
+                value={formData.new_password}
+                onChange={(e) => setFormData({ ...formData, new_password: e.target.value })}
+                className="h-11 border-border bg-background"
+                required
+              />
+            </Field>
+            <Field label="Xác nhận mật khẩu">
+              <Input
+                type="password"
+                value={formData.confirm_password}
+                onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
+                className="h-11 border-border bg-background"
+                required
+              />
+            </Field>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div className="space-y-2">
-               <label className="text-sm font-semibold text-white/70 ml-1">Mật khẩu mới</label>
-               <Input 
-                 type="password"
-                 value={formData.new_password}
-                 onChange={(e) => setFormData({ ...formData, new_password: e.target.value })}
-                 className="bg-white/5 border-white/10 h-11"
-                 required
-               />
-             </div>
-             <div className="space-y-2">
-               <label className="text-sm font-semibold text-white/70 ml-1">Xác nhận mật khẩu</label>
-               <Input 
-                 type="password"
-                 value={formData.confirm_password}
-                 onChange={(e) => setFormData({ ...formData, confirm_password: e.target.value })}
-                 className="bg-white/5 border-white/10 h-11"
-                 required
-               />
-             </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-white/70 ml-1">Mã xác thực Email</label>
+          <Field label="Mã xác thực Email" hint="Mã xác thực sẽ được gửi tới địa chỉ email tài khoản của bạn.">
             <div className="flex gap-3">
-              <Input 
+              <Input
                 placeholder="Nhập mã 6 chữ số..."
                 value={formData.otp_code}
                 onChange={(e) => setFormData({ ...formData, otp_code: e.target.value })}
-                className="bg-white/5 border-white/10 h-11 flex-1"
+                className="h-11 flex-1 border-border bg-background"
                 maxLength={6}
               />
-              <Button 
-                type="button" 
-                onClick={handleSendOtp} 
+              <Button
+                type="button"
+                onClick={handleSendOtp}
                 disabled={sendingOtp || cooldown > 0}
                 variant="outline"
-                className="h-11 px-6 border-white/10 bg-white/5 hover:bg-white/10 min-w-[120px]"
+                className="h-11 min-w-[120px] border-border bg-background hover:bg-accent"
               >
-                {sendingOtp ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : cooldown > 0 ? (
-                  `${cooldown}s`
-                ) : (
-                  "Gửi mã"
-                )}
+                {sendingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : cooldown > 0 ? `${cooldown}s` : "Gửi mã"}
               </Button>
             </div>
-            <p className="text-[11px] text-white/30 italic">Mã xác thực sẽ được gửi tới địa chỉ email tài khoản của bạn.</p>
-          </div>
+          </Field>
 
-          <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-xl flex gap-3 text-amber-500 items-start">
-             <ShieldAlert size={20} className="shrink-0 mt-0.5" />
-             <div className="text-[11px] leading-normal font-medium italic opacity-80">
-                Ghi chú: Bạn bắt buộc phải nhập mã OTP từ Email để xác nhận đổi mật khẩu. Sau khi đổi thành công, bạn có thể được yêu cầu đăng nhập lại.
-             </div>
+          <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-400">
+            <ShieldAlert size={20} className="mt-0.5 shrink-0" />
+            <div className="text-[11px] font-medium italic leading-normal opacity-90">
+              Ghi chú: Bạn bắt buộc phải nhập mã OTP từ Email để xác nhận đổi mật khẩu. Sau khi đổi thành công, bạn có thể được yêu cầu đăng nhập lại.
+            </div>
           </div>
         </form>
       </CardContent>
 
-      <CardFooter className="border-t border-white/5 bg-white/[0.02]">
-        <Button 
-          form="account-form" 
-          type="submit" 
-          disabled={loading}
-          className="bg-primary-gradient h-11 px-8 font-bold"
-        >
-          {loading ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
+      <CardFooter className="border-t border-border/70 bg-muted/30">
+        <Button form="account-form" type="submit" disabled={loading} className="h-11 px-8 font-bold">
+          {loading ? <Loader2 className="mr-2 animate-spin" size={18} /> : null}
           Đổi mật khẩu
         </Button>
       </CardFooter>
     </Card>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="ml-1 text-sm font-semibold text-foreground">{label}</label>
+      {children}
+      {hint ? <p className="text-[11px] italic text-muted-foreground">{hint}</p> : null}
+    </div>
   );
 }

@@ -77,7 +77,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     return new Date(doc.expired_at).getTime() < Date.now();
   }, [doc?.expired_at]);
 
-  const handleSendMessage = (q: string) => {
+  const handleSendMessage = (q: string, model: string = "Mindex-1") => {
     if (doc?.status !== 'ready') {
       toast.warning("Tài liệu chưa sẵn sàng", {
         description: "Vui lòng đợi quá trình xử lý tài liệu hoàn tất."
@@ -94,7 +94,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
     // Truyền forkId chỉ lần đầu (khi chưa có session) để inject Shared Context
     const currentFork = !sessionId ? forkId : undefined;
-    sendMessage(id, q, currentFork);
+    sendMessage(id, q, currentFork, false, model);
   };
 
   // 1. Phục hồi lịch sử chat khi vào tài liệu
@@ -240,7 +240,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       
       {/* 1. SIDEBAR TRÁI: Inbox Style - Nổi khối */}
       <aside className="hidden md:flex w-[300px] h-full flex-col bg-zinc-900/20 backdrop-blur-3xl rounded-[32px] border border-white/5 shadow-2xl overflow-hidden flex-shrink-0 z-50 animate-in slide-in-from-left duration-700">
-          <div className="p-6 flex flex-col h-full">
+          <div className="p-6 flex flex-col h-full min-h-0">
             <div className="flex items-center justify-between mb-6 px-1">
                 <h2 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
                     Inbox
@@ -263,7 +263,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             </div>
 
             {/* Document List */}
-            <ScrollArea className="flex-1 -mx-2 px-2">
+            <ScrollArea className="flex-1 -mx-2 px-2 min-h-0">
                 <div className="space-y-2">
                     {filteredDocs.length === 0 ? (
                         <div className="py-10 text-center">
@@ -378,7 +378,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                   </button>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2.5">
-                      <FileText size={14} className="text-primary opacity-60 hidden md:block" />
+                      <FileText size={16} className="text-zinc-400 hidden md:block" />
                       <h3 className="text-[14px] md:text-[14px] font-extrabold text-white tracking-tight truncate max-w-[200px] md:max-w-[400px]">
                           {doc.title}
                       </h3>
@@ -452,8 +452,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
 
                       {messages.length === 0 && (
                           <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in duration-1000">
-                              <div className="w-20 h-20 bg-primary-gradient rounded-[32px] flex items-center justify-center mb-10 shadow-[0_20px_50px_rgba(184,41,255,0.3)] rotate-6">
-                                  <Zap size={32} className="text-white fill-white" />
+                              <div className="w-20 h-20 bg-zinc-900 border border-white/5 rounded-[32px] flex items-center justify-center mb-10 shadow-2xl">
+                                  <Zap size={32} className="text-primary fill-primary" />
                               </div>
                               <h3 className="text-[24px] font-black text-white mb-2 tracking-tighter uppercase">
                                   {doc.title}

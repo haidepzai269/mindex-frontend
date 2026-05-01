@@ -94,12 +94,12 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
   }, [id, setMessages, setSessionId, clearChat]);
 
   // 2. Xử lý gửi tin
-  const handleSendMessage = (q: string) => {
+  const handleSendMessage = (q: string, model: string = "Mindex-1") => {
     if (!collection || collection.doc_count === 0) {
       toast.error("Bộ tài liệu trống. Vui lòng thêm tài liệu trước khi chat.");
       return;
     }
-    sendMessage(id, q, undefined, true);
+    sendMessage(id, q, undefined, true, model);
   };
 
   // 3. Auto Scroll
@@ -140,7 +140,7 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
       
       {/* PANEL 1: COLLECTION INFO (LEFT) */}
       <aside className="w-[280px] h-full flex flex-col bg-zinc-900/40 backdrop-blur-3xl rounded-[32px] border border-white/5 shadow-2xl overflow-hidden flex-shrink-0 z-50 animate-in slide-in-from-left duration-700">
-        <div className="p-6 flex flex-col h-full">
+        <div className="p-6 flex flex-col h-full min-h-0">
             <button 
                 onClick={() => router.push('/library')}
                 className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-6 text-sm font-bold uppercase tracking-wider"

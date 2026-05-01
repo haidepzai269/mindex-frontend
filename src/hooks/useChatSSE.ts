@@ -18,14 +18,14 @@ export function useChatSSE() {
   } = useChatStore();
 
 
-  const sendMessage = useCallback(async (targetId: string, question: string, forkId?: string, isCollection: boolean = false) => {
+  const sendMessage = useCallback(async (targetId: string, question: string, forkId?: string, isCollection: boolean = false, model?: string) => {
     if (!targetId || !question) return;
 
     setError(null);
     setIsStreaming(true);
     setCurrentStreamText('');
 
-    console.log(`[SSE] Sending message. TargetID: ${targetId}, SessionID: ${sessionId || 'NEW_SESSION'}`);
+    console.log(`[SSE] Sending message. TargetID: ${targetId}, SessionID: ${sessionId || 'NEW_SESSION'}, Model: ${model || 'default'}`);
 
     // Truyền tham số retry để tránh vòng lặp vô hạn
     const executeFetch = async (retryCount = 0): Promise<Response | null> => {
@@ -48,6 +48,7 @@ export function useChatSSE() {
                 session_id: sessionId,
                 question: question,
                 ...(forkId ? { fork_id: forkId } : {}),
+                ...(model ? { model: model } : {}),
             };
 
             console.log(`[SSE] Sending request to ${API_BASE_URL}/chat/message:`, payload);

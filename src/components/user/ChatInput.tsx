@@ -5,7 +5,7 @@ import { Send, Loader2, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, model: string) => void;
   disabled?: boolean;
   isLoading?: boolean;
   placeholder?: string;
@@ -13,14 +13,15 @@ interface ChatInputProps {
 
 export function ChatInput({ onSendMessage, disabled, isLoading, placeholder }: ChatInputProps) {
   const [input, setInput] = useState("");
+  const [model, setModel] = useState("Mindex-1");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = useCallback(() => {
     if (input.trim() && !disabled && !isLoading) {
-      onSendMessage(input.trim());
+      onSendMessage(input.trim(), model);
       setInput("");
     }
-  }, [input, onSendMessage, disabled, isLoading]);
+  }, [input, onSendMessage, disabled, isLoading, model]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -56,7 +57,31 @@ export function ChatInput({ onSendMessage, disabled, isLoading, placeholder }: C
         
         <div className="flex items-center justify-between px-2 pb-1 pt-1 border-t border-zinc-800/20 mt-1">
           <div className="flex items-center gap-2">
-             <div className="px-2 py-1 rounded-md bg-black text-[8px] font-black text-zinc-700 uppercase tracking-widest flex items-center gap-1.5 border border-zinc-800/30">
+             <div className="flex items-center bg-black/40 rounded-lg p-0.5 border border-zinc-800/50">
+                <button
+                  onClick={() => setModel("Mindex-1")}
+                  className={cn(
+                    "px-3 py-1 rounded-md text-[10px] font-black transition-all duration-200",
+                    model === "Mindex-1" 
+                      ? "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.3)]" 
+                      : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
+                  )}
+                >
+                  MINDEX-1
+                </button>
+                <button
+                  onClick={() => setModel("Mindex-2")}
+                  className={cn(
+                    "px-3 py-1 rounded-md text-[10px] font-black transition-all duration-200",
+                    model === "Mindex-2" 
+                      ? "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.3)]" 
+                      : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
+                  )}
+                >
+                  MINDEX-2
+                </button>
+             </div>
+             <div className="px-2 py-1 rounded-md bg-black text-[8px] font-black text-zinc-700 uppercase tracking-widest flex items-center gap-1.5 border border-zinc-800/30 hidden sm:flex">
                 <kbd className="opacity-40">SHIFT+ENTER</kbd> 
                 <span className="opacity-20">|</span>
                 XUỐNG DÒNG
@@ -91,7 +116,7 @@ export function ChatInput({ onSendMessage, disabled, isLoading, placeholder }: C
             <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] whitespace-nowrap">
                 Logic - nhanh chóng - chuẩn xác
             </p>
-            <Zap size={9} className="text-primary fill-primary" />
+            <Zap size={9} className="text-zinc-600" />
         </div>
       </div>
     </div>

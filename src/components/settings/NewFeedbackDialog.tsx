@@ -28,9 +28,7 @@ export default function NewFeedbackDialog({ open, onOpenChange, onSuccess }: New
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1"}/feedbacks/sessions`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ subject, message }),
       });
@@ -45,7 +43,7 @@ export default function NewFeedbackDialog({ open, onOpenChange, onSuccess }: New
       } else {
         toast.error(data.error || "Có lỗi xảy ra");
       }
-    } catch (error) {
+    } catch {
       toast.error("Lỗi kết nối máy chủ");
     } finally {
       setIsSubmitting(false);
@@ -54,42 +52,36 @@ export default function NewFeedbackDialog({ open, onOpenChange, onSuccess }: New
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-zinc-900 border-white/10 text-white sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] border-border/70 bg-card text-card-foreground shadow-xl">
         <DialogHeader>
           <DialogTitle>Góp ý hệ thống</DialogTitle>
-          <DialogDescription className="text-zinc-400">
-            Hãy chia sẻ ý kiến hoặc báo lỗi để chúng tôi hoàn thiện Mindex hơn.
-          </DialogDescription>
+          <DialogDescription>Hãy chia sẻ ý kiến hoặc báo lỗi để chúng tôi hoàn thiện Mindex hơn.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Tiêu đề</label>
+            <label className="text-sm font-medium text-foreground">Tiêu đề</label>
             <Input
               placeholder="Ví dụ: Góp ý về giao diện, Báo lỗi upload..."
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="bg-white/5 border-white/10 focus:border-primary/50 transition-colors"
+              className="border-border bg-background"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Nội dung chi tiết</label>
+            <label className="text-sm font-medium text-foreground">Nội dung chi tiết</label>
             <Textarea
               placeholder="Nhập nội dung góp ý của bạn tại đây..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="bg-white/5 border-white/10 min-h-[150px] focus:border-primary/50 transition-colors"
+              className="min-h-[150px] border-border bg-background"
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} className="hover:bg-white/5">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="hover:bg-accent">
             Hủy
           </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isSubmitting}
-            className="bg-primary hover:bg-primary/80 text-white min-w-[100px]"
-          >
+          <Button onClick={handleSubmit} disabled={isSubmitting} className="min-w-[100px]">
             {isSubmitting ? "Đang gửi..." : "Gửi góp ý"}
           </Button>
         </DialogFooter>

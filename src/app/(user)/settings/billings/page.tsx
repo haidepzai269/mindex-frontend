@@ -10,11 +10,8 @@ import { Check, Sparkles, Zap, ArrowRight, Loader2, CheckCircle2, AlertCircle } 
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 export default function UserBillingsPage() {
   const router = useRouter();
@@ -25,7 +22,6 @@ export default function UserBillingsPage() {
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    const status = searchParams.get("status");
     const orderCode = searchParams.get("orderCode");
     const cancel = searchParams.get("cancel");
 
@@ -34,13 +30,13 @@ export default function UserBillingsPage() {
       toast.promise(
         fetchApi<any>(`/billings/verify?orderCode=${orderCode}`).then((res) => {
           setTimeout(() => {
-             window.location.href = "/settings/billings";
+            window.location.href = "/settings/billings";
           }, 1500);
           return res;
         }),
         {
           loading: "Đang xác thực hóa đơn của bạn...",
-          success: "Nâng cấp gói cước thành công! 🎉",
+          success: "Nâng cấp gói cước thành công!",
           error: "Xác nhận giao dịch thất bại.",
         }
       );
@@ -55,9 +51,9 @@ export default function UserBillingsPage() {
     try {
       setIsProcessing(true);
       toast.loading("Đang kết nối PayOS...", { id: "payos" });
-      const res = await fetchApi<any>("/billings/create-payment-link", { 
-        method: "POST", 
-        body: JSON.stringify({ package_name: pkg }) 
+      const res = await fetchApi<any>("/billings/create-payment-link", {
+        method: "POST",
+        body: JSON.stringify({ package_name: pkg }),
       });
       toast.dismiss("payos");
       if (res?.success && res?.data?.checkout_url) {
@@ -75,151 +71,189 @@ export default function UserBillingsPage() {
 
   const proPrice = data?.data?.PRO || 5000;
   const ultraPrice = data?.data?.ULTRA || 10000;
-
   const isPro = user?.tier === "PRO";
   const isUltra = user?.tier === "ULTRA";
 
   return (
-    <div className="flex-1 p-8 space-y-8 max-w-5xl mx-auto w-full relative">
-      <div className="text-center space-y-3 mb-10 mt-8 relative z-10">
+    <div className="relative mx-auto flex w-full max-w-5xl flex-1 flex-col space-y-8 p-8">
+      <div className="relative z-10 mb-10 mt-8 space-y-3 text-center">
         <AnimatePresence>
           {paymentError && (
-             <motion.div 
-               initial={{ opacity: 0, y: -20 }}
-               animate={{ opacity: 1, y: 0 }}
-               className="mb-8 flex justify-center"
-             >
-               <Alert variant="destructive" className="max-w-xl py-4 flex items-start gap-4 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
-                 <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                 <div className="text-left flex flex-col gap-1">
-                   <AlertTitle className="text-lg font-bold leading-none">Thanh toán thất bại</AlertTitle>
-                   <AlertDescription className="text-sm opacity-90">
-                      Giao dịch của bạn không thể hoàn tất hoặc đã bị hủy. Vui lòng kiểm tra lại phương thức thanh toán và thử lại.
-                   </AlertDescription>
-                 </div>
-               </Alert>
-             </motion.div>
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex justify-center">
+              <Alert variant="destructive" className="max-w-xl py-4 shadow-sm">
+                <AlertCircle className="h-5 w-5" />
+                <AlertTitle>Thanh toán thất bại</AlertTitle>
+                <AlertDescription>Giao dịch của bạn không thể hoàn tất hoặc đã bị hủy. Vui lòng kiểm tra lại và thử lại.</AlertDescription>
+              </Alert>
+            </motion.div>
           )}
 
           {(isPro || isUltra) && !paymentError && (
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8 flex justify-center"
-            >
-              <Alert className="max-w-xl bg-green-500/10 border-green-500/50 text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.1)] py-4 backdrop-blur-sm text-left flex items-start gap-4">
-                <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
-                <div className="flex flex-col gap-1">
-                  <AlertTitle className="text-lg font-bold leading-none">Giao dịch thành công</AlertTitle>
-                  <AlertDescription className="text-sm opacity-90">
-                    {isPro ? "Chúc mừng bạn đã nâng cấp lên gói PRO thành công! 🎉" : "Chúc mừng bạn đã nâng cấp lên gói ULTRA thành công! 🚀"}
-                  </AlertDescription>
-                </div>
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex justify-center">
+              <Alert className="max-w-xl border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="h-5 w-5" />
+                <AlertTitle>Giao dịch thành công</AlertTitle>
+                <AlertDescription>
+                  {isPro ? "Chúc mừng bạn đã nâng cấp lên gói PRO thành công!" : "Chúc mừng bạn đã nâng cấp lên gói ULTRA thành công!"}
+                </AlertDescription>
               </Alert>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <h1 className="text-4xl font-extrabold tracking-tight text-white mb-1">
-          Nâng Cấp Gói <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">Trí Tuệ Mindex</span>
+        <h1 className="mb-1 text-4xl font-extrabold tracking-tight text-foreground">
+          Nâng Cấp Gói <span className="bg-gradient-to-r from-primary to-fuchsia-500 bg-clip-text text-transparent">Trí Tuệ Mindex</span>
         </h1>
-        <p className="text-white/50 text-base max-w-2xl mx-auto">
-          Mở khóa toàn bộ giới hạn và làm chủ lượng tri thức vô hạn. Tham gia cùng hàng trăm cao thủ khác.
+        <p className="mx-auto max-w-2xl text-base text-muted-foreground">
+          Mở khóa toàn bộ giới hạn và làm chủ lượng tri thức vô hạn. Chọn gói phù hợp với cường độ học tập của bạn.
         </p>
       </div>
 
       {(isLoading || isProcessing) && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-3xl">
-          <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-3xl bg-background/70 backdrop-blur-sm">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-8 items-center max-w-4xl mx-auto relative z-10">
-        {/* PRO CARD */}
+      <div className="relative z-10 mx-auto grid max-w-4xl items-stretch gap-8 md:grid-cols-2">
         <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.3 }} className="h-full">
-          <Card className={`relative overflow-hidden h-full flex flex-col bg-[#111115] border-white/10 ${isPro ? 'ring-2 ring-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.2)]' : 'hover:border-white/20'} transition-all`}>
-            {/* VIP Tia sáng */}
-            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-yellow-400 to-transparent opacity-50"></div>
-            
-            <div className="p-8 flex-1 flex flex-col">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-5 h-5 text-yellow-400" />
-                <h3 className="font-bold text-xl text-white">Gói PRO</h3>
-              </div>
-              <p className="text-white/40 text-sm mb-6">Lựa chọn hàng đầu để quản lý tài nguyên học tập.</p>
-              
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-4xl font-black text-white">{proPrice.toLocaleString()}đ</span>
-                <span className="text-white/40 font-medium">/ tháng</span>
-              </div>
-              
-              <ul className="space-y-4 flex-1 mb-8">
-                {["Ghim tối đa 5 tài liệu quan trọng", "Chia sẻ template 5 tài liệu", "Biểu tượng Vàng Gold VIP", "Prioritized Response AI (Tốc độ x2)"].map((f, i) => (
-                  <li className="flex gap-3 text-sm text-white/70" key={i}>
-                    <Check className="w-5 h-5 text-yellow-500 shrink-0" /> {f}
-                  </li>
-                ))}
-              </ul>
-
-              <Button 
-                onClick={() => handleUpgrade("PRO")} 
-                disabled={isPro || isUltra || isProcessing}
-                className={`w-full py-6 text-base font-bold transition-all ${isPro ? 'bg-white/10 text-white cursor-not-allowed' : 'bg-white text-black hover:bg-white/90 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]'}`}
-              >
-                {isPro ? "Đang sử dụng" : isUltra ? "Bạn đã có gói cao hơn" : "Nâng cấp lên PRO"}
-                {!isPro && !isUltra && <ArrowRight className="w-4 h-4 ml-2" />}
-              </Button>
-            </div>
-          </Card>
+          <PackageCard
+            title="Gói PRO"
+            description="Lựa chọn hàng đầu để quản lý tài nguyên học tập."
+            price={proPrice}
+            accent="amber"
+            active={isPro}
+            disabled={isPro || isUltra || isProcessing}
+            features={[
+              "Ghim tối đa 5 tài liệu quan trọng",
+              "Chia sẻ template 5 tài liệu",
+              "Biểu tượng Vàng Gold VIP",
+              "Ưu tiên phản hồi AI",
+            ]}
+            onClick={() => handleUpgrade("PRO")}
+            buttonLabel={isPro ? "Đang sử dụng" : isUltra ? "Bạn đã có gói cao hơn" : "Nâng cấp lên PRO"}
+            icon={<Sparkles className="h-5 w-5 text-amber-500" />}
+          />
         </motion.div>
 
-        {/* ULTRA CARD */}
         <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.3 }} className="h-full">
-          <Card className={`relative overflow-hidden h-full flex flex-col bg-gradient-to-b from-[#1c0816] to-[#0a0208] border-rose-500/30 ${isUltra ? 'ring-2 ring-rose-500 shadow-[0_0_40px_rgba(225,29,72,0.3)]' : 'hover:border-rose-500/50'} transition-all`}>
-            {/* Neon đỏ tia sáng */}
-            <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent"></div>
-            
-            <div className="p-8 flex-1 flex flex-col relative z-10">
-              <div className="absolute top-0 right-0 p-4">
-                <span className="bg-rose-500/20 text-rose-400 text-xs font-bold px-3 py-1 rounded-full border border-rose-500/30">
-                  ĐỀ XUẤT
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="w-5 h-5 text-rose-500" />
-                <h3 className="font-bold text-xl text-white">Gói ULTRA</h3>
-              </div>
-              <p className="text-rose-200/40 text-sm mb-6">Mở khóa sức mạnh tuyệt đối, dành cho Pro User.</p>
-              
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-4xl font-black text-rose-100">{ultraPrice.toLocaleString()}đ</span>
-                <span className="text-rose-100/40 font-medium">/ tháng</span>
-              </div>
-              
-              <ul className="space-y-4 flex-1 mb-8">
-                {["Ghim tối đa 10 tài liệu quan trọng", "Chia sẻ template lên đến 10 tài liệu", "Biểu tượng Neon Đỏ Đẳng Cấp", "Premium AI Model Access (Cerebras, Groq...)", "Được support 1-1 riêng biệt"].map((f, i) => (
-                  <li className="flex gap-3 text-sm text-rose-100/70" key={i}>
-                    <Check className="w-5 h-5 text-rose-500 shrink-0" /> {f}
-                  </li>
-                ))}
-              </ul>
-
-              <Button 
-                onClick={() => handleUpgrade("ULTRA")} 
-                disabled={isUltra || isProcessing}
-                className={`w-full py-6 text-base font-bold transition-all ${isUltra ? 'bg-white/10 text-white cursor-not-allowed' : 'bg-rose-600 text-white hover:bg-rose-500 hover:shadow-[0_0_25px_rgba(225,29,72,0.5)]'}`}
-              >
-                {isUltra ? "Đang sử dụng" : "Nâng cấp lên ULTRA"}
-                {!isUltra && <ArrowRight className="w-4 h-4 ml-2" />}
-              </Button>
-            </div>
-            
-            {/* Background Blob */}
-            <div className="absolute bottom-0 right-0 w-64 h-64 bg-rose-600/10 rounded-full blur-[80px] pointer-events-none"></div>
-          </Card>
+          <PackageCard
+            title="Gói ULTRA"
+            description="Mở khóa sức mạnh tuyệt đối, dành cho power user."
+            price={ultraPrice}
+            accent="rose"
+            active={isUltra}
+            disabled={isUltra || isProcessing}
+            badge="Đề xuất"
+            features={[
+              "Ghim tối đa 10 tài liệu quan trọng",
+              "Chia sẻ template lên đến 10 tài liệu",
+              "Biểu tượng Neon Đỏ đẳng cấp",
+              "Premium AI Model Access",
+              "Được support 1-1 riêng biệt",
+            ]}
+            onClick={() => handleUpgrade("ULTRA")}
+            buttonLabel={isUltra ? "Đang sử dụng" : "Nâng cấp lên ULTRA"}
+            icon={<Zap className="h-5 w-5 text-rose-500" />}
+          />
         </motion.div>
       </div>
     </div>
+  );
+}
+
+function PackageCard({
+  title,
+  description,
+  price,
+  features,
+  onClick,
+  buttonLabel,
+  icon,
+  accent,
+  active,
+  disabled,
+  badge,
+}: {
+  title: string;
+  description: string;
+  price: number;
+  features: string[];
+  onClick: () => void;
+  buttonLabel: string;
+  icon: React.ReactNode;
+  accent: "amber" | "rose";
+  active: boolean;
+  disabled: boolean;
+  badge?: string;
+}) {
+  const accentMap = {
+    amber: {
+      shell: "border-amber-400/30 bg-gradient-to-b from-amber-50 to-white dark:from-[#1b1308] dark:to-[#0d0a07]",
+      line: "via-amber-400",
+      title: "text-foreground",
+      desc: "text-muted-foreground",
+      price: "text-foreground",
+      sub: "text-muted-foreground",
+      feature: "text-foreground/80",
+      icon: "text-amber-500",
+      button: active ? "bg-muted text-muted-foreground" : "bg-foreground text-background hover:opacity-90",
+      ring: "ring-2 ring-amber-400/40 shadow-[0_0_30px_rgba(251,191,36,0.15)]",
+      badge: "border-amber-400/30 bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    },
+    rose: {
+      shell: "border-rose-400/30 bg-gradient-to-b from-rose-50 to-white dark:from-[#1c0816] dark:to-[#0a0208]",
+      line: "via-rose-500",
+      title: "text-foreground",
+      desc: "text-muted-foreground dark:text-rose-100/60",
+      price: "text-foreground dark:text-rose-100",
+      sub: "text-muted-foreground dark:text-rose-100/40",
+      feature: "text-foreground/80 dark:text-rose-100/70",
+      icon: "text-rose-500",
+      button: active ? "bg-muted text-muted-foreground" : "bg-rose-600 text-white hover:bg-rose-500",
+      ring: "ring-2 ring-rose-500/40 shadow-[0_0_40px_rgba(225,29,72,0.2)]",
+      badge: "border-rose-400/30 bg-rose-500/15 text-rose-700 dark:text-rose-300",
+    },
+  } as const;
+
+  const style = accentMap[accent];
+
+  return (
+    <Card className={cn("relative flex h-full flex-col overflow-hidden backdrop-blur", style.shell, active ? style.ring : "")}>
+      <div className={cn("absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent to-transparent", style.line)} />
+
+      <div className="relative z-10 flex flex-1 flex-col p-8">
+        {badge ? (
+          <div className="absolute right-4 top-4">
+            <span className={cn("rounded-full border px-3 py-1 text-xs font-bold", style.badge)}>{badge}</span>
+          </div>
+        ) : null}
+
+        <div className="mb-2 flex items-center gap-2">
+          <span className={style.icon}>{icon}</span>
+          <h3 className={cn("text-xl font-bold", style.title)}>{title}</h3>
+        </div>
+        <p className={cn("mb-6 text-sm", style.desc)}>{description}</p>
+
+        <div className="mb-6 flex items-baseline gap-1">
+          <span className={cn("text-4xl font-black", style.price)}>{price.toLocaleString()}đ</span>
+          <span className={cn("font-medium", style.sub)}>/ tháng</span>
+        </div>
+
+        <ul className="mb-8 flex-1 space-y-4">
+          {features.map((feature) => (
+            <li className={cn("flex gap-3 text-sm", style.feature)} key={feature}>
+              <Check className={cn("h-5 w-5 shrink-0", style.icon)} />
+              {feature}
+            </li>
+          ))}
+        </ul>
+
+        <Button onClick={onClick} disabled={disabled} className={cn("w-full py-6 text-base font-bold transition-all", style.button)}>
+          {buttonLabel}
+          {!active && !disabled && <ArrowRight className="ml-2 h-4 w-4" />}
+        </Button>
+      </div>
+    </Card>
   );
 }

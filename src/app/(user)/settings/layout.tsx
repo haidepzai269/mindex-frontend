@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Shield, CreditCard, Palette, MessageSquare, Info } from "lucide-react";
+import { CreditCard, Info, MessageSquare, Palette, Shield, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function SettingsLayout({ children }: { children: ReactNode }) {
@@ -43,39 +43,39 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background relative overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px] -z-10 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-secondary/5 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
+    <div className="relative flex h-full flex-1 flex-col overflow-hidden bg-background">
+      <div className="pointer-events-none absolute right-0 top-0 -z-10 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[150px] dark:bg-primary/5" />
+      <div className="pointer-events-none absolute bottom-0 left-0 -z-10 h-[300px] w-[300px] rounded-full bg-sky-500/10 blur-[100px] dark:bg-secondary/5" />
 
-      <header className="h-16 hidden md:flex items-center px-8 border-b border-white/5 bg-black/10 backdrop-blur-md sticky top-0 z-10 w-full mb-8">
-        <h1 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
+      <header className="sticky top-0 z-10 mb-8 hidden h-16 w-full items-center border-b border-border/70 bg-background/75 px-8 backdrop-blur-md md:flex">
+        <h1 className="bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-xl font-bold tracking-tight text-transparent">
           Cài đặt hệ thống
         </h1>
       </header>
 
-      <main className="flex-1 px-4 md:px-8 pt-4 md:pt-0 pb-28 md:pb-12 overflow-y-auto">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
-            <aside className="w-full md:w-64 flex-shrink-0">
-              <nav className="flex flex-row md:flex-col overflow-x-auto hide-scrollbar w-full bg-transparent border-none p-0 gap-2 pb-2 md:pb-0 border-b border-white/5 md:border-none">
+      <main className="flex-1 overflow-y-auto px-4 pb-28 pt-4 md:px-8 md:pb-12 md:pt-0">
+        <div className="mx-auto max-w-5xl">
+          <div className="flex flex-col items-start gap-6 md:flex-row md:gap-8">
+            <aside className="w-full flex-shrink-0 md:w-64">
+              <nav className="hide-scrollbar flex w-full flex-row gap-2 overflow-x-auto border-b border-border/70 pb-2 md:flex-col md:border-none md:pb-0">
                 {menuItems.map((item) => {
                   const isActive = pathname === item.href;
+
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-xl transition-all border-none whitespace-nowrap shrink-0",
+                        "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border px-3 py-2 transition-all md:gap-3 md:px-4 md:py-3",
                         isActive
-                          ? "bg-white/5 text-white shadow-sm"
-                          : "text-white/40 hover:text-white/80 hover:bg-white/[0.02]"
+                          ? "border-primary/20 bg-primary/10 text-foreground shadow-sm"
+                          : "border-transparent text-muted-foreground hover:bg-accent/40 hover:text-foreground"
                       )}
                     >
                       {item.icon}
                       <span className="text-sm font-medium">{item.label}</span>
                       {isActive && (
-                        <div className="hidden md:block ml-auto w-1 h-4 bg-primary rounded-full shadow-[0_0_8px_rgba(184,41,255,0.8)]" />
+                        <div className="ml-auto hidden h-4 w-1 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.5)] md:block" />
                       )}
                     </Link>
                   );
@@ -83,9 +83,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
               </nav>
             </aside>
 
-            <div className="flex-1 w-full min-w-0">
-              {children}
-            </div>
+            <div className="w-full min-w-0 flex-1">{children}</div>
           </div>
         </div>
       </main>
