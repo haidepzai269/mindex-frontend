@@ -42,6 +42,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
   const [numQ, setNumQ] = useState(10);
   const [qType, setQType] = useState<"mcq" | "essay" | "mix">("mcq");
   const [difficulty, setDifficulty] = useState("mix");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const currentQ = questions[currentIdx];
   const progress = questions.length ? ((currentIdx) / questions.length) * 100 : 0;
@@ -60,11 +61,14 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
         setQuestions(quizData.questions || []);
         setStartTime(Date.now());
         setState("playing");
+      } else {
+        toast.error(res.message || "Không thể tạo quiz, vui lòng thử lại");
+        setState("config");
       }
     } catch (err: any) {
       if (err.status === 429) {
-        toast.error("Hết quota hôm nay!", {
-          description: err.data?.message || "Bạn đã dùng hết lượt tạo quiz miễn phí hôm nay",
+        toast.error("Hết hạn mức hôm nay!", {
+          description: err.data?.message || "Bạn đã dùng hết lượt tạo quiz cho gói cước hiện tại.",
         });
       } else {
         toast.error("Không thể tạo quiz, vui lòng thử lại");
@@ -78,7 +82,8 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
   };
 
   const handleSubmit = async () => {
-    if (!quizId) return;
+    if (!quizId || isSubmitting) return;
+    setIsSubmitting(true);
     const timeSpent = Math.round((Date.now() - startTime) / 1000);
     const answersPayload = Object.entries(answers).map(([qId, ans]) => ({
       question_id: qId,
@@ -89,11 +94,17 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
         method: "POST",
         body: JSON.stringify({ answers: answersPayload, time_spent_sec: timeSpent }),
       });
-      setResults(res.answers || []);
-      setScore(res.score || 0);
-      setState("submitted");
+      if (res.success) {
+        setResults(res.answers || []);
+        setScore(res.score || 0);
+        setState("submitted");
+      } else {
+        toast.error(res.message || "Không thể nộp bài");
+      }
     } catch {
       toast.error("Không thể nộp bài, vui lòng thử lại");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -101,7 +112,8 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
 
   // ─── Config Screen ────────────────────────────────────────────────────────
   if (state === "config") return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center px-4 py-12">
+    <div className="h-full w-full bg-[#050505] text-white overflow-y-auto">
+      <div className="min-h-full flex flex-col items-center justify-center px-4 py-12">
       <button onClick={() => router.back()} className="self-start mb-8 flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-sm font-bold">
         <ArrowLeft size={18} /> Quay lại
       </button>
@@ -153,17 +165,18 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
         </div>
 
         <button onClick={handleGenerate}
-          className="w-full py-4 rounded-2xl bg-primary text-white font-black text-sm hover:bg-primary/90 transition-all shadow-2xl shadow-primary/30 flex items-center justify-center gap-2">
+          className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-black text-sm hover:opacity-90 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2">
           <Sparkles size={16} /> Bắt đầu Quiz AI
         </button>
-        <p className="text-center text-[11px] text-zinc-700 mt-3">Free: 1 lượt tạo quiz/ngày · Nâng cấp Pro để không giới hạn</p>
+        <p className="text-center text-[11px] text-zinc-700 mt-3 italic">Hạn mức: Free (1) · Pro (3) · Ultra (10) lượt/ngày</p>
+      </div>
       </div>
     </div>
   );
 
   // ─── Loading Screen ───────────────────────────────────────────────────────
   if (state === "loading") return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center gap-4">
+    <div className="h-full w-full bg-[#050505] flex flex-col items-center justify-center gap-4">
       <Loader2 size={40} className="text-primary animate-spin" />
       <p className="text-zinc-500 font-bold text-sm animate-pulse">AI đang tạo câu hỏi...</p>
     </div>
@@ -171,7 +184,8 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
 
   // ─── Playing Screen ───────────────────────────────────────────────────────
   if (state === "playing" && currentQ) return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center px-4 py-8">
+    <div className="h-full w-full bg-[#050505] text-white overflow-y-auto">
+      <div className="min-h-full flex flex-col items-center px-4 py-8">
       {/* Progress */}
       <div className="w-full max-w-2xl mb-8">
         <div className="flex items-center justify-between mb-2">
@@ -242,19 +256,22 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
               Tiếp theo <ChevronRight size={14} />
             </button>
           ) : (
-            <button onClick={handleSubmit}
-              className="flex items-center gap-2 px-8 py-2.5 rounded-xl bg-primary text-white text-sm font-black hover:bg-primary/90 transition-all shadow-lg shadow-primary/30">
-              Nộp bài <Trophy size={14} />
+            <button onClick={handleSubmit} disabled={isSubmitting}
+              className="flex items-center gap-2 px-8 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-black hover:opacity-90 transition-all shadow-xl shadow-primary/10 disabled:opacity-50">
+              {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Trophy size={14} />}
+              {isSubmitting ? "Đang chấm điểm..." : "Nộp bài"}
             </button>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
 
   // ─── Result Screen ────────────────────────────────────────────────────────
   if (state === "submitted") return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center px-4 py-12">
+    <div className="h-full w-full bg-[#050505] text-white overflow-y-auto">
+      <div className="min-h-full flex flex-col items-center px-4 py-12">
       {/* Score */}
       <div className="flex flex-col items-center mb-12">
         <div className={cn(
@@ -332,6 +349,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
           className="flex items-center gap-2 px-6 py-3 rounded-xl bg-zinc-800 text-white text-sm font-bold hover:bg-zinc-700 transition-all">
           <ArrowLeft size={14} /> Về tài liệu
         </button>
+      </div>
       </div>
     </div>
   );

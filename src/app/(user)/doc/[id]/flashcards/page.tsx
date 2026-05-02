@@ -7,8 +7,16 @@ import { fetcher, fetchApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
-  Loader2, ArrowLeft, RotateCcw, ChevronLeft, ChevronRight,
-  Sparkles, Download, BookOpen, CheckCircle, XCircle,
+  Loader2,
+  ArrowLeft,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Download,
+  BookOpen,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 
 type Flashcard = {
@@ -29,34 +37,53 @@ function DifficultyBadge({ d }: { d: string }) {
     hard: "bg-red-500/20 text-red-400 border-red-500/30",
   };
   return (
-    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-black border uppercase tracking-wider", cfg[d] || "bg-zinc-700/30 text-zinc-400")}>
+    <span
+      className={cn(
+        "px-2 py-0.5 rounded-full text-[10px] font-black border uppercase tracking-wider",
+        cfg[d] || "bg-zinc-700/30 text-zinc-400",
+      )}
+    >
       {d}
     </span>
   );
 }
 
-export default function FlashcardsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function FlashcardsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id: docId } = use(params);
   const router = useRouter();
 
   // set_id từ URL hoặc lấy set mới nhất
-  const { data: setsData, isLoading: setsLoading, mutate: mutateSets } =
-    useSWR<{ success: boolean; data: any[] }>(`/study/docs/${docId}/flashcards`, fetcher as any);
+  const {
+    data: setsData,
+    isLoading: setsLoading,
+    mutate: mutateSets,
+  } = useSWR<{ success: boolean; data: any[] }>(
+    `/study/docs/${docId}/flashcards`,
+    fetcher as any,
+  );
 
   const sets = setsData?.data ?? [];
   const latestSet = sets[0];
 
-  const { data: cardsData, isLoading: cardsLoading, mutate: mutateCards } =
-    useSWR<{ success: boolean; data: Flashcard[] }>(
-      latestSet ? `/study/flashcards/${latestSet.id}` : null,
-      fetcher as any
-    );
+  const {
+    data: cardsData,
+    isLoading: cardsLoading,
+    mutate: mutateCards,
+  } = useSWR<{ success: boolean; data: Flashcard[] }>(
+    latestSet ? `/study/flashcards/${latestSet.id}` : null,
+    fetcher as any,
+  );
 
   const cards = cardsData?.data ?? [];
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [numCards, setNumCards] = useState(20);
   const [exporting, setExporting] = useState(false);
 
   const currentCard = cards[currentIdx];
@@ -71,7 +98,10 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === " ") { e.preventDefault(); setIsFlipped((f) => !f); }
+      if (e.key === " ") {
+        e.preventDefault();
+        setIsFlipped((f) => !f);
+      }
       if (e.key === "ArrowRight") nextCard();
       if (e.key === "ArrowLeft") prevCard();
     };
@@ -86,7 +116,10 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
 
   const prevCard = useCallback(() => {
     setIsFlipped(false);
-    setTimeout(() => setCurrentIdx((i) => (i - 1 + cards.length) % cards.length), 150);
+    setTimeout(
+      () => setCurrentIdx((i) => (i - 1 + cards.length) % cards.length),
+      150,
+    );
   }, [cards.length]);
 
   const markCard = async (remembered: boolean) => {
@@ -107,16 +140,30 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const res: any = await fetchApi(`/study/docs/${docId}/flashcards/generate`, { method: "POST" });
+      const res: any = await fetchApi(
+        `/study/docs/${docId}/flashcards/generate`,
+        {
+          method: "POST",
+          body: JSON.stringify({ num_cards: numCards }),
+        },
+      );
       if (res.success) {
         toast.success(`Đã tạo ${res.count} flashcard!`);
         if (res.is_capped) {
-          toast.info("Bạn đang dùng gói Free — Giới hạn 20 card/bộ. Nâng cấp Pro để tạo nhiều hơn!");
+          toast.info(
+            "Bạn đang dùng gói Free — Giới hạn 20 card/bộ. Nâng cấp Pro để tạo nhiều hơn!",
+          );
         }
         mutateSets();
       }
     } catch (err: any) {
-      toast.error(err.message || "Không thể tạo flashcard");
+      if (err.status === 403 && err.data?.error === "LIMIT_REACHED") {
+        toast.error("Giới hạn tài liệu!", {
+          description: "Tài liệu này đã đạt giới hạn 2 lần tạo flashcard.",
+        });
+      } else {
+        toast.error(err.message || "Không thể tạo flashcard");
+      }
     } finally {
       setGenerating(false);
     }
@@ -126,9 +173,12 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
     if (!latestSet) return;
     setExporting(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/study/flashcards/${latestSet.id}/export?format=csv`, {
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/study/flashcards/${latestSet.id}/export?format=csv`,
+        {
+          credentials: "include",
+        },
+      );
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -144,11 +194,12 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
     }
   };
 
-  if (setsLoading) return (
-    <div className="flex h-screen items-center justify-center bg-[#050505]">
-      <Loader2 size={32} className="text-primary animate-spin" />
-    </div>
-  );
+  if (setsLoading)
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#050505]">
+        <Loader2 size={32} className="text-primary animate-spin" />
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center px-4 py-8">
@@ -166,7 +217,11 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
             disabled={!latestSet || exporting}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-600 text-[12px] font-bold transition-all disabled:opacity-30"
           >
-            {exporting ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+            {exporting ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Download size={12} />
+            )}
             Export CSV
           </button>
           <button
@@ -174,7 +229,11 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
             disabled={generating}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-primary/20 border border-primary/30 text-primary hover:bg-primary/30 text-[12px] font-bold transition-all disabled:opacity-50"
           >
-            {generating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+            {generating ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Sparkles size={12} />
+            )}
             {generating ? "Đang tạo..." : "Tạo bộ mới"}
           </button>
         </div>
@@ -186,18 +245,51 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
           <div className="w-20 h-20 rounded-[32px] bg-primary/10 border border-primary/20 flex items-center justify-center mb-6 rotate-6">
             <BookOpen size={32} className="text-primary" />
           </div>
-          <h2 className="text-2xl font-black text-white mb-3">Chưa có Flashcard</h2>
-          <p className="text-zinc-500 text-sm mb-8 max-w-sm">
-            Nhấn nút bên dưới để AI tự động tạo flashcard từ nội dung tài liệu này.
+          <h2 className="text-2xl font-black text-white mb-3">
+            Chưa có Flashcard
+          </h2>
+          <p className="text-zinc-500 text-sm mb-10 max-w-sm">
+            AI sẽ tự động tạo flashcard từ nội dung tài liệu này (tối đa 2
+            bộ/tài liệu).
           </p>
+
+          <div className="w-full max-w-xs mb-10">
+            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-3 block text-center">
+              Chọn số lượng thẻ mong muốn
+            </label>
+            <div className="flex gap-2">
+              {[10, 20, 30, 50].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setNumCards(n)}
+                  className={cn(
+                    "flex-1 py-2.5 rounded-xl border font-black text-xs transition-all",
+                    numCards === n
+                      ? "bg-primary/20 border-primary/40 text-primary"
+                      : "bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-white",
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary text-white font-black text-sm hover:bg-primary/90 transition-all shadow-2xl shadow-primary/30 disabled:opacity-50"
+            className="flex items-center gap-2 px-10 py-4 rounded-2xl bg-primary text-primary-foreground font-black text-sm hover:opacity-90 transition-all shadow-xl shadow-primary/10 disabled:opacity-50"
           >
-            {generating ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-            {generating ? "Đang tạo flashcard..." : "✨ Tạo Flashcard"}
+            {generating ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <Sparkles size={18} />
+            )}
+            {generating ? "Đang tạo flashcard..." : "Tạo Flashcard AI"}
           </button>
+          <p className="text-center text-[11px] text-zinc-700 mt-4 italic">
+            Mỗi tài liệu được tạo tối đa 2 bộ thẻ · Hỗ trợ cache Redis
+          </p>
         </div>
       )}
 
@@ -227,7 +319,11 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
                   key={card.id}
                   className={cn(
                     "flex-1 h-1 rounded-full transition-all",
-                    i === currentIdx ? "bg-primary" : card.remembered ? "bg-emerald-500/60" : "bg-zinc-800"
+                    i === currentIdx
+                      ? "bg-primary"
+                      : card.remembered
+                        ? "bg-emerald-500/60"
+                        : "bg-zinc-800",
                   )}
                 />
               ))}
@@ -256,7 +352,9 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
                 <div className="mb-4 flex items-center gap-2">
                   <DifficultyBadge d={currentCard.difficulty} />
                   {currentCard.topic && (
-                    <span className="text-[10px] text-zinc-600 font-medium">{currentCard.topic}</span>
+                    <span className="text-[10px] text-zinc-600 font-medium">
+                      {currentCard.topic}
+                    </span>
                   )}
                 </div>
                 <p className="text-xl font-black text-white text-center leading-relaxed">
@@ -270,7 +368,10 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
               {/* Back */}
               <div
                 className="absolute inset-0 rounded-[32px] border border-primary/20 bg-primary/5 backdrop-blur-xl p-10 flex flex-col items-center justify-center"
-                style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+                style={{
+                  backfaceVisibility: "hidden",
+                  transform: "rotateY(180deg)",
+                }}
               >
                 <p className="text-[15px] text-zinc-200 text-center leading-relaxed whitespace-pre-line">
                   {currentCard.back}
@@ -336,7 +437,10 @@ export default function FlashcardsPage({ params }: { params: Promise<{ id: strin
                       body: JSON.stringify({ remembered: false }),
                     });
                   });
-                  setTimeout(() => { mutateCards(); setCurrentIdx(0); }, 500);
+                  setTimeout(() => {
+                    mutateCards();
+                    setCurrentIdx(0);
+                  }, 500);
                 }}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl border border-zinc-800 text-zinc-500 hover:text-white text-sm font-bold transition-all"
               >
