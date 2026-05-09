@@ -127,11 +127,11 @@ function UploadPageContent() {
 
       <div className="max-w-2xl mx-auto w-full">
         <div className="text-center mb-6 md:mb-10">
-          <div className="w-12 h-12 md:w-16 md:h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary">
+          <div className="w-12 h-12 md:w-16 md:h-16 bg-muted border border-border rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary">
             <UploadCloud className="w-6 h-6 md:w-8 md:h-8" />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">Tải lên Tài liệu mới</h1>
-          <p className="text-white/50">Hệ thống đang chuẩn bị dữ liệu giúp bạn có thể bắt đầu tra cứu và trò chuyện ngay lập tức</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-2">Tải lên Tài liệu mới</h1>
+          <p className="text-muted-foreground">Hệ thống đang chuẩn bị dữ liệu giúp bạn có thể bắt đầu tra cứu và trò chuyện ngay lập tức</p>
         </div>
 
         {status === "idle" ? (
@@ -139,56 +139,56 @@ function UploadPageContent() {
             {!file ? (
               <div 
                 {...getRootProps()} 
-                className={`border-2 border-dashed ${isDragActive ? 'border-primary bg-primary/5' : 'border-white/20 bg-white/5'} rounded-2xl p-6 md:p-12 text-center transition-all cursor-pointer hover:border-primary/50 hover:bg-white/10`}
+                className={`border-2 border-dashed ${isDragActive ? 'border-primary bg-primary/5' : 'border-border bg-muted/30'} rounded-2xl p-6 md:p-12 text-center transition-all cursor-pointer hover:border-primary/50 hover:bg-accent/30`}
               >
                 <input {...getInputProps()} />
-                <div className="mx-auto w-16 h-16 bg-background rounded-full flex items-center justify-center mb-4 shadow-xl border border-white/5 text-white/50">
+                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4 shadow-sm border border-border text-muted-foreground">
                    <UploadCloud size={24} />
                 </div>
-                <h3 className="text-lg font-medium text-white mb-1">Kéo thả file PDF hoặc DOCX vào đây</h3>
-                <p className="text-sm text-white/40 mb-6">hoặc click để chọn file từ máy tính</p>
-                
-                <Button className="btn-outline">
-                  Chọn File 
+                <h3 className="text-lg font-medium text-foreground mb-1">Kéo thả file PDF hoặc DOCX vào đây</h3>
+                <p className="text-sm text-muted-foreground mb-6">hoặc click để chọn file từ máy tính</p>
+
+                <Button variant="outline">
+                  Chọn File
                 </Button>
-                
-                <div className="mt-8 text-xs text-white/30 uppercase tracking-widest font-semibold flex items-center justify-center gap-4">
+
+                <div className="mt-8 text-xs text-muted-foreground/60 uppercase tracking-widest font-semibold flex items-center justify-center gap-4">
                   <span>PDF, DOCX</span>
-                  <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                  <span className="w-1 h-1 rounded-full bg-border"></span>
                   <span>TỐI ĐA 50MB</span>
                 </div>
               </div>
             ) : (
-              <div className="glass-card p-6 border-primary/30 relative">
-                <button 
+              <div className="rounded-2xl border border-primary/30 bg-card p-6 relative">
+                <button
                   onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                  className="absolute top-4 right-4 text-white/30 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+                  className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-accent transition-colors"
                 >
                   <X size={20} />
                 </button>
-                
+
                 <div className="flex flex-col items-center mb-6">
                   <FileText size={48} className="text-primary mb-4" />
-                  <h3 className="font-semibold text-lg text-white mb-1 truncate max-w-full px-4">{file.name}</h3>
-                  <p className="text-sm text-white/40">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                  <h3 className="font-semibold text-lg text-foreground mb-1 truncate max-w-full px-4">{file.name}</h3>
+                  <p className="text-sm text-muted-foreground">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                 </div>
 
-                <div className="bg-black/20 rounded-xl p-4 border border-white/5 mb-6 flex items-start gap-3">
-                  <div className="mt-0.5 text-blue-400"><Globe size={18} /></div>
+                <div className="bg-muted/40 rounded-xl p-4 border border-border/70 mb-6 flex items-start gap-3">
+                  <div className="mt-0.5 text-blue-500"><Globe size={18} /></div>
                   <div className="flex-1">
                     <label className="flex items-start gap-3 cursor-pointer">
                       <div className="flex h-5 items-center">
-                        <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-black/50 text-primary focus:ring-primary focus:ring-offset-background" />
+                        <input type="checkbox" className="w-4 h-4 rounded border-border bg-background text-primary focus:ring-primary focus:ring-offset-background" />
                       </div>
                       <div className="text-sm">
-                        <span className="font-medium text-white block mb-0.5">Chia sẻ tài liệu vào Thư viện chung</span>
-                        <span className="text-white/40 text-xs block">Tài liệu sẽ được lưu vĩnh viễn không giới hạn 24h và giúp sinh viên khác truy cập được từ tìm kiếm.</span>
+                        <span className="font-medium text-foreground block mb-0.5">Chia sẻ tài liệu vào Thư viện chung</span>
+                        <span className="text-muted-foreground text-xs block">Tài liệu sẽ được lưu vĩnh viễn không giới hạn 24h và giúp sinh viên khác truy cập được từ tìm kiếm.</span>
                       </div>
                     </label>
                   </div>
                 </div>
 
-                <Button onClick={handleUpload} className="w-full btn-primary h-12 text-base">
+                <Button onClick={handleUpload} className="w-full h-12 text-base">
                   <UploadCloud size={20} className="mr-2" /> Tải lên & Bắt đầu phân tích
                 </Button>
               </div>
@@ -217,11 +217,11 @@ function UploadPageContent() {
                   status === 'processing' ? 'Đang phân tích tài liệu...' : 
                   status === 'success' ? 'Hoàn tất!' : 'Xử lý thất bại'}
                </h3>
-               <p className="text-white/40 text-sm mb-8">{file?.name || 'Tài liệu đang xử lý'}</p>
+               <p className="text-muted-foreground text-sm mb-8">{file?.name || 'Tài liệu đang xử lý'}</p>
 
                {(status === 'uploading' || status === 'processing') && (
                  <div className="space-y-2 mb-8">
-                   <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-white/60">
+                   <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                      <span>Tiến độ tổng quát</span>
                      <span>{status === 'uploading' ? Math.floor(uploadProgress * 0.3) : (30 + Math.floor((sseData?.progress || 0) * 0.7))}%</span>
                    </div>
@@ -236,7 +236,7 @@ function UploadPageContent() {
                  </div>
                )}
 
-               <div className="space-y-4 text-sm text-left bg-black/20 rounded-xl p-5 border border-white/5">
+               <div className="space-y-4 text-sm text-left bg-muted/30 rounded-xl p-5 border border-border/50">
                   <PipelineStep 
                     label="Giai đoạn 1: Tiếp nhận và đọc tài liệu" 
                     done={status === 'processing' || status === 'success'} 
@@ -255,7 +255,7 @@ function UploadPageContent() {
                </div>
 
               {(status === 'success' || status === 'error') && (
-                <Button onClick={() => router.push('/library')} className="w-full mt-8 bg-white/5 border-white/10 hover:bg-white/20">
+                <Button onClick={() => router.push('/library')} variant="outline" className="w-full mt-8">
                   Quay lại Thư viện
                 </Button>
               )}
@@ -276,14 +276,14 @@ export default function UploadPage() {
 
 function PipelineStep({ label, done, loading }: { label: string, done: boolean, loading: boolean }) {
   return (
-    <div className={`flex items-center gap-3 transition-colors ${done ? 'text-emerald-400' : loading ? 'text-white' : 'text-white/20'}`}>
+    <div className={`flex items-center gap-3 transition-colors ${done ? 'text-emerald-600 dark:text-emerald-400' : loading ? 'text-foreground' : 'text-muted-foreground/40'}`}>
       <div className="w-5 h-5 flex flex-shrink-0 items-center justify-center">
         {done ? (
           <CheckCircle2 size={16} />
         ) : loading ? (
           <Loader2 size={16} className="animate-spin text-primary" />
         ) : (
-          <div className="w-1.5 h-1.5 rounded-full bg-white/20"></div>
+          <div className="w-1.5 h-1.5 rounded-full bg-border"></div>
         )}
       </div>
       <span>{label}</span>

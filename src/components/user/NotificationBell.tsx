@@ -82,12 +82,12 @@ export function NotificationBell() {
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "relative p-2.5 rounded-xl transition-all duration-300",
-          isOpen ? "bg-white/10 text-white" : "text-white/40 hover:text-white hover:bg-white/5"
+          isOpen ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"
         )}
       >
         <Bell size={20} className={cn(unreadCount > 0 && "animate-pulse")} />
         {unreadCount > 0 && (
-          <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 text-[9px] font-black text-white rounded-full flex items-center justify-center border-2 border-[#0A0B10] shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+          <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 text-[9px] font-black text-white rounded-full flex items-center justify-center border-2 border-background">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -106,19 +106,19 @@ export function NotificationBell() {
               damping: 35,
               opacity: { duration: 0.2 } 
             }}
-            className="absolute right-0 mt-3 w-80 md:w-96 bg-[#0F111A]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_30px_70px_rgba(0,0,0,0.6)] overflow-hidden z-[100] flex flex-col max-h-[min(520px,80vh)] pointer-events-auto"
+            className="absolute right-0 mt-3 w-80 md:w-96 bg-popover/95 backdrop-blur-2xl border border-border rounded-2xl shadow-2xl overflow-hidden z-[100] flex flex-col max-h-[min(520px,80vh)] pointer-events-auto"
           >
             {/* Header */}
-            <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02] shrink-0">
+            <div className="p-4 border-b border-border/50 flex items-center justify-between bg-muted/20 shrink-0">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Thông báo</h3>
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Thông báo</h3>
                 <Sparkles size={12} className="text-primary animate-pulse" />
               </div>
               <div className="flex items-center gap-4">
                   {notifications.length > 0 && (
                     <button 
                         onClick={handleClearAll}
-                        className="text-[10px] font-bold text-white/30 hover:text-red-400 transition-colors uppercase tracking-tight flex items-center gap-1"
+                        className="text-[10px] font-bold text-muted-foreground/50 hover:text-red-500 transition-colors uppercase tracking-tight flex items-center gap-1"
                         title="Xóa tất cả"
                     >
                         <Trash2 size={10} /> Xóa hết
@@ -140,7 +140,7 @@ export function NotificationBell() {
               <div className="flex flex-col pb-4">
                 <AnimatePresence initial={false}>
                     {notifications.length === 0 ? (
-                    <div className="py-20 flex flex-col items-center justify-center text-zinc-600 italic">
+                    <div className="py-20 flex flex-col items-center justify-center text-muted-foreground italic">
                         <Bell size={32} className="opacity-10 mb-2" />
                         <p className="text-xs">Chưa có thông báo nào</p>
                     </div>
@@ -159,8 +159,8 @@ export function NotificationBell() {
             </ScrollArea>
             
             {/* Footer */}
-            <div className="p-3 bg-[#0F111A] border-t border-white/10 text-center shrink-0 relative z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
-                <p className="text-[10px] text-white/20 font-medium uppercase tracking-[0.2em]">Mindex Neural Notifications</p>
+            <div className="p-3 bg-card border-t border-border text-center shrink-0 relative z-20">
+                <p className="text-[10px] text-muted-foreground/40 font-medium uppercase tracking-[0.2em]">Mindex Neural Notifications</p>
             </div>
           </motion.div>
         )}
@@ -182,7 +182,7 @@ function NotificationItem({ item, onRead, onDelete }: { item: Notification; onRe
       transition={{ duration: 0.2 }}
       onClick={onRead}
       className={cn(
-        "p-4 border-b border-white/[0.03] last:border-0 cursor-pointer transition-all hover:bg-white/[0.03] group relative",
+        "p-4 border-b border-border/30 last:border-0 cursor-pointer transition-all hover:bg-accent/30 group relative",
         !item.read_at && "bg-primary/5"
       )}
     >
@@ -191,7 +191,7 @@ function NotificationItem({ item, onRead, onDelete }: { item: Notification; onRe
           "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-transform group-hover:scale-110",
           isExpired ? "bg-amber-500/10 border-amber-500/20 text-amber-500" : 
           isDeleted ? "bg-red-500/10 border-red-500/20 text-red-500" :
-          "bg-white/5 border-white/10 text-white/40"
+          "bg-muted border-border text-muted-foreground/60"
         )}>
           {isExpired ? <Clock size={18} /> : 
            isDeleted ? <Trash2 size={18} /> : 
@@ -202,17 +202,17 @@ function NotificationItem({ item, onRead, onDelete }: { item: Notification; onRe
           <div className="flex justify-between items-start mb-1">
             <h4 className={cn(
               "text-[13px] font-bold truncate pr-2",
-              !item.read_at ? "text-white" : "text-white/60"
+              !item.read_at ? "text-foreground" : "text-muted-foreground"
             )}>
               {item.title}
             </h4>
-            <span className="text-[9px] text-white/20 whitespace-nowrap pt-0.5">
+            <span className="text-[9px] text-muted-foreground/40 whitespace-nowrap pt-0.5">
               {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: vi })}
             </span>
           </div>
           <p className={cn(
             "text-[11px] leading-relaxed line-clamp-2",
-            !item.read_at ? "text-white/70" : "text-white/40"
+            !item.read_at ? "text-foreground/70" : "text-muted-foreground/60"
           )}>
             {item.message}
           </p>

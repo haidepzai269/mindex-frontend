@@ -40,7 +40,7 @@ function DifficultyBadge({ d }: { d: string }) {
     <span
       className={cn(
         "px-2 py-0.5 rounded-full text-[10px] font-black border uppercase tracking-wider",
-        cfg[d] || "bg-zinc-700/30 text-zinc-400",
+        cfg[d] || "bg-muted/30 text-muted-foreground",
       )}
     >
       {d}
@@ -196,18 +196,18 @@ export default function FlashcardsPage({
 
   if (setsLoading)
     return (
-      <div className="flex h-screen items-center justify-center bg-[#050505]">
+      <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 size={32} className="text-primary animate-spin" />
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center px-4 py-8">
+    <div className="min-h-screen bg-background text-foreground flex flex-col items-center px-4 py-8">
       {/* Header */}
       <div className="w-full max-w-2xl flex items-center justify-between mb-8">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-sm font-bold"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-bold"
         >
           <ArrowLeft size={18} /> Quay lại
         </button>
@@ -215,7 +215,7 @@ export default function FlashcardsPage({
           <button
             onClick={handleExportCSV}
             disabled={!latestSet || exporting}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-600 text-[12px] font-bold transition-all disabled:opacity-30"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 text-[12px] font-bold transition-all disabled:opacity-30"
           >
             {exporting ? (
               <Loader2 size={12} className="animate-spin" />
@@ -245,16 +245,16 @@ export default function FlashcardsPage({
           <div className="w-20 h-20 rounded-[32px] bg-primary/10 border border-primary/20 flex items-center justify-center mb-6 rotate-6">
             <BookOpen size={32} className="text-primary" />
           </div>
-          <h2 className="text-2xl font-black text-white mb-3">
+          <h2 className="text-2xl font-black text-foreground mb-3">
             Chưa có Flashcard
           </h2>
-          <p className="text-zinc-500 text-sm mb-10 max-w-sm">
+          <p className="text-muted-foreground text-sm mb-10 max-w-sm">
             AI sẽ tự động tạo flashcard từ nội dung tài liệu này (tối đa 2
             bộ/tài liệu).
           </p>
 
           <div className="w-full max-w-xs mb-10">
-            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-3 block text-center">
+            <label className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest mb-3 block text-center">
               Chọn số lượng thẻ mong muốn
             </label>
             <div className="flex gap-2">
@@ -266,7 +266,7 @@ export default function FlashcardsPage({
                     "flex-1 py-2.5 rounded-xl border font-black text-xs transition-all",
                     numCards === n
                       ? "bg-primary/20 border-primary/40 text-primary"
-                      : "bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-white",
+                      : "bg-muted/40 border-border text-muted-foreground hover:border-primary/30 hover:text-foreground",
                   )}
                 >
                   {n}
@@ -287,7 +287,7 @@ export default function FlashcardsPage({
             )}
             {generating ? "Đang tạo flashcard..." : "Tạo Flashcard AI"}
           </button>
-          <p className="text-center text-[11px] text-zinc-700 mt-4 italic">
+          <p className="text-center text-[11px] text-muted-foreground/40 mt-4 italic">
             Mỗi tài liệu được tạo tối đa 2 bộ thẻ · Hỗ trợ cache Redis
           </p>
         </div>
@@ -299,14 +299,14 @@ export default function FlashcardsPage({
           {/* Progress Bar */}
           <div className="w-full max-w-2xl mb-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[12px] font-bold text-zinc-500">
+              <span className="text-[12px] font-bold text-muted-foreground">
                 {currentIdx + 1} / {cards.length}
               </span>
               <span className="text-[12px] font-bold text-emerald-400">
                 Đã nhớ: {remembered}/{cards.length}
               </span>
             </div>
-            <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full transition-all duration-500"
                 style={{ width: `${((currentIdx + 1) / cards.length) * 100}%` }}
@@ -323,7 +323,7 @@ export default function FlashcardsPage({
                       ? "bg-primary"
                       : card.remembered
                         ? "bg-emerald-500/60"
-                        : "bg-zinc-800",
+                        : "bg-muted/60",
                   )}
                 />
               ))}
@@ -346,21 +346,21 @@ export default function FlashcardsPage({
             >
               {/* Front */}
               <div
-                className="absolute inset-0 rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-xl p-10 flex flex-col items-center justify-center"
+                className="absolute inset-0 rounded-[32px] border border-border bg-card/80 backdrop-blur-xl p-10 flex flex-col items-center justify-center"
                 style={{ backfaceVisibility: "hidden" }}
               >
                 <div className="mb-4 flex items-center gap-2">
                   <DifficultyBadge d={currentCard.difficulty} />
                   {currentCard.topic && (
-                    <span className="text-[10px] text-zinc-600 font-medium">
+                    <span className="text-[10px] text-muted-foreground/50 font-medium">
                       {currentCard.topic}
                     </span>
                   )}
                 </div>
-                <p className="text-xl font-black text-white text-center leading-relaxed">
+                <p className="text-xl font-black text-foreground text-center leading-relaxed">
                   {currentCard.front}
                 </p>
-                <p className="text-[11px] text-zinc-600 mt-6 font-bold">
+                <p className="text-[11px] text-muted-foreground/60 mt-6 font-bold">
                   Nhấn Space hoặc click để lật thẻ
                 </p>
               </div>
@@ -373,7 +373,7 @@ export default function FlashcardsPage({
                   transform: "rotateY(180deg)",
                 }}
               >
-                <p className="text-[15px] text-zinc-200 text-center leading-relaxed whitespace-pre-line">
+                <p className="text-[15px] text-foreground text-center leading-relaxed whitespace-pre-line">
                   {currentCard.back}
                 </p>
               </div>
@@ -384,7 +384,7 @@ export default function FlashcardsPage({
           <div className="flex items-center gap-4 mt-8">
             <button
               onClick={prevCard}
-              className="p-3 rounded-2xl border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-600 transition-all"
+              className="p-3 rounded-2xl border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
             >
               <ChevronLeft size={20} />
             </button>
@@ -409,7 +409,7 @@ export default function FlashcardsPage({
             {!isFlipped && (
               <button
                 onClick={() => setIsFlipped(true)}
-                className="px-8 py-3 rounded-2xl bg-zinc-800 border border-zinc-700 text-zinc-300 hover:bg-zinc-700 font-black text-sm transition-all"
+                className="px-8 py-3 rounded-2xl bg-secondary border border-border text-secondary-foreground hover:bg-secondary/80 font-black text-sm transition-all"
               >
                 Lật thẻ (Space)
               </button>
@@ -417,7 +417,7 @@ export default function FlashcardsPage({
 
             <button
               onClick={nextCard}
-              className="p-3 rounded-2xl border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-600 transition-all"
+              className="p-3 rounded-2xl border border-border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
             >
               <ChevronRight size={20} />
             </button>
@@ -442,7 +442,7 @@ export default function FlashcardsPage({
                     setCurrentIdx(0);
                   }, 500);
                 }}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl border border-zinc-800 text-zinc-500 hover:text-white text-sm font-bold transition-all"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground text-sm font-bold transition-all"
               >
                 <RotateCcw size={14} /> Ôn lại từ đầu
               </button>
@@ -450,7 +450,7 @@ export default function FlashcardsPage({
           )}
 
           {/* Keyboard Hint */}
-          <p className="mt-6 text-[11px] text-zinc-700 text-center">
+          <p className="mt-6 text-[11px] text-muted-foreground/40 text-center">
             Space = lật · ← → = chuyển card · (sau khi lật) ✓ = Nhớ rồi
           </p>
         </>

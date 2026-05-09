@@ -23,7 +23,6 @@ import useSWR from "swr";
 import { cn } from "@/lib/utils";
 import { fetcher } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useLoadingStore } from "@/store/useLoadingStore";
 import { PremiumConfirmDialog } from "@/components/ui/PremiumConfirmDialog";
 import { UpgradeNotification } from "@/components/user/UpgradeNotification";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -83,16 +82,6 @@ export default function UserLayout({ children }: { children: ReactNode }) {
   const { data: docsData } = useSWR<{ success: boolean; data: any[] }>(user ? "/documents" : null, fetcher as any);
   const recentDocs = docsData?.data?.slice(0, 10) || [];
 
-  const { startLoading, stopLoading } = useLoadingStore();
-
-  useEffect(() => {
-    startLoading();
-    const timer = setTimeout(() => stopLoading(), 700);
-    return () => {
-      clearTimeout(timer);
-      stopLoading();
-    };
-  }, [pathname, startLoading, stopLoading]);
 
   const pinnedCount = quota?.pinnedCount ?? quota?.pinnedDocs ?? 0;
   const maxPins = quota?.maxPins ?? quota?.pinnedDocsLimit ?? 3;
@@ -105,9 +94,19 @@ export default function UserLayout({ children }: { children: ReactNode }) {
           initial={false}
           animate={{ width: isCollapsed ? 80 : 256 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="relative z-[60] hidden h-full flex-shrink-0 flex-col border-r border-border/70 bg-sidebar/95 text-sidebar-foreground backdrop-blur md:flex"
+          className={cn(
+            "relative z-[60] hidden h-full flex-shrink-0 flex-col border-r bg-sidebar/95 text-sidebar-foreground backdrop-blur md:flex",
+            user?.tier === "PRO" ? "border-amber-400/20" : user?.tier === "ULTRA" ? "border-rose-400/20" : "border-border/70"
+          )}
         >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.12),transparent_40%)] dark:bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_40%)]" />
+          <div className={cn(
+            "pointer-events-none absolute inset-0",
+            user?.tier === "PRO"
+              ? "bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.08),transparent_40%),radial-gradient(ellipse_at_bottom,rgba(251,191,36,0.04),transparent_60%)]"
+              : user?.tier === "ULTRA"
+              ? "bg-[radial-gradient(circle_at_top_right,rgba(244,63,94,0.1),transparent_40%),radial-gradient(ellipse_at_bottom,rgba(244,63,94,0.05),transparent_60%)]"
+              : "bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.12),transparent_40%)] dark:bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_40%)]"
+          )} />
 
           <button
             onClick={toggleSidebar}
@@ -123,7 +122,14 @@ export default function UserLayout({ children }: { children: ReactNode }) {
               isCollapsed ? "justify-center px-0" : "gap-3 px-6"
             )}
           >
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-primary">
+            <div className={cn(
+              "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border transition-all",
+              user?.tier === "PRO"
+                ? "border-amber-400/30 bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
+                : user?.tier === "ULTRA"
+                ? "border-rose-400/30 bg-rose-500/15 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.4)]"
+                : "border-primary/15 bg-primary/10 text-primary"
+            )}>
               <BookOpen className="h-5 w-5" />
             </div>
 
@@ -132,18 +138,27 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                 <motion.span
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="overflow-hidden whitespace-nowrap text-2xl font-bold tracking-tighter text-foreground"
+                  className={cn(
+                    "overflow-hidden whitespace-nowrap text-2xl font-bold tracking-tighter",
+                    user?.tier === "PRO"
+                      ? "animate-gold-shimmer bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 bg-clip-text text-transparent"
+                      : user?.tier === "ULTRA"
+                      ? "animate-gold-shimmer bg-gradient-to-r from-rose-500 via-pink-400 to-rose-500 bg-clip-text text-transparent"
+                      : "text-foreground"
+                  )}
                 >
                   Mindex
                 </motion.span>
                 {user?.tier === "PRO" && (
-                  <span className="rounded border border-amber-400/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-black uppercase text-amber-600 dark:text-amber-400">
+                  <span className="relative overflow-hidden rounded border border-amber-400/50 bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-black uppercase text-amber-600 shadow-[0_0_8px_rgba(251,191,36,0.4)] dark:text-amber-400">
                     Pro
+                    <span className="absolute inset-0 -translate-x-full animate-[shimmer_2.5s_ease_infinite] bg-gradient-to-r from-transparent via-amber-300/50 to-transparent" />
                   </span>
                 )}
                 {user?.tier === "ULTRA" && (
-                  <span className="rounded border border-rose-400/40 bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-black uppercase text-rose-600 dark:text-rose-400">
-                    Ultra
+                  <span className="relative overflow-hidden rounded border border-rose-400/50 bg-gradient-to-r from-rose-500/20 via-pink-500/15 to-rose-500/20 px-2 py-0.5 text-[10px] font-black uppercase shadow-[0_0_14px_rgba(244,63,94,0.5)]">
+                    <span className="animate-gold-shimmer bg-gradient-to-r from-rose-400 via-pink-300 to-rose-400 bg-clip-text text-transparent">✦ Ultra</span>
+                    <span className="absolute inset-0 -translate-x-full animate-[shimmer_1.8s_ease_infinite] bg-gradient-to-r from-transparent via-pink-300/30 to-transparent" />
                   </span>
                 )}
               </>
@@ -219,46 +234,80 @@ export default function UserLayout({ children }: { children: ReactNode }) {
 
             <div
               className={cn(
-                "group relative flex items-center overflow-hidden transition-all",
-                isCollapsed ? "mx-auto h-10 w-10 justify-center rounded-full p-0" : "gap-3 rounded-xl border p-2",
+                "group relative flex items-center transition-all",
+                isCollapsed
+                  ? "mx-auto h-10 w-10 justify-center rounded-full p-0"
+                  : "gap-3 rounded-xl border p-2 overflow-hidden",
                 !isCollapsed &&
                   (user?.tier === "PRO"
-                    ? "border-amber-400/30 bg-amber-500/10"
+                    ? "border-amber-400/40 bg-amber-500/10 shadow-[0_0_20px_rgba(251,191,36,0.12),inset_0_0_20px_rgba(251,191,36,0.05)]"
                     : user?.tier === "ULTRA"
-                      ? "border-rose-400/30 bg-rose-500/10"
-                      : "border-border/70 bg-background/70")
+                    ? "border-rose-400/40 bg-gradient-to-br from-rose-500/8 via-pink-500/5 to-rose-500/8 shadow-[0_0_25px_rgba(244,63,94,0.18),inset_0_0_20px_rgba(244,63,94,0.07)]"
+                    : "border-border/70 bg-background/70")
               )}
             >
-              <Tooltip>
-                <TooltipTrigger>
-                  <Avatar
-                    className={cn(
-                      "relative z-10 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border transition-transform group-hover:scale-105",
-                      user?.tier === "PRO"
-                        ? "border-amber-400/50"
-                        : user?.tier === "ULTRA"
-                          ? "border-rose-400/50"
-                          : "border-border"
-                    )}
-                  >
-                    {user?.avatar_url ? (
-                      <img src={user.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
-                    ) : (
-                      <AvatarFallback className="bg-primary/15 font-bold text-primary">
-                        {user?.name?.substring(0, 2).toUpperCase() || "SV"}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
-                </TooltipTrigger>
-                {isCollapsed && (
-                  <TooltipContent side="right">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="font-bold">{user?.name || "Người dùng Mindex"}</span>
-                      <span className="text-[10px] opacity-60">Nhấn để đăng xuất</span>
-                    </div>
-                  </TooltipContent>
+              {/* Shimmer sweep PRO */}
+              {!isCollapsed && user?.tier === "PRO" && (
+                <div className="pointer-events-none absolute inset-0 -translate-x-full animate-[shimmer_4s_ease_infinite] bg-gradient-to-r from-transparent via-amber-300/12 to-transparent" />
+              )}
+              {/* Shimmer sweep ULTRA */}
+              {!isCollapsed && user?.tier === "ULTRA" && (
+                <div className="pointer-events-none absolute inset-0 -translate-x-full animate-[shimmer_3s_ease_infinite] bg-gradient-to-r from-transparent via-rose-300/15 to-transparent" />
+              )}
+
+              {/* Avatar with spinning ring for collapsed PRO/ULTRA */}
+              <div className="relative shrink-0">
+                {isCollapsed && user?.tier === "PRO" && (
+                  <div
+                    className="pointer-events-none absolute inset-[-3px] animate-ring-spin rounded-full opacity-90"
+                    style={{ background: "conic-gradient(transparent 0deg, rgba(251,191,36,0.9) 90deg, transparent 200deg)" }}
+                  />
                 )}
-              </Tooltip>
+                {isCollapsed && user?.tier === "ULTRA" && (
+                  <div
+                    className="pointer-events-none absolute inset-[-3px] animate-ring-spin rounded-full"
+                    style={{ background: "conic-gradient(transparent 0deg, rgba(244,63,94,1) 70deg, rgba(236,72,153,0.6) 130deg, transparent 210deg)" }}
+                  />
+                )}
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Avatar
+                      className={cn(
+                        "relative z-10 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border transition-transform group-hover:scale-105",
+                        user?.tier === "PRO"
+                          ? "border-amber-400/60 shadow-[0_0_12px_rgba(251,191,36,0.4)]"
+                          : user?.tier === "ULTRA"
+                          ? "border-rose-400/60 shadow-[0_0_16px_rgba(244,63,94,0.5)]"
+                          : "border-border"
+                      )}
+                    >
+                      {user?.avatar_url ? (
+                        <img src={user.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                      ) : (
+                        <AvatarFallback className="bg-primary/15 font-bold text-primary">
+                          {user?.name?.substring(0, 2).toUpperCase() || "SV"}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                  </TooltipTrigger>
+                  {isCollapsed && (
+                    <TooltipContent side="right">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold">{user?.name || "Người dùng Mindex"}</span>
+                          {user?.tier === "PRO" && (
+                            <span className="rounded bg-amber-500/20 px-1 py-0.5 text-[9px] font-black uppercase text-amber-500">PRO</span>
+                          )}
+                          {user?.tier === "ULTRA" && (
+                            <span className="rounded bg-rose-500/20 px-1 py-0.5 text-[9px] font-black uppercase text-rose-500">✦ ULTRA</span>
+                          )}
+                        </div>
+                        <span className="text-[10px] opacity-60">Nhấn để đăng xuất</span>
+                      </div>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </div>
 
               {!isCollapsed && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 min-w-0 flex-1">

@@ -70,7 +70,7 @@ export function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && reset()}>
-      <DialogContent className="sm:max-w-[460px] bg-[#0A0B10] border border-white/10 text-white shadow-2xl p-0 overflow-hidden rounded-[24px]">
+      <DialogContent className="sm:max-w-[460px] bg-card border border-border text-foreground shadow-2xl p-0 overflow-hidden rounded-[24px]">
         <div className="relative p-8 flex flex-col items-center text-center">
           <AnimatePresence mode="wait">
             {step === 1 ? (
@@ -81,41 +81,41 @@ export function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProps) {
                 exit={{ opacity: 0, y: -10 }}
                 className="w-full space-y-6 flex flex-col items-center"
               >
-                <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-2 shadow-inner">
-                  <Users className="w-8 h-8 text-white/80" />
+                <div className="w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center mb-2">
+                  <Users className="w-8 h-8 text-foreground/60" />
                 </div>
-                
+
                 <div className="space-y-2">
-                  <DialogTitle className="text-2xl font-black tracking-tight text-white">Tạo phòng học mới</DialogTitle>
-                  <DialogDescription className="text-white/40 font-medium">
+                  <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Tạo phòng học mới</DialogTitle>
+                  <DialogDescription className="text-muted-foreground font-medium">
                     Cùng học tập và chia sẻ tài liệu với bạn bè qua Mindex AI.
                   </DialogDescription>
                 </div>
 
                 <div className="w-full space-y-4 py-2">
                   <div className="space-y-2 text-left">
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-white/30 font-bold ml-1">Tên phòng học</label>
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60 font-bold ml-1">Tên phòng học</label>
                     <Input
                       placeholder="Ví dụ: Ôn thi Giải tích 1..."
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="h-12 bg-white/5 border-white/10 focus:border-white/20 focus:ring-0 rounded-xl text-sm px-4 text-white transition-all"
+                      className="h-12 bg-muted/40 border-border focus:border-primary/30 focus:ring-0 rounded-xl text-sm px-4 text-foreground transition-all"
                       autoFocus
                     />
                   </div>
 
-                  <div className="flex items-start gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-2xl text-left">
-                    <ShieldCheck className="w-4 h-4 text-white/20 mt-0.5 shrink-0" />
-                    <p className="text-[10px] text-white/30 leading-relaxed italic">
+                  <div className="flex items-start gap-3 p-4 bg-muted/20 border border-border/50 rounded-2xl text-left">
+                    <ShieldCheck className="w-4 h-4 text-muted-foreground/40 mt-0.5 shrink-0" />
+                    <p className="text-[10px] text-muted-foreground/60 leading-relaxed italic">
                       Phòng chat được bảo mật. Chỉ những người có mã mời mới có thể tham gia.
                     </p>
                   </div>
                 </div>
 
-                <Button 
-                  onClick={handleCreate} 
+                <Button
+                  onClick={handleCreate}
                   disabled={isLoading}
-                  className="w-full h-12 bg-white text-black hover:bg-zinc-200 rounded-xl font-black text-xs uppercase tracking-widest transition-all"
+                  className="w-full h-12 rounded-xl font-black text-xs uppercase tracking-widest transition-all"
                 >
                   {isLoading ? <Loader2 className="animate-spin text-black" /> : "Tạo phòng ngay"}
                 </Button>
@@ -132,35 +132,33 @@ export function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProps) {
                 </div>
                 
                 <div className="space-y-1">
-                  <h3 className="text-2xl font-black text-white">Phòng đã sẵn sàng!</h3>
-                  <p className="text-sm text-white/40 font-medium">Gửi mã hoặc link này cho bạn bè</p>
+                  <h3 className="text-2xl font-black text-foreground">Phòng đã sẵn sàng!</h3>
+                  <p className="text-sm text-muted-foreground font-medium">Gửi mã hoặc link này cho bạn bè</p>
                 </div>
 
                 <div className="w-full space-y-5">
-                  {/* Mã mời Section */}
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-white/30 font-black block">Mã mời</label>
-                    <div 
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60 font-black block">Mã mời</label>
+                    <div
                       onClick={() => copyToClipboard(createdRoom.invite_code)}
-                      className="group cursor-pointer p-5 bg-white/10 border border-white/10 rounded-2xl flex items-center justify-center gap-4 transition-all hover:bg-white/15"
+                      className="group cursor-pointer p-5 bg-muted/30 border border-border rounded-2xl flex items-center justify-center gap-4 transition-all hover:bg-accent/40"
                     >
-                      <span className="text-3xl font-black tracking-[0.2em] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+                      <span className="text-3xl font-black tracking-[0.2em] text-foreground">
                         {createdRoom.invite_code}
                       </span>
-                      <Copy size={16} className="text-white/40 group-hover:text-white transition-colors" />
+                      <Copy size={16} className="text-muted-foreground/40 group-hover:text-foreground transition-colors" />
                     </div>
                   </div>
 
-                  {/* Link mời Section */}
                   <div className="space-y-2">
-                    <label className="text-[10px] uppercase tracking-[0.2em] text-white/30 font-black block">Link tham gia nhanh</label>
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60 font-black block">Link tham gia nhanh</label>
                     <div className="flex gap-2">
-                      <div className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 flex items-center text-[11px] text-white font-medium truncate h-12 italic">
+                      <div className="flex-1 bg-muted/20 border border-border rounded-xl px-4 flex items-center text-[11px] text-foreground font-medium truncate h-12 italic">
                         {fullInviteLink}
                       </div>
-                      <Button 
-                        size="icon" 
-                        className="h-12 w-12 rounded-xl bg-white text-black hover:bg-zinc-200 transition-all shrink-0"
+                      <Button
+                        size="icon"
+                        className="h-12 w-12 rounded-xl transition-all shrink-0"
                         onClick={() => copyToClipboard(fullInviteLink)}
                       >
                         {copied ? <Check size={18} /> : <Copy size={18} />}
@@ -170,8 +168,8 @@ export function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProps) {
                 </div>
 
                 <div className="w-full pt-2">
-                  <Button 
-                    className="w-full h-12 bg-white text-black hover:bg-zinc-200 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-white/10"
+                  <Button
+                    className="w-full h-12 rounded-xl font-black text-xs uppercase tracking-widest"
                     onClick={() => {
                       onClose();
                       router.push(`/rooms/${createdRoom.id}`);
@@ -179,7 +177,7 @@ export function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProps) {
                   >
                     Vào phòng học ngay
                   </Button>
-                  <p className="mt-4 text-[10px] text-white/20 italic">
+                  <p className="mt-4 text-[10px] text-muted-foreground/40 italic">
                     * Tài liệu chia sẻ sẽ hiển thị cho tất cả thành viên.
                   </p>
                 </div>

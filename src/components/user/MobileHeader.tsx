@@ -18,12 +18,12 @@ export function MobileHeader() {
   if (pathname.startsWith("/doc/")) return null;
 
   return (
-    <header className="md:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-white/5 px-4 h-14 flex items-center justify-between">
+    <header className="md:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 h-14 flex items-center justify-between">
       <div className="flex items-center gap-2">
          <div className="w-8 h-8 rounded-lg bg-secondary border border-border flex items-center justify-center">
             <BookOpen className="w-4 h-4 text-muted-foreground" />
          </div>
-         <span className="font-bold text-lg tracking-tight text-white/90">Mindex</span>
+         <span className="font-bold text-lg tracking-tight text-foreground">Mindex</span>
       </div>
 
       <div className="flex items-center gap-3">
@@ -32,7 +32,7 @@ export function MobileHeader() {
          <Sheet>
             <SheetTrigger className="relative outline-none focus:outline-none">
                  <Avatar className={cn("w-8 h-8 border shadow-lg transition-transform hover:scale-105 overflow-hidden", 
-                   user?.tier === "PRO" ? "border-yellow-400" : user?.tier === "ULTRA" ? "border-rose-400" : "border-white/20"
+                   user?.tier === "PRO" ? "border-yellow-400" : user?.tier === "ULTRA" ? "border-rose-400" : "border-border"
                  )}>
                    {user?.avatar_url ? (
                      <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover rounded-full" />
@@ -47,17 +47,17 @@ export function MobileHeader() {
                  )}
             </SheetTrigger>
             
-            <SheetContent side="right" className="w-[300px] bg-[#0A0B10]/95 backdrop-blur-2xl border-white/5 p-6 sm:w-[350px]">
+            <SheetContent side="right" className="w-[300px] bg-card/95 backdrop-blur-2xl border-border p-6 sm:w-[350px]">
                <SheetHeader className="mb-6 mt-4">
-                 <SheetTitle className="text-left text-white font-bold">Tài khoản</SheetTitle>
+                 <SheetTitle className="text-left text-foreground font-bold">Tài khoản</SheetTitle>
                </SheetHeader>
                
                <div className="flex flex-col gap-6">
                  {/* User Info */}
                  <div className="flex items-center gap-4">
                    <Avatar className={cn("w-14 h-14 border-2 shadow-2xl overflow-hidden", 
-                     user?.tier === "PRO" ? "border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.3)]" : 
-                     user?.tier === "ULTRA" ? "border-rose-400 shadow-[0_0_15px_rgba(225,29,72,0.3)]" : "border-white/20"
+                     user?.tier === "PRO" ? "border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.3)]" :
+                     user?.tier === "ULTRA" ? "border-rose-400 shadow-[0_0_15px_rgba(225,29,72,0.3)]" : "border-border"
                    )}>
                      {user?.avatar_url ? (
                        <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
@@ -69,26 +69,26 @@ export function MobileHeader() {
                    </Avatar>
                    <div className="flex flex-col flex-1 min-w-0">
                      <div className="flex items-center gap-2">
-                       <span className="font-bold text-white truncate text-lg">{user?.name || "Người dùng"}</span>
+                       <span className="font-bold text-foreground truncate text-lg">{user?.name || "Người dùng"}</span>
                        {user?.tier === "PRO" && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-500 border border-yellow-500/50 uppercase">Pro</span>}
                        {user?.tier === "ULTRA" && <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-500 border border-rose-500/60 uppercase">Ultra</span>}
                      </div>
-                     <span className="text-xs text-white/40 truncate">{user?.email || "Không rõ email"}</span>
+                     <span className="text-xs text-muted-foreground truncate">{user?.email || "Không rõ email"}</span>
                    </div>
                  </div>
 
-                 <Separator className="bg-white/5" />
+                 <Separator className="bg-border/50" />
 
                  {/* Quota */}
                  <div className="space-y-4">
-                   <h4 className="text-sm font-semibold text-white/80">Hạn mức của bạn</h4>
-                   
-                   <div className="space-y-2 bg-white/5 p-4 rounded-xl border border-white/5">
-                     <div className="flex justify-between text-xs font-medium text-white/60">
-                       <span className="flex items-center gap-1.5 text-white/80"><FileText size={14} className="text-amber-500" /> Tài liệu đã ghim</span>
-                       <span className="text-white font-bold">{quota?.pinnedCount ?? quota?.pinnedDocs ?? 0} <span className="text-white/40 font-normal">/ {quota?.maxPins ?? quota?.pinnedDocsLimit ?? 3}</span></span>
+                   <h4 className="text-sm font-semibold text-foreground">Hạn mức của bạn</h4>
+
+                   <div className="space-y-2 bg-muted/30 p-4 rounded-xl border border-border">
+                     <div className="flex justify-between text-xs font-medium text-muted-foreground">
+                       <span className="flex items-center gap-1.5 text-foreground/80"><FileText size={14} className="text-amber-500" /> Tài liệu đã ghim</span>
+                       <span className="text-foreground font-bold">{quota?.pinnedCount ?? quota?.pinnedDocs ?? 0} <span className="text-muted-foreground font-normal">/ {quota?.maxPins ?? quota?.pinnedDocsLimit ?? 3}</span></span>
                      </div>
-                     <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden shadow-inner">
+                     <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                        <div 
                          className={cn(
                            "h-full rounded-full transition-all duration-1000",

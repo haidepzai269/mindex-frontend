@@ -420,6 +420,19 @@ function DocCard({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [isIconHovered, setIsIconHovered] = useState(false);
+  const [localIsPublic, setLocalIsPublic] = useState(isPublic ?? false);
+
+  // Sync local state khi SWR data thay đổi (vd: refresh trang)
+  useEffect(() => {
+    setLocalIsPublic(isPublic ?? false);
+  }, [isPublic]);
+
+  const handleShareSuccess = () => {
+    // Cập nhật UI ngay lập tức qua local state — không phụ thuộc vào SWR re-fetch
+    setLocalIsPublic((prev) => !prev);
+    // Re-fetch sau 800ms để sync với server (tránh race condition với backend)
+    setTimeout(() => onMutate(), 800);
+  };
 
   const isReady = status === "ready";
   const isProcessing = status === "processing" || status === "queued";
@@ -487,14 +500,14 @@ function DocCard({
       }}
       className={cn(
         "rounded-md p-1.5 transition-all",
-        isPublic
+        localIsPublic
           ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
           : "text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400",
         className
       )}
-      title={isPublic ? "Đang chia sẻ - Nhấn để rút" : "Chia sẻ vào cộng đồng"}
+      title={localIsPublic ? "Đang chia sẻ - Nhấn để rút" : "Chia sẻ vào cộng đồng"}
     >
-      {isPublic ? <Globe size={size} /> : <GlobeLock size={size} />}
+      {localIsPublic ? <Globe size={size} /> : <GlobeLock size={size} />}
     </button>
   );
 
@@ -520,7 +533,7 @@ function DocCard({
                 {isReady && isExpired && <StateBadge className="border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400">Hết hạn</StateBadge>}
                 {isProcessing && <StateBadge className="border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400">Đang xử lý</StateBadge>}
                 {isError && <StateBadge className="border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400">Lỗi trích xuất</StateBadge>}
-                {isPublic && <StateBadge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"><Globe size={10} /> Công khai</StateBadge>}
+                {localIsPublic && <StateBadge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"><Globe size={10} /> Công khai</StateBadge>}
                 {pinned && <StateBadge className="border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400">★ Ghim</StateBadge>}
               </div>
               <div className="flex items-center gap-3">
@@ -587,7 +600,7 @@ function DocCard({
           </div>
         </div>
 
-        <CommunityShareDialog open={showShareDialog} onOpenChange={setShowShareDialog} docId={id} docTitle={title} isPublic={!!isPublic} onSuccess={onMutate} />
+        <CommunityShareDialog open={showShareDialog} onOpenChange={setShowShareDialog} docId={id} docTitle={title} isPublic={localIsPublic} onSuccess={handleShareSuccess} />
       </>
     );
   }
@@ -643,7 +656,7 @@ function DocCard({
             {isProcessing && <StateBadge className="border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400">Đang xử lý</StateBadge>}
             {isError && <StateBadge className="border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400">Lỗi trích xuất</StateBadge>}
             {pinned && <StateBadge className="border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400">★ Đã ghim</StateBadge>}
-            {isPublic && <StateBadge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"><Globe size={9} /> Công khai</StateBadge>}
+            {localIsPublic && <StateBadge className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"><Globe size={9} /> Công khai</StateBadge>}
           </div>
         </div>
 
@@ -727,11 +740,11 @@ function DocCard({
                   variant="outline"
                   className={cn(
                     "flex h-10 w-full items-center gap-2 border-border bg-background text-foreground hover:bg-accent",
-                    isPublic && "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400"
+                    localIsPublic && "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400"
                   )}
                 >
-                  {isPublic ? <Globe size={14} /> : <GlobeLock size={14} />}
-                  {isPublic ? "Đang chia sẻ cộng đồng" : "Chia sẻ vào cộng đồng"}
+                  {localIsPublic ? <Globe size={14} /> : <GlobeLock size={14} />}
+                  {localIsPublic ? "Đang chia sẻ cộng đồng" : "Chia sẻ vào cộng đồng"}
                 </Button>
               </div>
             )}
@@ -752,7 +765,7 @@ function DocCard({
         </div>
       </div>
 
-      <CommunityShareDialog open={showShareDialog} onOpenChange={setShowShareDialog} docId={id} docTitle={title} isPublic={!!isPublic} onSuccess={onMutate} />
+      <CommunityShareDialog open={showShareDialog} onOpenChange={setShowShareDialog} docId={id} docTitle={title} isPublic={localIsPublic} onSuccess={handleShareSuccess} />
     </>
   );
 }

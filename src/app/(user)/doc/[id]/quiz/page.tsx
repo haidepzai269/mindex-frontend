@@ -112,9 +112,9 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
 
   // ─── Config Screen ────────────────────────────────────────────────────────
   if (state === "config") return (
-    <div className="h-full w-full bg-[#050505] text-white overflow-y-auto">
+    <div className="h-full w-full bg-background text-foreground overflow-y-auto">
       <div className="min-h-full flex flex-col items-center justify-center px-4 py-12">
-      <button onClick={() => router.back()} className="self-start mb-8 flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-sm font-bold">
+      <button onClick={() => router.back()} className="self-start mb-8 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm font-bold">
         <ArrowLeft size={18} /> Quay lại
       </button>
 
@@ -122,17 +122,17 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
         <div className="w-16 h-16 rounded-[24px] bg-primary/10 border border-primary/20 flex items-center justify-center mb-6 rotate-3 mx-auto">
           <Sparkles size={28} className="text-primary" />
         </div>
-        <h1 className="text-3xl font-black text-white text-center mb-2">Tạo Quiz</h1>
-        <p className="text-zinc-500 text-center text-sm mb-10">Cấu hình bài kiểm tra của bạn</p>
+        <h1 className="text-3xl font-black text-foreground text-center mb-2">Tạo Quiz</h1>
+        <p className="text-muted-foreground text-center text-sm mb-10">Cấu hình bài kiểm tra của bạn</p>
 
         {/* Số câu */}
         <div className="mb-6">
-          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest mb-3 block">Số câu hỏi</label>
+          <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-3 block">Số câu hỏi</label>
           <div className="flex gap-2">
             {[5, 10, 20].map((n) => (
               <button key={n} onClick={() => setNumQ(n)}
                 className={cn("flex-1 py-3 rounded-xl border font-black text-sm transition-all",
-                  numQ === n ? "bg-primary/20 border-primary/40 text-primary" : "bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-white"
+                  numQ === n ? "bg-primary/20 border-primary/40 text-primary" : "bg-muted/40 border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
                 )}>{n} câu</button>
             ))}
           </div>
@@ -140,12 +140,12 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
 
         {/* Loại câu */}
         <div className="mb-6">
-          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest mb-3 block">Dạng câu hỏi</label>
+          <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-3 block">Dạng câu hỏi</label>
           <div className="flex gap-2">
             {[{ v: "mcq", l: "Trắc nghiệm" }, { v: "essay", l: "Tự luận" }, { v: "mix", l: "Hỗn hợp" }].map((opt) => (
               <button key={opt.v} onClick={() => setQType(opt.v as any)}
                 className={cn("flex-1 py-3 rounded-xl border font-bold text-[12px] transition-all",
-                  qType === opt.v ? "bg-primary/20 border-primary/40 text-primary" : "bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-white"
+                  qType === opt.v ? "bg-primary/20 border-primary/40 text-primary" : "bg-muted/40 border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
                 )}>{opt.l}</button>
             ))}
           </div>
@@ -153,12 +153,12 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
 
         {/* Độ khó */}
         <div className="mb-10">
-          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest mb-3 block">Độ khó</label>
+          <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-3 block">Độ khó</label>
           <div className="flex gap-2">
             {[{ v: "easy", l: "Dễ" }, { v: "medium", l: "Trung bình" }, { v: "hard", l: "Khó" }, { v: "mix", l: "Tổng hợp" }].map((opt) => (
               <button key={opt.v} onClick={() => setDifficulty(opt.v)}
                 className={cn("flex-1 py-2.5 rounded-xl border font-bold text-[11px] transition-all",
-                  difficulty === opt.v ? "bg-primary/20 border-primary/40 text-primary" : "bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-600 hover:text-white"
+                  difficulty === opt.v ? "bg-primary/20 border-primary/40 text-primary" : "bg-muted/40 border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
                 )}>{opt.l}</button>
             ))}
           </div>
@@ -168,7 +168,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
           className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-black text-sm hover:opacity-90 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2">
           <Sparkles size={16} /> Bắt đầu Quiz AI
         </button>
-        <p className="text-center text-[11px] text-zinc-700 mt-3 italic">Hạn mức: Free (1) · Pro (3) · Ultra (10) lượt/ngày</p>
+        <p className="text-center text-[11px] text-muted-foreground/50 mt-3 italic">Hạn mức: Free (1) · Pro (3) · Ultra (10) lượt/ngày</p>
       </div>
       </div>
     </div>
@@ -176,34 +176,34 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
 
   // ─── Loading Screen ───────────────────────────────────────────────────────
   if (state === "loading") return (
-    <div className="h-full w-full bg-[#050505] flex flex-col items-center justify-center gap-4">
+    <div className="h-full w-full bg-background flex flex-col items-center justify-center gap-4">
       <Loader2 size={40} className="text-primary animate-spin" />
-      <p className="text-zinc-500 font-bold text-sm animate-pulse">AI đang tạo câu hỏi...</p>
+      <p className="text-muted-foreground font-bold text-sm animate-pulse">AI đang tạo câu hỏi...</p>
     </div>
   );
 
   // ─── Playing Screen ───────────────────────────────────────────────────────
   if (state === "playing" && currentQ) return (
-    <div className="h-full w-full bg-[#050505] text-white overflow-y-auto">
+    <div className="h-full w-full bg-background text-foreground overflow-y-auto">
       <div className="min-h-full flex flex-col items-center px-4 py-8">
       {/* Progress */}
       <div className="w-full max-w-2xl mb-8">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[12px] font-bold text-zinc-500">Câu {currentIdx + 1} / {questions.length}</span>
+          <span className="text-[12px] font-bold text-muted-foreground">Câu {currentIdx + 1} / {questions.length}</span>
           <span className="text-[12px] font-bold text-primary">{Math.round(progress)}%</span>
         </div>
-        <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
           <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       {/* Question Card */}
       <div className="w-full max-w-2xl">
-        <div className="p-8 rounded-[32px] border border-white/10 bg-white/[0.02] backdrop-blur-xl mb-6">
-          <p className="text-[11px] font-black text-zinc-600 uppercase tracking-widest mb-4">
+        <div className="p-8 rounded-[32px] border border-border bg-card/60 backdrop-blur-xl mb-6">
+          <p className="text-[11px] font-black text-muted-foreground/60 uppercase tracking-widest mb-4">
             {currentQ.type === "mcq" ? "TRẮC NGHIỆM" : "TỰ LUẬN"}
           </p>
-          <p className="text-lg font-black text-white leading-relaxed">{currentQ.question}</p>
+          <p className="text-lg font-black text-foreground leading-relaxed">{currentQ.question}</p>
         </div>
 
         {/* MCQ Options */}
@@ -217,11 +217,11 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
                     "w-full p-4 rounded-2xl border text-left font-bold text-[14px] transition-all flex items-center gap-3",
                     selected
                       ? "bg-primary/20 border-primary/40 text-primary"
-                      : "bg-zinc-900/30 border-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
+                      : "bg-muted/20 border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
                   )}>
                   <span className={cn(
                     "w-7 h-7 rounded-lg border flex items-center justify-center text-[11px] font-black flex-shrink-0",
-                    selected ? "bg-primary border-primary text-white" : "border-zinc-700 text-zinc-600"
+                    selected ? "bg-primary border-primary text-primary-foreground" : "border-border text-muted-foreground"
                   )}>
                     {["A", "B", "C", "D"][i]}
                   </span>
@@ -239,20 +239,20 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
             onChange={(e) => handleSelectAnswer(currentQ.id, e.target.value)}
             placeholder="Nhập câu trả lời của bạn..."
             rows={5}
-            className="w-full p-5 rounded-2xl border border-zinc-800 bg-zinc-900/50 text-zinc-200 text-[14px] leading-relaxed resize-none focus:border-primary/50 focus:outline-none transition-all placeholder:text-zinc-700"
+            className="w-full p-5 rounded-2xl border border-border bg-muted/40 text-foreground text-[14px] leading-relaxed resize-none focus:border-primary/50 focus:outline-none transition-all placeholder:text-muted-foreground/50"
           />
         )}
 
         {/* Navigation */}
         <div className="flex items-center justify-between mt-8">
           <button onClick={() => setCurrentIdx((i) => i - 1)} disabled={currentIdx === 0}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-zinc-800 text-zinc-500 hover:text-white disabled:opacity-20 text-sm font-bold transition-all">
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground disabled:opacity-20 text-sm font-bold transition-all">
             <ArrowLeft size={14} /> Trước
           </button>
 
           {currentIdx < questions.length - 1 ? (
             <button onClick={() => setCurrentIdx((i) => i + 1)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-sm font-black hover:bg-zinc-700 transition-all">
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-secondary border border-border text-secondary-foreground text-sm font-black hover:bg-secondary/80 transition-all">
               Tiếp theo <ChevronRight size={14} />
             </button>
           ) : (
@@ -270,7 +270,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
 
   // ─── Result Screen ────────────────────────────────────────────────────────
   if (state === "submitted") return (
-    <div className="h-full w-full bg-[#050505] text-white overflow-y-auto">
+    <div className="h-full w-full bg-background text-foreground overflow-y-auto">
       <div className="min-h-full flex flex-col items-center px-4 py-12">
       {/* Score */}
       <div className="flex flex-col items-center mb-12">
@@ -288,7 +288,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
         <h2 className="text-2xl font-black">
           {score >= 80 ? "Xuất sắc! 🏆" : score >= 50 ? "Tốt! 👏" : "Cần ôn thêm 📚"}
         </h2>
-        <p className="text-zinc-500 text-sm mt-2">
+        <p className="text-muted-foreground text-sm mt-2">
           Đúng {results.filter((r) => r.is_correct).length}/{results.filter((r) => r.is_correct !== undefined).length} câu trắc nghiệm
         </p>
       </div>
@@ -303,13 +303,13 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
               "p-6 rounded-[24px] border transition-all",
               isCorrect === true ? "bg-emerald-500/5 border-emerald-500/20" :
               isCorrect === false ? "bg-red-500/5 border-red-500/20" :
-              "bg-zinc-900/30 border-zinc-800"
+              "bg-muted/20 border-border"
             )}>
               <div className="flex items-start gap-3 mb-3">
-                <span className="text-[11px] font-black text-zinc-600 mt-0.5">#{i + 1}</span>
+                <span className="text-[11px] font-black text-muted-foreground/60 mt-0.5">#{i + 1}</span>
                 {isCorrect === true && <CheckCircle size={16} className="text-emerald-400 flex-shrink-0 mt-0.5" />}
                 {isCorrect === false && <XCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />}
-                <p className="text-[14px] font-bold text-white">{q.question}</p>
+                <p className="text-[14px] font-bold text-foreground">{q.question}</p>
               </div>
 
               {q.type === "mcq" && q.options && res && (
@@ -320,7 +320,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
                       <p key={oi} className={cn("text-[12px] font-medium px-3 py-1 rounded-lg",
                         isUserAnswer && isCorrect ? "bg-emerald-500/20 text-emerald-300" :
                         isUserAnswer && !isCorrect ? "bg-red-500/20 text-red-300 line-through" :
-                        "text-zinc-600"
+                        "text-muted-foreground/60"
                       )}>
                         {["A", "B", "C", "D"][oi]}. {opt}
                       </p>
@@ -330,7 +330,7 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
               )}
 
               {res?.explanation && (
-                <p className="ml-7 mt-3 text-[12px] text-zinc-500 italic">
+                <p className="ml-7 mt-3 text-[12px] text-muted-foreground italic">
                   💡 {res.explanation}
                 </p>
               )}
@@ -342,11 +342,11 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
       {/* Actions */}
       <div className="flex gap-3 mt-10">
         <button onClick={() => setState("config")}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl border border-zinc-800 text-zinc-400 hover:text-white text-sm font-bold transition-all">
+          className="flex items-center gap-2 px-6 py-3 rounded-xl border border-border text-muted-foreground hover:text-foreground text-sm font-bold transition-all">
           <RotateCcw size={14} /> Làm quiz mới
         </button>
         <button onClick={() => router.back()}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-zinc-800 text-white text-sm font-bold hover:bg-zinc-700 transition-all">
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-secondary text-secondary-foreground text-sm font-bold hover:bg-secondary/80 transition-all">
           <ArrowLeft size={14} /> Về tài liệu
         </button>
       </div>

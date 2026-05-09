@@ -127,38 +127,38 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
     return grouped;
   }, [messages]);
 
-  if (colError) return <div className="flex h-screen items-center justify-center bg-black text-red-500 font-black">COLLECTION_SYNC_ERROR</div>;
+  if (colError) return <div className="flex h-screen items-center justify-center bg-background text-red-500 font-black">COLLECTION_SYNC_ERROR</div>;
   if (!collection) return (
-    <div className="flex h-screen flex-col items-center justify-center bg-[#020205]">
+    <div className="flex h-screen flex-col items-center justify-center bg-background">
         <Loader2 size={32} className="text-primary animate-spin mb-4" />
-        <span className="text-[10px] font-black text-zinc-700 tracking-[0.2em] uppercase">Syncing Knowledge Cluster</span>
+        <span className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">Syncing Knowledge Cluster</span>
     </div>
   );
 
   return (
-    <div className="dark h-screen w-full overflow-hidden bg-[#050505] text-zinc-50 flex flex-row p-6 gap-6">
-      
+    <div className="h-screen w-full overflow-hidden bg-background text-foreground flex flex-row p-6 gap-6">
+
       {/* PANEL 1: COLLECTION INFO (LEFT) */}
-      <aside className="w-[280px] h-full flex flex-col bg-zinc-900/40 backdrop-blur-3xl rounded-[32px] border border-white/5 shadow-2xl overflow-hidden flex-shrink-0 z-50 animate-in slide-in-from-left duration-700">
+      <aside className="w-[280px] h-full flex flex-col bg-card/80 backdrop-blur-3xl rounded-[32px] border border-border shadow-xl overflow-hidden flex-shrink-0 z-50 animate-in slide-in-from-left duration-700">
         <div className="p-6 flex flex-col h-full min-h-0">
-            <button 
+            <button
                 onClick={() => router.push('/library')}
-                className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors mb-6 text-sm font-bold uppercase tracking-wider"
+                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6 text-sm font-bold uppercase tracking-wider"
             >
                 <ChevronLeft size={16} /> Thư viện
             </button>
 
             <div className="mb-8">
                 <div className="text-4xl mb-4">{collection.emoji}</div>
-                <h2 className="text-xl font-black tracking-tight text-white leading-tight mb-2">
+                <h2 className="text-xl font-black tracking-tight text-foreground leading-tight mb-2">
                     {collection.name}
                 </h2>
-                <p className="text-xs text-zinc-500 font-medium line-clamp-2">
+                <p className="text-xs text-muted-foreground font-medium line-clamp-2">
                     {collection.description || "Học tập và nghiên cứu tổng hợp."}
                 </p>
             </div>
 
-            <Separator className="bg-white/5 mb-6" />
+            <Separator className="bg-border/50 mb-6" />
 
             <div className="flex-1 flex flex-col min-h-0">
                 <div className="flex items-center justify-between mb-4 px-1">
@@ -167,21 +167,21 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
                         {collection.doc_count} Tài liệu
                     </h4>
                 </div>
-                
+
                 <ScrollArea className="flex-1 -mx-2 px-2 min-h-0">
                     <div className="space-y-2">
                         {collection.documents?.map((doc: any) => (
-                            <div 
+                            <div
                                 key={doc.id}
-                                className="p-3 bg-white/[0.03] border border-white/5 rounded-2xl flex items-center gap-3 group hover:bg-white/[0.06] transition-all cursor-pointer"
+                                className="p-3 bg-muted/20 border border-border/50 rounded-2xl flex items-center gap-3 group hover:bg-accent/40 transition-all cursor-pointer"
                                 onClick={() => router.push(`/doc/${doc.id}/chat`)}
                             >
-                                <div className="w-8 h-8 rounded-lg bg-zinc-950 flex items-center justify-center border border-white/5 group-hover:border-primary/30 transition-all text-primary">
+                                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center border border-border group-hover:border-primary/30 transition-all text-primary">
                                     <FileText size={16} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[12px] font-bold text-zinc-300 truncate group-hover:text-white">{doc.title}</p>
-                                    <div className="flex items-center gap-2 text-[9px] text-zinc-600 font-black tracking-tighter">
+                                    <p className="text-[12px] font-bold text-muted-foreground truncate group-hover:text-foreground">{doc.title}</p>
+                                    <div className="flex items-center gap-2 text-[9px] text-muted-foreground/50 font-black tracking-tighter">
                                         {doc.status.toUpperCase()} • P{doc.chunk_count}
                                     </div>
                                 </div>
@@ -189,11 +189,11 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
                         ))}
                     </div>
                 </ScrollArea>
-                
-                <Button 
-                    variant="outline" 
+
+                <Button
+                    variant="outline"
                     onClick={() => setIsEditModalOpen(true)}
-                    className="mt-6 w-full border-white/5 bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-2xl h-10 text-xs font-bold"
+                    className="mt-6 w-full border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-accent rounded-2xl h-10 text-xs font-bold"
                 >
                     Quản lý tài liệu
                 </Button>
@@ -213,12 +213,12 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
       />
 
       {/* PANEL 2: CHAT AREA (MIDDLE) */}
-      <main className="flex-1 h-full bg-white/[0.01] rounded-[40px] border border-white/5 flex flex-col relative overflow-hidden items-center shadow-inner">
-          <div className="w-full h-16 border-b border-white/[0.03] bg-black/40 backdrop-blur-3xl flex items-center justify-center px-8 z-50">
+      <main className="flex-1 h-full bg-background rounded-[40px] border border-border flex flex-col relative overflow-hidden items-center shadow-sm">
+          <div className="w-full h-16 border-b border-border/50 bg-card/80 backdrop-blur-xl flex items-center justify-center px-8 z-50">
               <div className="w-full max-w-2xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Zap size={14} className="text-primary" />
-                    <span className="text-[12px] font-bold text-zinc-400 uppercase tracking-widest">
+                    <span className="text-[12px] font-bold text-muted-foreground uppercase tracking-widest">
                         Neural Hub / Multi-Source Chat
                     </span>
                 </div>
@@ -230,24 +230,24 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
 
           <ScrollArea className="flex-1 w-full min-h-0" ref={scrollRef}>
               <div className="w-full max-w-2xl px-6 pt-12 pb-44 mx-auto">
-                  
+
                   {messages.length === 0 && (
                       <div className="flex flex-col items-center justify-center py-20 text-center">
-                          <div className="w-16 h-16 bg-primary-gradient rounded-[28px] flex items-center justify-center mb-8 shadow-2xl rotate-3">
-                              <Layers size={32} className="text-white fill-white" />
+                          <div className="w-16 h-16 bg-primary-gradient rounded-[28px] flex items-center justify-center mb-8 shadow-xl rotate-3">
+                              <Layers size={32} className="text-primary-foreground" />
                           </div>
-                          <h3 className="text-2xl font-black text-white mb-3">Sẵn sàng để tổng hợp!</h3>
-                          <p className="text-sm text-zinc-500 max-w-md mx-auto leading-relaxed mb-10">
+                          <h3 className="text-2xl font-black text-foreground mb-3">Sẵn sàng để tổng hợp!</h3>
+                          <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed mb-10">
                               Mindex AI sẽ kết nối tri thức từ toàn bộ {collection.doc_count} tài liệu trong bộ này để đưa ra câu trả lời toàn diện nhất.
                           </p>
 
                           <div className="flex flex-wrap justify-center gap-3">
                               {["Điểm chung là gì?", "So sánh các nguồn", "Tổng hợp kiến thức", "Check mâu thuẫn"].map(hint => (
-                                  <Button 
+                                  <Button
                                     key={hint}
                                     variant="outline"
                                     onClick={() => handleSendMessage(hint)}
-                                    className="h-10 px-6 rounded-full border-white/5 bg-white/5 hover:bg-primary/10 hover:border-primary/20 text-xs font-bold tracking-tight uppercase"
+                                    className="h-10 px-6 rounded-full border-border bg-muted/30 hover:bg-primary/10 hover:border-primary/20 text-xs font-bold tracking-tight uppercase"
                                   >
                                       {hint}
                                   </Button>
@@ -262,13 +262,13 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
                       ))}
 
                       {isStreaming && (
-                          <ChatMessage 
+                          <ChatMessage
                               message={{
                                   id: "streaming",
                                   role: "assistant",
                                   content: currentStreamText,
                                   timestamp: new Date().toISOString()
-                              }} 
+                              }}
                               isStreaming={true}
                           />
                       )}
@@ -276,11 +276,11 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
               </div>
           </ScrollArea>
 
-          <div className="w-full max-w-2xl absolute bottom-0 px-6 py-8 bg-gradient-to-t from-[#050505] via-[#050505]/95 to-transparent pt-20 z-40 pointer-events-none">
-              <div className="bg-zinc-900/50 backdrop-blur-xl rounded-[28px] border border-white/5 p-1 shadow-2xl pointer-events-auto">
-                <ChatInput 
-                    onSendMessage={handleSendMessage} 
-                    disabled={isStreaming} 
+          <div className="w-full max-w-2xl absolute bottom-0 left-1/2 -translate-x-1/2 px-6 py-8 bg-gradient-to-t from-background via-background/95 to-transparent pt-20 z-40 pointer-events-none">
+              <div className="bg-card/80 backdrop-blur-xl rounded-[28px] border border-border p-1 shadow-md pointer-events-auto">
+                <ChatInput
+                    onSendMessage={handleSendMessage}
+                    disabled={isStreaming}
                     isLoading={isStreaming}
                 />
               </div>
@@ -288,20 +288,20 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
       </main>
 
       {/* PANEL 3: SOURCES PANEL (RIGHT) */}
-      <aside className="w-[320px] h-full flex flex-col bg-zinc-900/20 backdrop-blur-2xl rounded-[32px] border border-white/5 shadow-2xl overflow-hidden flex-shrink-0 z-50 animate-in slide-in-from-right duration-700">
+      <aside className="w-[320px] h-full flex flex-col bg-card/50 backdrop-blur-2xl rounded-[32px] border border-border shadow-xl overflow-hidden flex-shrink-0 z-50 animate-in slide-in-from-right duration-700">
         <div className="p-6 flex flex-col h-full">
-            <h4 className="text-[10px] font-black text-white tracking-[0.2em] uppercase mb-6 flex items-center gap-2">
+            <h4 className="text-[10px] font-black text-foreground tracking-[0.2em] uppercase mb-6 flex items-center gap-2">
                 <Search size={14} className="text-primary" />
                 Dữ liệu trích dẫn
             </h4>
 
             <ScrollArea className="flex-1 -mx-2 px-2 min-h-0">
                 {!lastMessageSources ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center py-20 px-4 opacity-30">
-                        <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-4 border border-white/5">
+                    <div className="h-full flex flex-col items-center justify-center text-center py-20 px-4 opacity-40">
+                        <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mb-4 border border-border">
                             <Info size={24} />
                         </div>
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Chưa có trích dẫn nào được sử dụng trong phiên này</p>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Chưa có trích dẫn nào được sử dụng trong phiên này</p>
                     </div>
                 ) : (
                     <div className="space-y-8 pb-10">
@@ -311,18 +311,18 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
                                     <div className="p-1 rounded bg-primary/20 border border-primary/30">
                                         <FileText size={10} className="text-primary" />
                                     </div>
-                                    <span className="text-[11px] font-black text-zinc-300 truncate uppercase tracking-tighter group-hover:text-white transition-colors">
+                                    <span className="text-[11px] font-black text-muted-foreground truncate uppercase tracking-tighter group-hover:text-foreground transition-colors">
                                         {title}
                                     </span>
                                 </div>
-                                <div className="space-y-3 pl-2 border-l border-white/5 ml-2">
+                                <div className="space-y-3 pl-2 border-l border-border/50 ml-2">
                                     {srcs.map((src, idx) => (
-                                        <div key={idx} className="p-4 bg-white/[0.03] border border-white/5 rounded-2xl hover:bg-white/[0.06] transition-all">
+                                        <div key={idx} className="p-4 bg-muted/20 border border-border/50 rounded-2xl hover:bg-accent/30 transition-all">
                                             <div className="flex items-center justify-between mb-3">
-                                                <Badge className="bg-zinc-950 text-primary border-zinc-800 text-[10px] px-2 h-5">P{src.page}</Badge>
-                                                <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">{Math.round(src.similarity * 100)}% Match</span>
+                                                <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] px-2 h-5">P{src.page}</Badge>
+                                                <span className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-widest">{Math.round(src.similarity * 100)}% Match</span>
                                             </div>
-                                            <p className="text-[12px] text-zinc-400 line-clamp-3 leading-relaxed italic">
+                                            <p className="text-[12px] text-muted-foreground line-clamp-3 leading-relaxed italic">
                                                 "{src.content}"
                                             </p>
                                         </div>
@@ -337,9 +337,9 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
             <div className="mt-6 p-4 bg-primary/5 rounded-2xl border border-primary/10">
                 <div className="flex items-center gap-2 mb-2">
                     <Zap size={12} className="text-primary fill-primary" />
-                    <span className="text-[10px] font-black text-white uppercase tracking-tighter">AI Consensus</span>
+                    <span className="text-[10px] font-black text-foreground uppercase tracking-tighter">AI Consensus</span>
                 </div>
-                <p className="text-[10px] text-zinc-500 font-medium leading-relaxed">
+                <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
                     AI đang tự động đối chiếu thông tin giữa các nguồn để cung cấp kết quả đáng tin cậy nhất.
                 </p>
             </div>

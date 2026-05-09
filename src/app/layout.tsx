@@ -89,6 +89,7 @@ export const metadata: Metadata = {
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Providers } from "@/components/Providers";
+import NextTopLoader from "nextjs-toploader";
 
 export default function RootLayout({
   children,
@@ -104,6 +105,14 @@ export default function RootLayout({
           jetbrainsMono.variable,
         )}
       >
+        <NextTopLoader
+          color="#7C3AED"
+          height={3}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #7C3AED, 0 0 5px #7C3AED"
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

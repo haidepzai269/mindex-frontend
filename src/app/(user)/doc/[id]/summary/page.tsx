@@ -370,7 +370,7 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
     },
     table({ children }: any) {
       return (
-        <div className="my-8 overflow-x-auto rounded-3xl border border-white/10 shadow-2xl bg-white/[0.02]">
+        <div className="my-8 overflow-x-auto rounded-3xl border border-border shadow-sm bg-muted/20">
           <table className="w-full border-collapse text-left min-w-[500px]">
             {children}
           </table>
@@ -378,28 +378,28 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
       );
     },
     thead({ children }: any) {
-      return <thead className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-b border-white/10">{children}</thead>;
+      return <thead className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-b border-border">{children}</thead>;
     },
     tbody({ children }: any) {
-      return <tbody className="divide-y divide-white/5">{children}</tbody>;
+      return <tbody className="divide-y divide-border/50">{children}</tbody>;
     },
     th({ children }: any) {
       return <th className="px-6 py-4 text-[10px] font-black text-primary uppercase tracking-widest">{children}</th>;
     },
     td({ children }: any) {
-      return <td className="px-6 py-4 text-sm text-zinc-400 font-medium">{children}</td>;
+      return <td className="px-6 py-4 text-sm text-muted-foreground font-medium">{children}</td>;
     },
     strong({ children }: any) {
       return <strong className="text-primary font-black italic">{children}</strong>;
     },
     h3({ children }: any) {
-      return <h3 className="text-xl font-black text-white italic mt-12 mb-6 border-l-4 border-primary pl-4 uppercase tracking-tight">{children}</h3>;
+      return <h3 className="text-xl font-black text-foreground italic mt-12 mb-6 border-l-4 border-primary pl-4 uppercase tracking-tight">{children}</h3>;
     },
     ul({ children }: any) {
-      return <ul className="list-disc pl-8 space-y-3 my-6 text-zinc-400">{children}</ul>;
+      return <ul className="list-disc pl-8 space-y-3 my-6 text-muted-foreground">{children}</ul>;
     },
     ol({ children }: any) {
-      return <ol className="list-decimal pl-8 space-y-3 my-6 text-zinc-400">{children}</ol>;
+      return <ol className="list-decimal pl-8 space-y-3 my-6 text-muted-foreground">{children}</ol>;
     },
     li({ children }: any) {
       return <li className="pl-2 marker:text-primary marker:font-black">{children}</li>;
@@ -416,13 +416,13 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
   ];
 
   if (!doc) return (
-    <div className="h-screen bg-[#050505] flex items-center justify-center">
+    <div className="h-screen bg-background flex items-center justify-center">
        <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
     </div>
   );
 
   return (
-    <div className="h-full bg-[#050505] text-zinc-100 flex flex-col md:flex-row overflow-hidden font-sans border-t border-white/5">
+    <div className="h-full bg-background text-foreground flex flex-col md:flex-row overflow-hidden font-sans border-t border-border/50">
       <style jsx global>{`
         @media (max-width: 768px) {
           .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -444,38 +444,38 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
       `}</style>
       
       {/* Sidebar - Mobile: Top Scroll / Desktop: Left Side */}
-      <div className="w-full md:w-80 h-auto md:h-full border-b md:border-b-0 md:border-r border-white/5 bg-[#0a0a0a] flex flex-col shrink-0 animate-in slide-in-from-left duration-500 no-print z-[60]">
-        <div className="p-4 md:p-6 border-b border-white/5 flex items-center justify-between md:block md:space-y-4">
-           <button 
-             onClick={() => window.history.back()} 
-             className="flex items-center gap-2 text-[10px] md:text-xs text-zinc-500 hover:text-white transition-all uppercase tracking-widest font-bold"
+      <div className="w-full md:w-80 h-auto md:h-full border-b md:border-b-0 md:border-r border-border/50 bg-card/80 flex flex-col shrink-0 animate-in slide-in-from-left duration-500 no-print z-[60]">
+        <div className="p-4 md:p-6 border-b border-border/50 flex items-center justify-between md:block md:space-y-4">
+           <button
+             onClick={() => window.history.back()}
+             className="flex items-center gap-2 text-[10px] md:text-xs text-muted-foreground hover:text-foreground transition-all uppercase tracking-widest font-bold"
            >
               <ArrowLeft size={14} /> <span className="md:inline">Thư viện</span>
            </button>
            <div className="text-right md:text-left flex-1 md:flex-none ml-4 md:ml-0">
               <div className="text-[8px] md:text-[10px] font-black text-primary mb-0.5 md:mb-1 tracking-tighter">SUMMARY</div>
-              <h1 className="text-[11px] md:text-sm font-bold text-zinc-200 truncate max-w-[150px] md:max-w-full ml-auto md:ml-0">{doc.title}</h1>
+              <h1 className="text-[11px] md:text-sm font-bold text-foreground truncate max-w-[150px] md:max-w-full ml-auto md:ml-0">{doc.title}</h1>
            </div>
         </div>
 
         <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto p-2 md:p-4 gap-2 hide-scrollbar">
-           <div className="hidden md:block px-3 py-2 text-[10px] font-black text-zinc-600 uppercase tracking-widest">Analysis Modes</div>
+           <div className="hidden md:block px-3 py-2 text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">Analysis Modes</div>
            {menuItems.map((item) => (
              <button
                 key={item.id}
                 onClick={() => setActiveMode(item.id as any)}
                 className={cn(
                   "flex-shrink-0 md:w-full text-left p-3 md:p-4 rounded-xl md:rounded-2xl transition-all group relative overflow-hidden flex items-center md:block gap-3",
-                  activeMode === item.id 
-                    ? "bg-primary text-white shadow-lg shadow-primary/20" 
-                    : "bg-white/5 md:bg-transparent hover:bg-white/5 text-zinc-400"
+                  activeMode === item.id
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                    : "bg-muted/30 md:bg-transparent hover:bg-muted/40 text-muted-foreground"
                 )}
              >
                 <div className="flex items-center gap-2 md:gap-4 relative z-10">
-                   <item.icon size={18} className={activeMode === item.id ? "text-white" : "text-zinc-600 group-hover:text-primary transition-colors"} />
+                   <item.icon size={18} className={activeMode === item.id ? "text-primary-foreground" : "text-muted-foreground/60 group-hover:text-primary transition-colors"} />
                    <div>
                       <div className="text-[10px] md:text-[12px] font-black uppercase tracking-tight whitespace-nowrap">{item.label}</div>
-                      <div className={cn("hidden md:block text-[10px] font-medium opacity-70", activeMode === item.id ? "text-white" : "text-zinc-500")}>
+                      <div className={cn("hidden md:block text-[10px] font-medium opacity-70", activeMode === item.id ? "text-primary-foreground" : "text-muted-foreground")}>
                         {item.desc}
                       </div>
                    </div>
@@ -487,9 +487,9 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
            ))}
         </div>
 
-        <div className="hidden md:block p-6 border-t border-white/5 bg-black/20">
-           <Button 
-             className="w-full h-12 bg-zinc-100 text-black hover:bg-white rounded-xl font-bold gap-2 text-xs uppercase tracking-widest"
+        <div className="hidden md:block p-6 border-t border-border/50 bg-muted/20">
+           <Button
+             className="w-full h-12 rounded-xl font-bold gap-2 text-xs uppercase tracking-widest"
              onClick={() => handleGenerateSummary(activeMode)}
              disabled={isSummarizing}
            >
@@ -502,11 +502,11 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
       {/* Main Content Area - Inbox Style */}
       <div className="flex-1 h-full flex flex-col relative animate-in fade-in duration-1000">
         {/* Top Header */}
-        <div className="h-14 md:h-16 border-b border-white/5 flex items-center justify-between px-4 md:px-8 bg-[#080808]/50 backdrop-blur-xl no-print z-50">
+        <div className="h-14 md:h-16 border-b border-border/50 flex items-center justify-between px-4 md:px-8 bg-card/80 backdrop-blur-xl no-print z-50">
            <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
               <Badge variant="outline" className="hidden sm:inline-flex bg-primary/10 text-primary border-primary/20 font-bold uppercase text-[9px] tracking-tighter ring-1 ring-primary/20 shrink-0">Mindex AI v2</Badge>
-              <div className="hidden sm:block h-4 w-px bg-white/10" />
-              <span className="text-[10px] md:text-xs font-bold text-zinc-500 uppercase tracking-widest truncate">
+              <div className="hidden sm:block h-4 w-px bg-border" />
+              <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest truncate">
                 {activeMode === "academic" ? "Detailed Scholarship Analysis" : activeMode === "quick" ? "Interactive Key Summary" : "Deep Domain Insights"}
               </span>
            </div>
@@ -514,7 +514,7 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
               <div className="flex items-center gap-1 md:gap-2">
                  <Button 
                    variant="ghost" size="sm" 
-                   className="text-zinc-500 hover:text-white h-8 md:h-9 px-2 md:px-3 rounded-lg gap-1.5"
+                   className="text-muted-foreground hover:text-foreground h-8 md:h-9 px-2 md:px-3 rounded-lg gap-1.5"
                    onClick={handleCopy}
                  >
                     <Copy size={13} /> <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest hidden xs:inline">Copy</span>
@@ -522,7 +522,7 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
                  <div className="relative">
                     <Button 
                       variant="ghost" size="sm" 
-                      className={cn("text-zinc-500 hover:text-white h-8 md:h-9 px-2 md:px-3 rounded-lg gap-1.5", showExportMenu && "bg-white/10 text-white")}
+                      className={cn("text-muted-foreground hover:text-foreground h-8 md:h-9 px-2 md:px-3 rounded-lg gap-1.5", showExportMenu && "bg-accent text-foreground")}
                       onClick={() => setShowExportMenu(!showExportMenu)}
                     >
                         <Download size={13} /> <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest hidden xs:inline">Export</span>
@@ -531,16 +531,16 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
                     {showExportMenu && (
                         <>
                             <div className="fixed inset-0 z-[100]" onClick={() => setShowExportMenu(false)} />
-                            <div className="absolute right-0 mt-2 w-48 bg-[#151515] border border-white/10 rounded-xl shadow-2xl p-2 z-[110] animate-in fade-in zoom-in-95 duration-200">
-                                <button onClick={() => handleExport("pdf")} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-zinc-400 hover:text-white rounded-lg transition-all text-left">
-                                    <FileText size={16} className="text-red-400" />
+                            <div className="absolute right-0 mt-2 w-48 bg-popover border border-border rounded-xl shadow-2xl p-2 z-[110] animate-in fade-in zoom-in-95 duration-200">
+                                <button onClick={() => handleExport("pdf")} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent text-muted-foreground hover:text-foreground rounded-lg transition-all text-left">
+                                    <FileText size={16} className="text-red-500" />
                                     <span className="text-xs font-bold uppercase tracking-tight">Adobe PDF (.pdf)</span>
                                 </button>
-                                <button onClick={() => handleExport("doc")} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-zinc-400 hover:text-white rounded-lg transition-all text-left">
-                                    <BookOpen size={16} className="text-blue-400" />
+                                <button onClick={() => handleExport("doc")} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent text-muted-foreground hover:text-foreground rounded-lg transition-all text-left">
+                                    <BookOpen size={16} className="text-blue-500" />
                                     <span className="text-xs font-bold uppercase tracking-tight">MS Word (.doc)</span>
                                 </button>
-                                <button onClick={() => handleExport("md")} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 text-zinc-400 hover:text-white rounded-lg transition-all text-left">
+                                <button onClick={() => handleExport("md")} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent text-muted-foreground hover:text-foreground rounded-lg transition-all text-left">
                                     <FileText size={16} className="text-primary" />
                                     <span className="text-xs font-bold uppercase tracking-tight">Markdown (.md)</span>
                                 </button>
@@ -553,7 +553,7 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
         </div>
 
         {/* Content Viewer - Chat Style */}
-        <div className="flex-1 relative bg-[#050505]">
+        <div className="flex-1 relative bg-background">
            <div className="absolute inset-0 overflow-y-auto custom-scrollbar px-6 py-12 lg:p-20" ref={scrollRef}>
               <div className="max-w-4xl mx-auto space-y-12 mb-20">
                  {isSummarizing && (
@@ -563,7 +563,7 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
                          <Loader2 size={48} className="text-primary animate-spin relative z-10" />
                       </div>
                       <div className="space-y-2">
-                         <h2 className="text-xl font-black text-white italic uppercase tracking-tight">{progressMsg}</h2>
+                         <h2 className="text-xl font-black text-foreground italic uppercase tracking-tight">{progressMsg}</h2>
                          <p className="text-sm font-medium leading-relaxed opacity-70">
                             Hãy nhấn nút <strong>Khai thác ngay</strong> ở thanh bên trái để bắt đầu bóc tách tinh túy của tài liệu này. 
                          </p>
@@ -577,10 +577,10 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
                        <div className="space-y-4">
                           <div className="flex items-center gap-3">
                              <div className="h-6 md:h-8 w-1 bg-primary rounded-full" />
-                             <h2 className="text-lg md:text-2xl font-black text-white uppercase italic tracking-tighter">Tổng quan kiến thức</h2>
+                             <h2 className="text-lg md:text-2xl font-black text-foreground uppercase italic tracking-tighter">Tổng quan kiến thức</h2>
                           </div>
-                          <div className="p-5 md:p-8 rounded-[24px] md:rounded-[32px] bg-white/[0.03] border border-white/5 shadow-2xl">
-                             <div className="markdown-content prose prose-invert max-w-none prose-p:text-sm md:prose-p:text-lg prose-p:leading-[1.7] md:prose-p:leading-[1.8] prose-p:text-zinc-300 prose-p:font-medium">
+                          <div className="p-5 md:p-8 rounded-[24px] md:rounded-[32px] bg-muted/20 border border-border/50 shadow-sm">
+                             <div className="markdown-content prose dark:prose-invert max-w-none prose-p:text-sm md:prose-p:text-lg prose-p:leading-[1.7] md:prose-p:leading-[1.8] prose-p:font-medium">
                                 {renderContent(summaryData.overview)}
                              </div>
                           </div>
@@ -588,27 +588,27 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
 
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div className="space-y-4">
-                             <h3 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                             <h3 className="text-xs font-black text-muted-foreground uppercase tracking-[0.3em] flex items-center gap-2">
                                 <Zap size={14} className="text-primary" /> Key Points
                              </h3>
                              <div className="space-y-3">
                                 {summaryData.key_points?.map((p: string, i: number) => (
-                                   <div key={i} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex gap-3 group hover:bg-white/[0.05] transition-all">
+                                   <div key={i} className="p-4 rounded-2xl bg-muted/20 border border-border/50 flex gap-3 group hover:bg-accent/30 transition-all">
                                       <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
-                                      <span className="text-sm text-zinc-400 group-hover:text-zinc-200">{p}</span>
+                                      <span className="text-sm text-muted-foreground group-hover:text-foreground">{p}</span>
                                    </div>
                                 ))}
                              </div>
                           </div>
                           <div className="space-y-4">
-                             <h3 className="text-xs font-black text-zinc-500 uppercase tracking-[0.3em] flex items-center gap-2">
+                             <h3 className="text-xs font-black text-muted-foreground uppercase tracking-[0.3em] flex items-center gap-2">
                                 <Search size={14} className="text-primary" /> Core Concepts
                              </h3>
                              <div className="space-y-3">
                                 {summaryData.concepts?.map((c: any, i: number) => (
-                                   <div key={i} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-primary/30 transition-all">
+                                   <div key={i} className="p-4 rounded-2xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all">
                                       <div className="text-[13px] font-black text-primary uppercase italic mb-1">{c.t}</div>
-                                      <div className="text-[11px] text-zinc-500 leading-relaxed">{c.d}</div>
+                                      <div className="text-[11px] text-muted-foreground leading-relaxed">{c.d}</div>
                                    </div>
                                 ))}
                              </div>
@@ -619,7 +619,7 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
                           <h4 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
                              <Lightbulb size={16} /> Khả năng ứng dụng
                           </h4>
-                          <p className="text-[17px] leading-[1.9] text-zinc-300 italic font-medium opacity-90">
+                          <p className="text-[17px] leading-[1.9] text-foreground/80 italic font-medium opacity-90">
                              "{summaryData.application}"
                           </p>
                        </div>
@@ -634,12 +634,12 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
                               <BookOpen size={24} className="md:w-8 md:h-8" />
                            </div>
                            <div>
-                              <h2 className="text-xl md:text-3xl font-black text-white italic uppercase tracking-tighter shrink-0">Academic Report.</h2>
-                              <p className="text-[9px] md:text-xs font-medium text-zinc-500 uppercase tracking-widest">Mindex AI Analytical Architecture</p>
+                              <h2 className="text-xl md:text-3xl font-black text-foreground italic uppercase tracking-tighter shrink-0">Academic Report.</h2>
+                              <p className="text-[9px] md:text-xs font-medium text-muted-foreground uppercase tracking-widest">Mindex AI Analytical Architecture</p>
                            </div>
                         </div>
                         
-                        <div className="markdown-content prose prose-invert max-w-none prose-headings:text-white prose-headings:font-black prose-headings:italic prose-headings:tracking-tight prose-h1:text-2xl md:prose-h1:text-4xl prose-h2:text-lg md:prose-h2:text-2xl prose-h2:border-b prose-h2:border-white/5 prose-h2:pb-3 md:prose-h2:pb-4 prose-h2:mt-8 md:prose-h2:mt-12 prose-p:text-[15px] md:prose-p:text-[18px] prose-p:leading-[1.7] md:prose-p:leading-[1.9] prose-p:text-zinc-300 prose-p:font-medium prose-li:text-[14px] md:prose-li:text-[16px] prose-li:leading-[1.7] md:prose-li:leading-[1.8] prose-li:text-zinc-300 prose-li:font-medium prose-strong:text-primary prose-strong:font-black">
+                        <div className="markdown-content prose dark:prose-invert max-w-none prose-headings:font-black prose-headings:italic prose-headings:tracking-tight prose-h1:text-2xl md:prose-h1:text-4xl prose-h2:text-lg md:prose-h2:text-2xl prose-h2:border-b prose-h2:border-border/50 prose-h2:pb-3 md:prose-h2:pb-4 prose-h2:mt-8 md:prose-h2:mt-12 prose-p:text-[15px] md:prose-p:text-[18px] prose-p:leading-[1.7] md:prose-p:leading-[1.9] prose-p:font-medium prose-li:text-[14px] md:prose-li:text-[16px] prose-li:leading-[1.7] md:prose-li:leading-[1.8] prose-li:font-medium prose-strong:text-primary prose-strong:font-black">
                           {renderContent(streamText)}
                         </div>
                      </div>
@@ -661,8 +661,8 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
            )}
 
            {/* Shadow phủ đỉnh và đáy để tạo hiệu ứng Mail chuyên nghiệp */}
-           <div className="absolute top-0 left-0 right-0 h-10 md:h-20 bg-gradient-to-b from-[#050505] to-transparent pointer-events-none z-10" />
-           <div className="absolute bottom-0 left-0 right-0 h-10 md:h-20 bg-gradient-to-t from-[#050505] to-transparent pointer-events-none z-10" />
+           <div className="absolute top-0 left-0 right-0 h-10 md:h-20 bg-gradient-to-b from-background to-transparent pointer-events-none z-10" />
+           <div className="absolute bottom-0 left-0 right-0 h-10 md:h-20 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
         </div>
       </div>
     </div>

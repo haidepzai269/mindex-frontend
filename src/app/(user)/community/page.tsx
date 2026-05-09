@@ -90,7 +90,7 @@ function PersonaBadge({ persona, isOwner, onEdit }: { persona: string; isOwner?:
       <PopoverTrigger asChild>
         {badge}
       </PopoverTrigger>
-      <PopoverContent className="w-40 p-1 bg-zinc-900 border-white/10 shadow-2xl">
+      <PopoverContent className="w-40 p-1 bg-popover border-border shadow-2xl">
         <div className="grid grid-cols-1 gap-0.5">
           {Object.entries(PERSONA_LABELS).map(([key, value]) => (
             <button
@@ -252,31 +252,31 @@ export default function CommunityPage() {
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl md:text-2xl font-bold tracking-tight">Thư viện chung</h1>
             <Dialog>
-              <DialogTrigger className="text-muted-foreground hover:text-white transition-colors">
+              <DialogTrigger className="text-muted-foreground hover:text-foreground transition-colors">
                 <Info size={16} />
               </DialogTrigger>
-              <DialogContent className="bg-zinc-950 border-white/10 text-white max-w-md rounded-2xl">
+              <DialogContent className="bg-card border-border text-foreground max-w-md rounded-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                    <Zap size={20} className="text-brand-primary" />
+                    <Zap size={20} className="text-primary" />
                     Cơ chế Mindex Neural Search
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-sm text-muted-foreground leading-relaxed">
                   <div className="space-y-2">
-                    <p className="font-semibold text-white">1. Tìm kiếm lai (Hybrid Search)</p>
+                    <p className="font-semibold text-foreground">1. Tìm kiếm lai (Hybrid Search)</p>
                     <p>Hệ thống kết hợp giữa **Tìm kiếm từ khóa** (khớp tiêu đề) và **Tìm kiếm ngữ nghĩa AI** (hiểu nội dung) để đưa ra thực tế chính xác nhất.</p>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-semibold text-white">2. Thứ tự ưu tiên</p>
+                    <p className="font-semibold text-foreground">2. Thứ tự ưu tiên</p>
                     <p>Các tài liệu được sắp xếp dựa trên **độ liên quan (relevance score)**. Những kết quả có tiêu đề khớp trực tiếp hoặc nội dung sát với ý định của bạn sẽ luôn được ưu tiên ở trên cùng.</p>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-semibold text-white">3. Tối ưu hóa hiệu suất</p>
+                    <p className="font-semibold text-foreground">3. Tối ưu hóa hiệu suất</p>
                     <p>Để tiết kiệm tài nguyên và tăng tốc độ, nếu hệ thống tìm thấy kết quả khớp hoàn toàn trong cơ sở dữ liệu, AI sẽ được tạm nghỉ để trả kết quả ngay lập tức.</p>
                   </div>
-                  <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-[12px]">
-                    <span className="text-brand-primary font-bold">Mẹo:</span> Bạn có thể sử dụng các từ khóa chuyên môn hoặc câu hỏi tự nhiên, Neural Search sẽ tự động hiểu ngữ cảnh.
+                  <div className="p-3 bg-muted/40 rounded-xl border border-border text-[12px]">
+                    <span className="text-primary font-bold">Mẹo:</span> Bạn có thể sử dụng các từ khóa chuyên môn hoặc câu hỏi tự nhiên, Neural Search sẽ tự động hiểu ngữ cảnh.
                   </div>
                 </div>
               </DialogContent>
@@ -287,7 +287,7 @@ export default function CommunityPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 md:gap-6 mb-1">
-           <Link href="/rooms" className="p-1.5 rounded-xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all" title="Phòng học nhóm">
+           <Link href="/rooms" className="p-1.5 rounded-xl bg-muted/40 border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all" title="Phòng học nhóm">
              <Users size={18} />
            </Link>
            {communityData?.data?.search_mode === "hybrid" && (
@@ -298,13 +298,13 @@ export default function CommunityPage() {
            )}
            <div className="flex items-center gap-1.5 bg-secondary/20 px-2.5 py-1 rounded-full border border-secondary/20">
              <BookOpen size={12} className="text-secondary" />
-             <span className="font-bold text-white/80 text-[10px] md:text-xs">{total} tài liệu</span>
+             <span className="font-bold text-foreground text-[10px] md:text-xs">{total} tài liệu</span>
            </div>
         </div>
       </div>
 
       {/* ── TOOLBAR ── */}
-      <div className="px-4 md:px-8 py-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shrink-0 border-b border-white/5 bg-white/[0.01]">
+      <div className="px-4 md:px-8 py-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shrink-0 border-b border-border/50 bg-muted/10">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 flex-1">
            <Popover open={showHistory && history.length > 0} onOpenChange={setShowHistory}>
              <PopoverTrigger asChild>
@@ -312,7 +312,7 @@ export default function CommunityPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" size={14} />
                   <Input
                     placeholder="Tìm tài liệu..."
-                    className="h-9 pl-9 bg-white/5 border-white/10 hover:bg-white/[0.08] transition-colors focus-visible:ring-1 focus-visible:ring-white/20 rounded-xl md:rounded-lg text-sm"
+                    className="h-9 pl-9 bg-muted/40 border-border hover:bg-muted/60 transition-colors focus-visible:ring-1 focus-visible:ring-primary/30 rounded-xl md:rounded-lg text-sm"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     onFocus={() => setShowHistory(true)}
@@ -320,36 +320,36 @@ export default function CommunityPage() {
                   />
                </div>
              </PopoverTrigger>
-             <PopoverContent 
-                 className="w-[calc(100vw-32px)] md:w-[320px] p-0 bg-zinc-900 border-white/10 shadow-2xl overflow-hidden rounded-2xl md:rounded-xl z-[100]" 
+             <PopoverContent
+                 className="w-[calc(100vw-32px)] md:w-[320px] p-0 bg-popover border-border shadow-2xl overflow-hidden rounded-2xl md:rounded-xl z-[100]"
                  align="start"
                  sideOffset={8}
                  onOpenAutoFocus={(e) => e.preventDefault()}
              >
-                <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 bg-white/[0.02]">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-muted/20">
                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Lịch sử tìm kiếm</span>
-                   <button onClick={handleClearHistory} className="text-[10px] text-muted-foreground hover:text-white transition-colors">
+                   <button onClick={handleClearHistory} className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">
                       Xóa tất cả
                    </button>
                 </div>
                 <div className="py-1">
                    {history.map(item => (
-                       <div 
-                          key={item.id} 
-                          className="flex items-center justify-between px-3 py-2 hover:bg-white/5 cursor-pointer group transition-colors"
+                       <div
+                          key={item.id}
+                          className="flex items-center justify-between px-3 py-2 hover:bg-accent cursor-pointer group transition-colors"
                           onClick={() => {
                               setSearch(item.query);
                               handleSaveSearch(item.query);
                               setShowHistory(false);
                           }}
                        >
-                          <div className="flex items-center gap-2 text-sm text-white/70 group-hover:text-white transition-colors">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">
                              <History size={14} className="text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
                              <span>{item.query}</span>
                           </div>
-                          <button 
+                          <button
                              onClick={(e) => handleDeleteHistory(e, item.id)}
-                             className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/10 rounded-md transition-all text-muted-foreground hover:text-rose-400"
+                             className="opacity-0 group-hover:opacity-100 p-1 hover:bg-accent rounded-md transition-all text-muted-foreground hover:text-rose-500"
                           >
                              <X size={14} />
                           </button>
@@ -360,13 +360,13 @@ export default function CommunityPage() {
            </Popover>
            
            <Select value={subject} onValueChange={(val) => setSubject(val ?? "all")}>
-              <SelectTrigger className="h-9 w-full md:w-[160px] border-white/10 bg-white/5 text-[11px] hover:bg-white/[0.08] transition-all rounded-xl md:rounded-lg">
+              <SelectTrigger className="h-9 w-full md:w-[160px] border-border bg-muted/40 text-[11px] hover:bg-muted/60 transition-all rounded-xl md:rounded-lg">
                 <div className="flex items-center gap-2">
                   <Filter size={14} className="text-muted-foreground" />
                   <span className="truncate">{subject === 'all' ? 'Tất cả lĩnh vực' : PERSONA_LABELS[subject]?.label}</span>
                 </div>
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-white/10 text-white z-[110]">
+              <SelectContent className="bg-popover border-border text-foreground z-[110]">
                 <SelectItem value="all">🌐 Tất cả lĩnh vực</SelectItem>
                 <SelectItem value="student">🎓 Sinh viên</SelectItem>
                 <SelectItem value="doctor">🏥 Y tế</SelectItem>
@@ -381,7 +381,7 @@ export default function CommunityPage() {
               <Button
                 variant="ghost"
                 onClick={() => { setSearch(""); setSubject("all"); }}
-                className="h-8 px-2 text-[10px] text-muted-foreground hover:text-white"
+                className="h-8 px-2 text-[10px] text-muted-foreground hover:text-foreground"
               >
                 Xóa lọc ×
               </Button>
@@ -389,12 +389,12 @@ export default function CommunityPage() {
         </div>
 
         <div className="flex items-center gap-2 md:ml-auto">
-           <Button variant="outline" size="sm" className="flex-1 md:flex-none h-9 border-white/10 text-[10px] md:text-xs gap-2 hover:bg-white/5 rounded-xl md:rounded-lg">
-              <Zap size={14} className="text-amber-400" /> 
+           <Button variant="outline" size="sm" className="flex-1 md:flex-none h-9 border-border text-[10px] md:text-xs gap-2 hover:bg-accent rounded-xl md:rounded-lg">
+              <Zap size={14} className="text-amber-500" />
               Tốc độ cao
            </Button>
-           <Button variant="outline" size="sm" className="flex-1 md:flex-none h-9 border-white/10 text-[10px] md:text-xs gap-2 hover:bg-white/5 rounded-xl md:rounded-lg">
-              <Users size={14} className="text-emerald-400" /> 
+           <Button variant="outline" size="sm" className="flex-1 md:flex-none h-9 border-border text-[10px] md:text-xs gap-2 hover:bg-accent rounded-xl md:rounded-lg">
+              <Users size={14} className="text-emerald-500" />
               Cộng đồng
            </Button>
         </div>
@@ -405,7 +405,7 @@ export default function CommunityPage() {
         {isLoading ? (
           <div className="space-y-4">
              {[1,2,3,4,5,6].map(i => (
-               <div key={i} className="h-20 w-full bg-white/5 animate-pulse rounded-xl border border-white/5" />
+               <div key={i} className="h-20 w-full bg-muted/40 animate-pulse rounded-xl border border-border/30" />
              ))}
           </div>
         ) : docs.length > 0 ? (
@@ -426,10 +426,10 @@ export default function CommunityPage() {
                 const isLoading_ = loadingDocs.has(doc.id);
 
                 return (
-                  <div key={doc.id} className="flex flex-col md:grid md:grid-cols-[1fr_150px_100px_140px_120px] gap-3 md:gap-4 px-4 md:px-6 py-4 md:items-center bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white/[0.05] hover:border-white/10 transition-all group shadow-sm">
+                  <div key={doc.id} className="flex flex-col md:grid md:grid-cols-[1fr_150px_100px_140px_120px] gap-3 md:gap-4 px-4 md:px-6 py-4 md:items-center bg-card/60 border border-border/50 rounded-2xl hover:bg-accent/30 hover:border-border transition-all group shadow-sm">
                      {/* Column: Info */}
                      <div className="min-w-0 md:pr-4">
-                        <div className="font-bold text-xs md:text-base text-white/90 group-hover:text-primary transition-colors mb-1 md:mb-1 flex items-start md:items-center gap-2">
+                        <div className="font-bold text-xs md:text-base text-foreground group-hover:text-primary transition-colors mb-1 md:mb-1 flex items-start md:items-center gap-2">
                            <span className="truncate flex-1">{doc.title}</span>
                            {doc.hybrid_score > 0.8 && (
                              <Badge className="h-3.5 px-1 text-[7px] md:text-[9px] bg-brand-primary/20 text-brand-primary border-brand-primary/20 flex items-center gap-1 shrink-0 mt-0.5 md:mt-0">
@@ -441,9 +441,9 @@ export default function CommunityPage() {
                            <TimeAgo dateStr={doc.display_date || doc.created_at} />
                            {doc.contributor_name && (
                              <>
-                               <span className="w-1 h-1 rounded-full bg-white/10" />
+                               <span className="w-1 h-1 rounded-full bg-border" />
                                <span className="flex items-center gap-1 truncate shrink-0">
-                                 <GraduationCap size={12} className="text-white/20 shrink-0" />
+                                 <GraduationCap size={12} className="text-muted-foreground/40 shrink-0" />
                                  <span className="truncate">{doc.contributor_name}</span>
                                </span>
                              </>
@@ -458,24 +458,24 @@ export default function CommunityPage() {
                           isOwner={doc.owner_id === user?.id}
                           onEdit={(newVal) => handleUpdatePersona(doc.id, newVal)}
                         />
-                        <Badge variant="outline" className="md:hidden flex text-[9px] font-medium bg-white/5 border-white/5 text-white/40 px-1.5 h-4 md:h-5 md:text-[10px] md:px-2">
+                        <Badge variant="outline" className="md:hidden flex text-[9px] font-medium bg-muted/30 border-border/30 text-muted-foreground px-1.5 h-4 md:h-5 md:text-[10px] md:px-2">
                           {Math.ceil((doc.chunk_count || 0) / 4)} trang
                         </Badge>
                      </div>
 
                      {/* Column: Detail (Desktop Only - Align with "Chi tiết") */}
                      <div className="hidden md:flex items-center justify-center">
-                        <Badge variant="outline" className="text-[10px] font-medium bg-white/5 border-white/5 text-white/30 px-2 h-5">
+                        <Badge variant="outline" className="text-[10px] font-medium bg-muted/30 border-border/30 text-muted-foreground px-2 h-5">
                           {Math.ceil((doc.chunk_count || 0) / 4)} trang
                         </Badge>
                      </div>
 
                      {/* Column: Stats (Align with "Tương tác") */}
-                     <div className="flex items-center justify-between gap-4 border-t border-white/5 pt-3 mt-1 md:border-none md:pt-0 md:mt-0 md:justify-center">
+                     <div className="flex items-center justify-between gap-4 border-t border-border/50 pt-3 mt-1 md:border-none md:pt-0 md:mt-0 md:justify-center">
                         <div className="flex items-center gap-4 md:gap-6">
                            <div className="flex flex-col md:items-center gap-0.5" title="Lượt dùng">
-                             <span className="text-[7px] md:hidden uppercase font-black text-white/20">Dùng</span>
-                             <div className="flex items-center gap-1.5 text-[11px] md:text-xs text-white/60">
+                             <span className="text-[7px] md:hidden uppercase font-black text-muted-foreground/40">Dùng</span>
+                             <div className="flex items-center gap-1.5 text-[11px] md:text-xs text-muted-foreground">
                                <Search size={10} className="opacity-40" />
                                <span className="font-bold">{doc.query_count || 0}</span>
                              </div>
@@ -504,9 +504,9 @@ export default function CommunityPage() {
                               variant={isUsed ? "ghost" : "default"}
                               className={cn(
                                  "h-7 px-3 rounded-lg transition-all shadow-md text-[9px] font-black uppercase tracking-tight",
-                                 isUsed 
-                                 ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                 : "bg-white text-black border-none hover:bg-white/90"
+                                 isUsed
+                                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                 : ""
                               )}
                               onClick={() => !isUsed && handleAddToLibrary(doc.id)}
                               disabled={isLoading_ || isUsed}
@@ -549,35 +549,20 @@ export default function CommunityPage() {
         ) : (
           /* Empty State */
           <div className="flex flex-col items-center justify-center py-32 text-center">
-            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
-              <Globe className="text-muted-foreground/20" size={40} />
+            <div className="w-20 h-20 bg-muted/40 rounded-full flex items-center justify-center mb-6">
+              <Globe className="text-muted-foreground/30" size={40} />
             </div>
             <h3 className="text-xl font-bold text-muted-foreground">Không tìm thấy tài liệu</h3>
             <p className="text-sm text-muted-foreground/50 max-w-sm mb-6">
               Thử từ khóa khác hoặc chuyển sang "Tất cả lĩnh vực" để mở rộng tìm kiếm.
             </p>
-            <Button variant="outline" onClick={() => { setSearch(""); setSubject("all"); }} className="border-white/10">
+            <Button variant="outline" onClick={() => { setSearch(""); setSubject("all"); }} className="border-border">
               Xóa lọc tìm kiếm
             </Button>
           </div>
         )}
       </div>
 
-      <style jsx global>{`
-        ::-webkit-scrollbar {
-          width: 5px;
-        }
-        ::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.1);
-        }
-      `}</style>
     </div>
   );
 }

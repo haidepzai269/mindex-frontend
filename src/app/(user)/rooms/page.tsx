@@ -18,7 +18,7 @@ import { useEffect } from "react";
 export default function RoomsPage() {
   const { data: roomsData, mutate } = useSWR<{ success: boolean; data: any[] }>("/rooms/my", fetcher as any);
   const rooms = roomsData?.data || [];
-  
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
@@ -32,63 +32,62 @@ export default function RoomsPage() {
     if (code) {
       setJoinCode(code);
       setIsJoinOpen(true);
-      // Xóa query param sau khi đã nhận
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
   }, [searchParams]);
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#020205] text-white p-6 md:p-10 overflow-y-auto custom-scrollbar">
+    <div className="flex-1 flex flex-col h-full bg-background text-foreground p-6 md:p-10 overflow-y-auto custom-scrollbar">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <motion.h1 
+            <motion.h1
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-white via-white/80 to-white/40 bg-clip-text text-transparent"
+              className="text-3xl md:text-4xl font-bold tracking-tight text-foreground"
             >
               Phòng học nhóm
             </motion.h1>
             <motion.button
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.1)" }}
+              whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsInfoOpen(true)}
-              className="p-1.5 rounded-full text-white/40 hover:text-white transition-colors border border-white/5 bg-white/5"
+              className="p-1.5 rounded-full text-muted-foreground hover:text-foreground transition-colors border border-border bg-muted/40 hover:bg-accent"
             >
               <Info size={20} />
             </motion.button>
           </div>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-white/40 text-sm md:text-base max-w-xl"
+            className="text-muted-foreground text-sm md:text-base max-w-xl"
           >
             Cùng bạn bè thảo luận, chia sẻ tài liệu và học tập hiệu quả hơn trong không gian riêng tư.
           </motion.p>
         </div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
           className="flex items-center gap-3"
         >
-          <Button 
+          <Button
             onClick={() => setIsJoinOpen(true)}
-            variant="outline" 
-            className="bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-xl px-5 h-12 gap-2"
+            variant="outline"
+            className="border-border bg-card hover:bg-accent hover:text-foreground text-foreground rounded-xl px-5 h-12 gap-2"
           >
             <Search size={18} />
             <span>Tham gia</span>
           </Button>
-          <Button 
+          <Button
             onClick={() => setIsCreateOpen(true)}
-            className="bg-zinc-800 hover:bg-zinc-700 text-white border border-white/5 rounded-xl px-6 h-12 gap-2 shadow-xl transition-all"
+            className="rounded-xl px-6 h-12 gap-2 shadow-xl transition-all"
           >
             <Plus size={18} />
             <span>Tạo nhóm mới</span>
@@ -107,35 +106,34 @@ export default function RoomsPage() {
               transition={{ delay: 0.1 * (index % 10) }}
             >
               <Link href={`/rooms/${room.id}`}>
-                <Card className="group relative bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-500 overflow-hidden rounded-2xl h-full flex flex-col p-6">
-                  {/* Glass highlight effect */}
-                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/5 blur-[80px] rounded-full group-hover:bg-white/10 transition-all duration-700" />
-                  
+                <Card className="group relative bg-card border-border hover:bg-accent/30 hover:border-primary/20 transition-all duration-500 overflow-hidden rounded-2xl h-full flex flex-col p-6 shadow-sm">
+                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 blur-[80px] rounded-full group-hover:bg-primary/10 transition-all duration-700" />
+
                   <div className="flex items-start justify-between mb-6 relative z-10">
-                    <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/70 group-hover:scale-110 transition-transform duration-500">
+                    <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center text-muted-foreground group-hover:text-primary group-hover:scale-110 transition-all duration-500">
                       <Users size={24} />
                     </div>
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold text-white/60">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/60 border border-border text-[10px] font-bold text-muted-foreground">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                       {room.member_count}/5 THÀNH VIÊN
                     </div>
                   </div>
 
                   <div className="flex-1 relative z-10">
-                    <h3 className="text-xl font-bold text-white/90 mb-2 group-hover:text-white transition-colors">
+                    <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                       {room.name}
                     </h3>
-                    <p className="text-sm text-white/30 line-clamp-2 mb-4">
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
                       {room.description || "Phòng học tập chung để trao đổi kiến thức và tài liệu."}
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-white/5 flex items-center justify-between relative z-10 mt-auto">
-                    <div className="flex items-center gap-2 text-white/40 group-hover:text-white/60 transition-colors">
+                  <div className="pt-4 border-t border-border/70 flex items-center justify-between relative z-10 mt-auto">
+                    <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
                       <MessageSquare size={14} />
                       <span className="text-xs">Vào thảo luận</span>
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-zinc-700 group-hover:text-white transition-all duration-300">
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
                       <ArrowRight size={16} />
                     </div>
                   </div>
@@ -145,24 +143,23 @@ export default function RoomsPage() {
           ))
         ) : (
           <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-white/10 mb-6">
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center text-muted-foreground/40 mb-6">
               <Users size={40} />
             </div>
-            <h3 className="text-xl font-bold text-white/60 mb-2">Bạn chưa tham gia nhóm nào</h3>
-            <p className="text-white/30 max-w-md mb-8 text-sm">
+            <h3 className="text-xl font-bold text-muted-foreground mb-2">Bạn chưa tham gia nhóm nào</h3>
+            <p className="text-muted-foreground/70 max-w-md mb-8 text-sm">
               Hãy tạo một nhóm mới hoặc tham gia nhóm của bạn bè để bắt đầu học tập cùng nhau.
             </p>
             <div className="flex gap-4">
-              <Button 
+              <Button
                 onClick={() => setIsJoinOpen(true)}
-                variant="outline" 
-                className="bg-transparent border-white/10 text-white/60 hover:text-white hover:bg-white/5"
+                variant="outline"
+                className="border-border text-foreground hover:bg-accent"
               >
                 Tham gia ngay
               </Button>
-              <Button 
+              <Button
                 onClick={() => setIsCreateOpen(true)}
-                className="bg-white/5 hover:bg-white/10 text-white/60 border border-white/10"
               >
                 Tạo nhóm mới
               </Button>
@@ -171,73 +168,73 @@ export default function RoomsPage() {
         )}
       </div>
 
-      <CreateRoomModal 
-        isOpen={isCreateOpen} 
+      <CreateRoomModal
+        isOpen={isCreateOpen}
         onClose={() => {
           setIsCreateOpen(false);
           mutate();
-        }} 
+        }}
       />
-      <JoinRoomModal 
-        isOpen={isJoinOpen} 
+      <JoinRoomModal
+        isOpen={isJoinOpen}
         initialCode={joinCode}
         onClose={() => {
           setIsJoinOpen(false);
           setJoinCode("");
           mutate();
-        }} 
+        }}
       />
 
       {/* INFO DIALOG */}
       <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-[#0A0B10] border border-white/10 text-white shadow-2xl p-0 overflow-hidden rounded-[24px]">
+        <DialogContent className="sm:max-w-[500px] bg-card border border-border text-foreground shadow-2xl p-0 overflow-hidden rounded-[24px]">
           <div className="p-8">
             <DialogHeader className="mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-                <Info className="w-7 h-7 text-white" />
+              <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center mb-4">
+                <Info className="w-7 h-7 text-foreground" />
               </div>
-              <DialogTitle className="text-2xl font-bold text-white">Nguyên tắc cộng đồng</DialogTitle>
-              <DialogDescription className="text-white/40">
+              <DialogTitle className="text-2xl font-bold text-foreground">Nguyên tắc cộng đồng</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
                 Để xây dựng môi trường học tập an toàn và hiệu quả, vui lòng tuân thủ các quy định sau.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
-              <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+              <div className="flex gap-4 p-4 rounded-2xl bg-muted/40 border border-border/70">
                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
                   <Hand className="w-5 h-5 text-blue-500" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-white/90">Học tập văn minh</h4>
-                  <p className="text-xs text-white/40 leading-relaxed">Tham gia phòng với mục đích học tập, trao đổi kiến thức chân chính và tôn trọng các thành viên khác.</p>
+                  <h4 className="font-bold text-sm text-foreground">Học tập văn minh</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Tham gia phòng với mục đích học tập, trao đổi kiến thức chân chính và tôn trọng các thành viên khác.</p>
                 </div>
               </div>
 
-              <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+              <div className="flex gap-4 p-4 rounded-2xl bg-muted/40 border border-border/70">
                 <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center shrink-0">
                   <ShieldAlert className="w-5 h-5 text-yellow-500" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-white/90">Không nội dung nhạy cảm</h4>
-                  <p className="text-xs text-white/40 leading-relaxed">Tuyệt đối không chia sẻ hình ảnh, tài liệu nhạy cảm, đồi trụy hoặc vi phạm các chuẩn mực đạo đức.</p>
+                  <h4 className="font-bold text-sm text-foreground">Không nội dung nhạy cảm</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Tuyệt đối không chia sẻ hình ảnh, tài liệu nhạy cảm, đồi trụy hoặc vi phạm các chuẩn mực đạo đức.</p>
                 </div>
               </div>
 
-              <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+              <div className="flex gap-4 p-4 rounded-2xl bg-muted/40 border border-border/70">
                 <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
                   <Scale className="w-5 h-5 text-red-500" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-white/90">Xử lý vi phạm</h4>
-                  <p className="text-xs text-white/40 leading-relaxed">Tài khoản vi phạm sẽ bị cấm vĩnh viễn và thông tin sẽ được xử lý theo quy định của pháp luật hiện hành.</p>
+                  <h4 className="font-bold text-sm text-foreground">Xử lý vi phạm</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Tài khoản vi phạm sẽ bị cấm vĩnh viễn và thông tin sẽ được xử lý theo quy định của pháp luật hiện hành.</p>
                 </div>
               </div>
             </div>
 
             <div className="mt-8">
-              <Button 
+              <Button
                 onClick={() => setIsInfoOpen(false)}
-                className="w-full h-12 bg-white text-black hover:bg-zinc-200 rounded-xl font-bold transition-all"
+                className="w-full h-12 rounded-xl font-bold transition-all"
               >
                 Tôi đã hiểu
               </Button>

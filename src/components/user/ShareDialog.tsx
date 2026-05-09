@@ -198,7 +198,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-md bg-[#0D0D12] border border-white/10 rounded-[32px] p-8 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-md bg-card border border-border rounded-[32px] p-8 shadow-2xl overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
 
@@ -206,36 +206,36 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white">
+                  <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center text-foreground">
                     <Share2 size={24} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white tracking-tight">
+                    <h3 className="text-xl font-bold text-foreground tracking-tight">
                       Chia sẻ
                     </h3>
-                    <p className="text-[11px] text-zinc-500 font-medium truncate max-w-[200px]">
+                    <p className="text-[11px] text-muted-foreground font-medium truncate max-w-[200px]">
                       {documentTitle}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-full hover:bg-white/5 text-zinc-500 hover:text-white transition-colors"
+                  className="p-2 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <X size={20} />
                 </button>
               </div>
 
               {/* Tab Switcher */}
-              <div className="flex gap-1 p-1 bg-white/5 rounded-2xl mb-6">
+              <div className="flex gap-1 p-1 bg-muted/40 rounded-2xl mb-6">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] font-bold transition-all ${
                       activeTab === tab.id
-                        ? "bg-white text-black shadow-md"
-                        : "text-zinc-500 hover:text-white"
+                        ? "bg-foreground text-background shadow-md"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {tab.icon}
@@ -256,19 +256,19 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                   >
                     {/* Link field */}
                     <div className="space-y-2">
-                      <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest px-1">
+                      <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest px-1">
                         Liên kết tài liệu
                       </label>
                       <div className="flex gap-2">
-                        <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl h-12 px-4 flex items-center overflow-hidden">
-                          <Link2 size={14} className="text-zinc-600 mr-2 flex-shrink-0" />
-                          <span className="text-sm text-zinc-400 truncate font-medium">
+                        <div className="flex-1 bg-muted/30 border border-border rounded-2xl h-12 px-4 flex items-center overflow-hidden">
+                          <Link2 size={14} className="text-muted-foreground/50 mr-2 flex-shrink-0" />
+                          <span className="text-sm text-muted-foreground truncate font-medium">
                             {docShareUrl}
                           </span>
                         </div>
                         <button
                           onClick={handleCopyDocLink}
-                          className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-all active:scale-90"
+                          className="w-12 h-12 rounded-2xl bg-muted/30 border border-border flex items-center justify-center text-foreground hover:bg-accent transition-all active:scale-90"
                         >
                           {isCopied ? (
                             <Check size={18} className="text-emerald-400" />
@@ -282,24 +282,24 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                     {/* Community Share Toggle */}
                     <div
                       onClick={() => setIsPublic(!isPublic)}
-                      className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer hover:bg-white/[0.08] transition-all group"
+                      className="flex items-center gap-4 p-4 bg-muted/30 border border-border rounded-2xl cursor-pointer hover:bg-accent/40 transition-all group"
                     >
                       <div
                         className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
                           isPublic
-                            ? "bg-white border-white"
-                            : "border-white/20 group-hover:border-white/40"
+                            ? "bg-primary border-primary"
+                            : "border-border group-hover:border-primary/40"
                         }`}
                       >
                         {isPublic && (
-                          <Check size={16} className="text-black font-bold" strokeWidth={3} />
+                          <Check size={16} className="text-primary-foreground font-bold" strokeWidth={3} />
                         )}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold text-white">
+                        <span className="text-sm font-bold text-foreground">
                           Share trên thư viện chung
                         </span>
-                        <span className="text-[11px] text-zinc-500 font-medium">
+                        <span className="text-[11px] text-muted-foreground font-medium">
                           Bất kỳ ai cũng có thể tìm thấy và sử dụng tài liệu này
                         </span>
                       </div>
@@ -308,7 +308,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                     <button
                       onClick={handleDone}
                       disabled={isSubmitting}
-                      className="w-full h-14 rounded-2xl bg-white text-black font-black text-sm transition-all hover:bg-zinc-200 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 uppercase tracking-widest shadow-xl shadow-white/5"
+                      className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black text-sm transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 uppercase tracking-widest shadow-sm"
                     >
                       {isSubmitting ? (
                         <Loader2 size={18} className="animate-spin" />
@@ -341,29 +341,29 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                     {/* Toggle: Hiển thị lịch sử */}
                     <div
                       onClick={() => setShowHistory(!showHistory)}
-                      className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer hover:bg-white/[0.08] transition-all group"
+                      className="flex items-center gap-4 p-4 bg-muted/30 border border-border rounded-2xl cursor-pointer hover:bg-accent/40 transition-all group"
                     >
                       <div
                         className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 ${
-                          showHistory ? "bg-white" : "bg-white/10"
+                          showHistory ? "bg-primary" : "bg-muted/60"
                         }`}
                       >
                         <div
                           className={`absolute top-1 w-4 h-4 rounded-full transition-all ${
                             showHistory
-                              ? "translate-x-6 bg-black"
-                              : "translate-x-1 bg-zinc-500"
+                              ? "translate-x-6 bg-primary-foreground"
+                              : "translate-x-1 bg-muted-foreground/40"
                           }`}
                         />
                       </div>
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                          <Eye size={13} className="text-zinc-400" />
-                          <span className="text-sm font-bold text-white">
+                          <Eye size={13} className="text-muted-foreground" />
+                          <span className="text-sm font-bold text-foreground">
                             Hiển thị toàn bộ hội thoại
                           </span>
                         </div>
-                        <span className="text-[11px] text-zinc-500 font-medium">
+                        <span className="text-[11px] text-muted-foreground font-medium">
                           Người nhận link sẽ thấy lịch sử chat của bạn
                         </span>
                       </div>
@@ -372,29 +372,29 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                     {/* Toggle: Cho phép fork */}
                     <div
                       onClick={() => setAllowFork(!allowFork)}
-                      className="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl cursor-pointer hover:bg-white/[0.08] transition-all group"
+                      className="flex items-center gap-4 p-4 bg-muted/30 border border-border rounded-2xl cursor-pointer hover:bg-accent/40 transition-all group"
                     >
                       <div
                         className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 ${
-                          allowFork ? "bg-white" : "bg-white/10"
+                          allowFork ? "bg-primary" : "bg-muted/60"
                         }`}
                       >
                         <div
                           className={`absolute top-1 w-4 h-4 rounded-full transition-all ${
                             allowFork
-                              ? "translate-x-6 bg-black"
-                              : "translate-x-1 bg-zinc-500"
+                              ? "translate-x-6 bg-primary-foreground"
+                              : "translate-x-1 bg-muted-foreground/40"
                           }`}
                         />
                       </div>
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                          <GitFork size={13} className="text-zinc-400" />
-                          <span className="text-sm font-bold text-white">
+                          <GitFork size={13} className="text-muted-foreground" />
+                          <span className="text-sm font-bold text-foreground">
                             Cho phép tiếp tục hỏi (Fork)
                           </span>
                         </div>
-                        <span className="text-[11px] text-zinc-500 font-medium">
+                        <span className="text-[11px] text-muted-foreground font-medium">
                           Người xem có thể tạo phiên chat riêng kế thừa ngữ cảnh
                         </span>
                       </div>
@@ -434,7 +434,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                     <button
                       onClick={handleCreateChatLink}
                       disabled={isCreatingLink || !sessionId}
-                      className="w-full h-14 rounded-2xl bg-white text-black font-black text-sm transition-all hover:bg-zinc-200 active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-3 uppercase tracking-widest shadow-xl shadow-white/5 mt-2"
+                      className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black text-sm transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-3 uppercase tracking-widest shadow-sm mt-2"
                     >
                       {isCreatingLink ? (
                         <>

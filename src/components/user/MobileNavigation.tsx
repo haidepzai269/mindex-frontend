@@ -72,7 +72,7 @@ export function MobileNavigation() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="md:hidden fixed bottom-4 left-4 right-4 z-[100] px-3 pb-[env(safe-area-inset-bottom,4px)] pt-2 bg-[#0A0B10]/90 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
+            className="md:hidden fixed bottom-4 left-4 right-4 z-[100] px-3 pb-[env(safe-area-inset-bottom,4px)] pt-2 bg-card/90 backdrop-blur-2xl border border-border rounded-[2rem] shadow-xl"
           >
             <div className="flex items-center justify-between relative px-2">
               {/* Thư viện */}
@@ -85,19 +85,19 @@ export function MobileNavigation() {
 
               {/* Floating Action Button (Center) */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="relative -top-6 w-14 h-14 outline-none rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-white/70 shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                <DropdownMenuTrigger className="relative -top-6 w-14 h-14 outline-none rounded-full bg-primary border border-primary/20 flex items-center justify-center text-primary-foreground shadow-xl hover:scale-105 active:scale-95 transition-all">
                     <Plus size={28} className="drop-shadow-lg" />
-                    <div className="absolute inset-0 rounded-full border border-white/5 animate-pulse pointer-events-none" />
+                    <div className="absolute inset-0 rounded-full border border-primary/30 animate-pulse pointer-events-none" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 
                   align="center" 
                   side="top" 
                   sideOffset={16}
-                  className="w-56 bg-[#1a1b26]/95 backdrop-blur-xl border-white/10 p-2 rounded-2xl shadow-2xl mb-2"
+                  className="w-56 bg-popover/95 backdrop-blur-xl border-border p-2 rounded-2xl shadow-2xl mb-2"
                 >
                   <DropdownMenuItem 
                     onClick={() => router.push('/upload')}
-                    className="flex items-center gap-3 p-3 cursor-pointer rounded-xl hover:bg-white/10 focus:bg-white/10 text-white/90"
+                    className="flex items-center gap-3 p-3 cursor-pointer rounded-xl hover:bg-accent focus:bg-accent text-foreground"
                   >
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                       <Upload size={16} />
@@ -112,7 +112,7 @@ export function MobileNavigation() {
                   
                   <DropdownMenuItem 
                     onClick={() => setIsImportModalOpen(true)}
-                    className="flex items-center gap-3 p-3 cursor-pointer rounded-xl hover:bg-white/10 focus:bg-white/10 text-white/90"
+                    className="flex items-center gap-3 p-3 cursor-pointer rounded-xl hover:bg-accent focus:bg-accent text-foreground"
                   >
                     <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
                       <LinkIcon size={16} />
@@ -127,7 +127,7 @@ export function MobileNavigation() {
 
                   <DropdownMenuItem 
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-3 p-3 cursor-pointer rounded-xl hover:bg-white/10 focus:bg-white/10 text-white/90"
+                    className="flex items-center gap-3 p-3 cursor-pointer rounded-xl hover:bg-accent focus:bg-accent text-foreground"
                   >
                     <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500">
                       <FolderPlus size={16} />
