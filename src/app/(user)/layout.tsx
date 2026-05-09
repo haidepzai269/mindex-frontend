@@ -40,6 +40,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
   const setUser = useAuthStore((state) => state.setUser);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
@@ -348,7 +349,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
 
         <main className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-background">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,hsl(var(--primary)/0.08),transparent_35%)] dark:bg-[radial-gradient(circle_at_top,hsl(var(--primary)/0.04),transparent_35%)]" />
-          <MobileHeader />
+          <MobileHeader onSheetOpenChange={setIsMobileSheetOpen} />
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
@@ -363,7 +364,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
           </AnimatePresence>
         </main>
 
-        <MobileNavigation />
+        <MobileNavigation isSheetOpen={isMobileSheetOpen} />
         <PremiumConfirmDialog />
         <UpgradeNotification />
       </div>

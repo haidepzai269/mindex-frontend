@@ -44,13 +44,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import useSWR from "swr";
 import { fetcher, fetchApi } from "@/lib/api";
 import { toast } from "sonner";
@@ -359,23 +352,52 @@ export default function CommunityPage() {
              </PopoverContent>
            </Popover>
            
-           <Select value={subject} onValueChange={(val) => setSubject(val ?? "all")}>
-              <SelectTrigger className="h-9 w-full md:w-[160px] border-border bg-muted/40 text-[11px] hover:bg-muted/60 transition-all rounded-xl md:rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Filter size={14} className="text-muted-foreground" />
-                  <span className="truncate">{subject === 'all' ? 'Tất cả lĩnh vực' : PERSONA_LABELS[subject]?.label}</span>
+           <Popover>
+              <PopoverTrigger asChild>
+                <button className={cn(
+                  "h-9 w-full md:w-[190px] flex items-center gap-2 px-3 border rounded-xl md:rounded-lg text-[11px] font-medium transition-all",
+                  subject === "all"
+                    ? "bg-muted/40 border-border text-muted-foreground hover:bg-muted/60"
+                    : cn(PERSONA_LABELS[subject]?.color, "border")
+                )}>
+                  <Filter size={13} className="shrink-0" />
+                  <span className="flex-1 text-left truncate">
+                    {subject === "all" ? "Tất cả lĩnh vực" : `${PERSONA_LABELS[subject]?.emoji} ${PERSONA_LABELS[subject]?.label}`}
+                  </span>
+                  <ChevronDown size={13} className="shrink-0 opacity-60" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-1.5 bg-popover border-border shadow-2xl rounded-2xl z-[110]" align="start" sideOffset={6}>
+                <div className="space-y-0.5">
+                  <button
+                    onClick={() => setSubject("all")}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] font-medium transition-all",
+                      subject === "all" ? "bg-primary/10 text-primary" : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <span>🌐</span>
+                    <span className="flex-1 text-left">Tất cả lĩnh vực</span>
+                    {subject === "all" && <CheckCircle size={12} />}
+                  </button>
+                  <div className="h-px bg-border/50 mx-1 my-0.5" />
+                  {Object.entries(PERSONA_LABELS).map(([key, cfg]) => (
+                    <button
+                      key={key}
+                      onClick={() => setSubject(key)}
+                      className={cn(
+                        "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[12px] font-medium transition-all border",
+                        subject === key ? cfg.color : "border-transparent hover:bg-accent text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <span>{cfg.emoji}</span>
+                      <span className="flex-1 text-left">{cfg.label}</span>
+                      {subject === key && <CheckCircle size={12} />}
+                    </button>
+                  ))}
                 </div>
-              </SelectTrigger>
-              <SelectContent className="bg-popover border-border text-foreground z-[110]">
-                <SelectItem value="all">🌐 Tất cả lĩnh vực</SelectItem>
-                <SelectItem value="student">🎓 Sinh viên</SelectItem>
-                <SelectItem value="doctor">🏥 Y tế</SelectItem>
-                <SelectItem value="legal">⚖️ Pháp lý</SelectItem>
-                <SelectItem value="engineer">⚙️ Kỹ thuật</SelectItem>
-                <SelectItem value="business">📊 Kinh doanh</SelectItem>
-                <SelectItem value="researcher">🔬 Nghiên cứu</SelectItem>
-              </SelectContent>
-            </Select>
+              </PopoverContent>
+            </Popover>
 
             {(search || subject !== "all") && (
               <Button
@@ -401,25 +423,29 @@ export default function CommunityPage() {
       </div>
 
       {/* ── CONTENT AREA ── */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-8 py-4 md:py-6 pb-32 md:pb-6">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {isLoading ? (
-          <div className="space-y-4">
-             {[1,2,3,4,5,6].map(i => (
-               <div key={i} className="h-20 w-full bg-muted/40 animate-pulse rounded-xl border border-border/30" />
-             ))}
+          <div className="flex-1 overflow-y-auto px-4 md:px-8 py-4 md:py-6">
+            <div className="space-y-4">
+               {[1,2,3,4,5,6].map(i => (
+                 <div key={i} className="h-20 w-full bg-muted/40 animate-pulse rounded-xl border border-border/30" />
+               ))}
+            </div>
           </div>
         ) : docs.length > 0 ? (
-          <div className="space-y-3">
-             {/* Header row labels (Desktop only) */}
-             <div className="hidden md:grid grid-cols-[1fr_150px_100px_140px_120px] gap-4 px-6 py-2 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-2">
-                <div>Tên tài liệu & Người đóng góp</div>
-                <div>Lĩnh vực</div>
-                <div className="text-center">Chi tiết</div>
-                <div className="text-center">Tương tác</div>
-                <div className="text-right pr-2">Thao tác</div>
-             </div>
+          <>
+            {/* Column headers — desktop only, fixed (không cuộn) */}
+            <div className="hidden md:grid grid-cols-[1fr_150px_100px_140px_120px] gap-4 md:px-14 py-2.5 shrink-0 border-b border-border/40 bg-background text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">
+               <div>Tên tài liệu & Người đóng góp</div>
+               <div>Lĩnh vực</div>
+               <div className="text-center">Chi tiết</div>
+               <div className="text-center">Tương tác</div>
+               <div className="text-right pr-2">Thao tác</div>
+            </div>
 
-             {/* Rows */}
+            {/* Scrollable list */}
+            <div className="flex-1 overflow-y-auto px-4 md:px-8 py-3 md:py-4 pb-32 md:pb-6">
+            <div className="space-y-3">
              {docs.map((doc: any) => {
                 const isUsed = usedDocs.has(doc.id);
                 const isVoted = votedDocs.has(doc.id);
@@ -545,10 +571,12 @@ export default function CommunityPage() {
                   </div>
                 );
              })}
-          </div>
+            </div>
+            </div>
+          </>
         ) : (
           /* Empty State */
-          <div className="flex flex-col items-center justify-center py-32 text-center">
+          <div className="flex-1 overflow-y-auto flex flex-col items-center justify-center py-32 text-center">
             <div className="w-20 h-20 bg-muted/40 rounded-full flex items-center justify-center mb-6">
               <Globe className="text-muted-foreground/30" size={40} />
             </div>

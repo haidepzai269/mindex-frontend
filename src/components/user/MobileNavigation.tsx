@@ -11,7 +11,7 @@ import { ImportLinkDialog } from "./ImportLinkDialog";
 import { CreateCollectionModal } from "./CreateCollectionModal";
 import { mutate } from "swr";
 
-export function MobileNavigation() {
+export function MobileNavigation({ isSheetOpen = false }: { isSheetOpen?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(true);
@@ -57,11 +57,11 @@ export function MobileNavigation() {
     };
   }, []);
 
-  // Ẩn thanh điều hướng khi ở trong trang tài liệu hoặc trong phòng chat cụ thể
+  // Ẩn thanh điều hướng khi ở trong trang tài liệu, phòng chat, hoặc sheet đang mở
   const isDocPage = pathname.startsWith("/doc/");
   const isRoomPage = pathname.startsWith("/rooms/") && pathname !== "/rooms";
-  
-  if (isDocPage || isRoomPage) return null;
+
+  if (isDocPage || isRoomPage || isSheetOpen) return null;
 
   return (
     <>
@@ -72,7 +72,7 @@ export function MobileNavigation() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="md:hidden fixed bottom-4 left-4 right-4 z-[100] px-3 pb-[env(safe-area-inset-bottom,4px)] pt-2 bg-card/90 backdrop-blur-2xl border border-border rounded-[2rem] shadow-xl"
+            className="md:hidden fixed bottom-4 left-4 right-4 z-[100] px-3 pb-[env(safe-area-inset-bottom,4px)] pt-2 bg-card backdrop-blur-xl rounded-[2rem] shadow-[0_4px_24px_rgba(0,0,0,0.13)]"
           >
             <div className="flex items-center justify-between relative px-2">
               {/* Thư viện */}
@@ -85,9 +85,8 @@ export function MobileNavigation() {
 
               {/* Floating Action Button (Center) */}
               <DropdownMenu>
-                <DropdownMenuTrigger className="relative -top-6 w-14 h-14 outline-none rounded-full bg-primary border border-primary/20 flex items-center justify-center text-primary-foreground shadow-xl hover:scale-105 active:scale-95 transition-all">
-                    <Plus size={28} className="drop-shadow-lg" />
-                    <div className="absolute inset-0 rounded-full border border-primary/30 animate-pulse pointer-events-none" />
+                <DropdownMenuTrigger className="relative w-12 h-12 outline-none rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-all shrink-0">
+                    <Plus size={24} />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 
                   align="center" 
@@ -178,7 +177,7 @@ function NavItem({ href, icon, active, label }: { href: string; icon: React.Reac
   return (
     <Link href={href} className={cn(
       "flex flex-col items-center justify-center w-16 h-12 gap-1.5 transition-all outline-none",
-      active ? "text-primary scale-110" : "text-white/40 hover:text-white/60 active:scale-95"
+      active ? "text-primary scale-110" : "text-muted-foreground hover:text-foreground active:scale-95"
     )}>
       {icon}
       {active && <span className="text-[9px] font-bold tracking-wider">{label}</span>}

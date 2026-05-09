@@ -32,13 +32,14 @@ import {
   MessageSquareShare,
   CornerDownRight,
   CornerDownLeft,
-  Trash2
+  Trash2,
+  Copy
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -63,6 +64,7 @@ interface RoomMessage {
 interface RoomMember {
   user_id: string;
   name: string;
+  avatar_url?: string;
   is_online: boolean;
   doc_count: number;
   last_seen?: string;
@@ -104,6 +106,7 @@ export default function RoomPage() {
 
   const ws = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const intentionalClose = useRef(false);
@@ -122,7 +125,10 @@ export default function RoomPage() {
   const [isLibraryPickerOpen, setIsLibraryPickerOpen] = useState(false);
   const [droppedDocs, setDroppedDocs] = useState<{id: string, title: string}[]>([]);
   const [isDragOverInput, setIsDragOverInput] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
   const dragCounterRef = useRef(0);
+  const typingTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const typingThrottleRef = useRef<number>(0);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -211,12 +217,7 @@ export default function RoomPage() {
   }, [id, user]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (viewport) {
-        viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
-      }
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, aiStreamingText, isAiTyping]);
 
   const handleWsEvent = (event: any) => {
@@ -249,8 +250,17 @@ export default function RoomPage() {
         }]);
         setAiStreamingText("");
         break;
+      case "user_typing": {
+        const { user_id, name } = event.payload;
+        setTypingUsers(prev => ({ ...prev, [user_id]: name }));
+        if (typingTimersRef.current[user_id]) clearTimeout(typingTimersRef.current[user_id]);
+        typingTimersRef.current[user_id] = setTimeout(() => {
+          setTypingUsers(prev => { const next = { ...prev }; delete next[user_id]; return next; });
+        }, 3000);
+        break;
+      }
       case "message_reaction":
-        setMessages(prev => prev.map(m => 
+        setMessages(prev => prev.map(m =>
           m.id === event.payload.id ? event.payload : m
         ));
         break;
@@ -283,6 +293,15 @@ export default function RoomPage() {
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart;
     setInputText(value);
+
+    // Gửi typing event (throttle 1 lần / 2 giây)
+    if (value.trim() && ws.current?.readyState === WebSocket.OPEN) {
+      const now = Date.now();
+      if (now - typingThrottleRef.current > 2000) {
+        typingThrottleRef.current = now;
+        ws.current.send(JSON.stringify({ type: "typing" }));
+      }
+    }
 
     // Xử lý @mention logic
     const lastAtPos = value.lastIndexOf("@", cursorPosition - 1);
@@ -374,7 +393,11 @@ export default function RoomPage() {
         return (
           <span
             key={i}
-            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold text-xs bg-violet-500/15 text-violet-600 dark:text-violet-400 cursor-pointer underline underline-offset-2 transition-all"
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold text-xs bg-slate-400/15 text-slate-600 dark:text-slate-300 cursor-pointer underline underline-offset-2 transition-all hover:bg-slate-400/25"
+            onClick={() => {
+              setInputText(prev => prev.endsWith(' ') || prev === '' ? prev + '@MindexAI ' : prev + ' @MindexAI ');
+              setTimeout(() => textareaRef.current?.focus(), 10);
+            }}
           >
             <Sparkles size={10} />
             @MindexAI
@@ -504,6 +527,7 @@ export default function RoomPage() {
                 >
                   <div className="relative">
                     <Avatar className="w-8 h-8 border border-border">
+                      {m.avatar_url && <AvatarImage src={m.avatar_url} alt={m.name} />}
                       <AvatarFallback className="bg-muted text-[10px]">{m.name.substring(0,2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className={cn(
@@ -549,7 +573,7 @@ export default function RoomPage() {
           </div>
 
           <ScrollArea ref={scrollRef} className="flex-1 min-h-0">
-            <div className="max-w-4xl mx-auto w-full space-y-8 p-6 pb-32">
+            <div className="max-w-4xl mx-auto w-full space-y-8 p-6">
               <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
                 <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/20">
                   <Sparkles className="w-8 h-8 text-primary" />
@@ -558,8 +582,8 @@ export default function RoomPage() {
                   <h2 className="text-xl font-bold italic text-foreground">Chào mừng tới {room.name}!</h2>
                   <p className="text-sm text-muted-foreground max-w-sm mt-2">
                     Dùng <span
-                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold text-xs bg-violet-500/15 text-violet-600 dark:text-violet-400 cursor-pointer underline underline-offset-2"
-                      onClick={() => setInputText(prev => prev + (prev.endsWith(' ') || prev === '' ? '@MindexAI ' : ' @MindexAI '))}
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-bold text-xs bg-slate-400/15 text-slate-600 dark:text-slate-300 cursor-pointer underline underline-offset-2 hover:bg-slate-400/25"
+                      onClick={() => { setInputText(prev => prev + (prev.endsWith(' ') || prev === '' ? '@MindexAI ' : ' @MindexAI ')); setTimeout(() => textareaRef.current?.focus(), 10); }}
                     ><Sparkles size={10} />@MindexAI</span> để hỏi về tài liệu chung của cả nhóm.
                   </p>
                 </div>
@@ -691,6 +715,14 @@ export default function RoomPage() {
                           >
                             <ReplyIcon size={14} />
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-7 h-7 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground"
+                            onClick={() => { navigator.clipboard.writeText(msg.text); toast.success("Đã sao chép!"); }}
+                          >
+                            <Copy size={14} />
+                          </Button>
                           {!isMe && !msg.is_ai && (
                             <Button variant="ghost" size="icon" className="w-7 h-7 rounded-full hover:bg-red-500/10 text-muted-foreground hover:text-red-500">
                               <Flag size={14} />
@@ -738,6 +770,21 @@ export default function RoomPage() {
                   </div>
                 </div>
               )}
+              {/* Typing indicator — người khác đang nhập */}
+              {Object.keys(typingUsers).length > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-1">
+                    {Object.values(typingUsers).slice(0, 2).map((name, i) => (
+                      <Avatar key={i} className="w-6 h-6 border-2 border-background">
+                        <AvatarFallback className="text-[8px] bg-muted">{name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                  <AIThinkingIndicator text={`${Object.values(typingUsers).join(' và ')} đang nhập...`} />
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 
