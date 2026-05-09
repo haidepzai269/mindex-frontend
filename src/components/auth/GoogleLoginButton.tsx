@@ -102,10 +102,10 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
     <div className="flex flex-col items-center w-full">
       <div className="relative w-full flex items-center justify-center my-8">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-white/5"></span>
+          <span className="w-full border-t border-border"></span>
         </div>
-        <div className="relative px-4 bg-background">
-          <span className="text-[10px] uppercase text-white/30 font-bold tracking-[0.2em]">Hoặc sử dụng</span>
+        <div className="relative px-4 bg-card dark:bg-transparent">
+          <span className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-[0.2em]">Hoặc sử dụng</span>
         </div>
       </div>
       

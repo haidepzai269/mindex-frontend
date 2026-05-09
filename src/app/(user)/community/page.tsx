@@ -20,6 +20,7 @@ import {
   History,
   X,
   Info,
+  ArrowUpDown,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -113,6 +114,7 @@ import { NotificationBell } from "@/components/user/NotificationBell";
 export default function CommunityPage() {
   const [search, setSearch] = useState("");
   const [subject, setSubject] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
   const [usedDocs, setUsedDocs] = useState<Set<string>>(new Set());
   const [votedDocs, setVotedDocs] = useState<Set<string>>(new Set());
   const [loadingDocs, setLoadingDocs] = useState<Set<string>>(new Set());
@@ -120,7 +122,7 @@ export default function CommunityPage() {
 
   const debouncedSearch = useDebounce(search, 400);
 
-  const queryKey = `/community/search?q=${debouncedSearch}&subject=${subject === "all" ? "" : subject}`;
+  const queryKey = `/community/search?q=${debouncedSearch}&subject=${subject === "all" ? "" : subject}&sort=${sortBy}`;
   const { data: communityData, isLoading, mutate } = useSWR(queryKey, fetcher as any) as {
     data: any;
     isLoading: boolean;
@@ -399,10 +401,42 @@ export default function CommunityPage() {
               </PopoverContent>
             </Popover>
 
-            {(search || subject !== "all") && (
+            {/* Sort dropdown */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="h-9 flex items-center gap-2 px-3 border border-border bg-muted/40 hover:bg-muted/60 rounded-xl md:rounded-lg text-[11px] font-medium transition-all text-muted-foreground shrink-0">
+                  <ArrowUpDown size={13} className="shrink-0" />
+                  <span className="hidden md:inline">
+                    {sortBy === "newest" ? "Mới nhất" : sortBy === "upvotes" ? "Nhiều vote" : "Nhiều dùng"}
+                  </span>
+                  <ChevronDown size={12} className="opacity-60" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[160px] p-1.5 bg-popover border-border shadow-2xl rounded-2xl z-[110]" align="start" sideOffset={6}>
+                {[
+                  { value: "newest", label: "Mới nhất" },
+                  { value: "upvotes", label: "Nhiều vote nhất" },
+                  { value: "usage", label: "Nhiều lượt dùng" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSortBy(opt.value)}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-all",
+                      sortBy === opt.value ? "bg-primary/10 text-primary" : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {opt.label}
+                    {sortBy === opt.value && <CheckCircle size={12} className="ml-auto" />}
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
+
+            {(search || subject !== "all" || sortBy !== "newest") && (
               <Button
                 variant="ghost"
-                onClick={() => { setSearch(""); setSubject("all"); }}
+                onClick={() => { setSearch(""); setSubject("all"); setSortBy("newest"); }}
                 className="h-8 px-2 text-[10px] text-muted-foreground hover:text-foreground"
               >
                 Xóa lọc ×
@@ -468,10 +502,10 @@ export default function CommunityPage() {
                            {doc.contributor_name && (
                              <>
                                <span className="w-1 h-1 rounded-full bg-border" />
-                               <span className="flex items-center gap-1 truncate shrink-0">
+                               <Link href={`/profile/${doc.owner_id}`} className="flex items-center gap-1 truncate shrink-0 hover:text-primary transition-colors">
                                  <GraduationCap size={12} className="text-muted-foreground/40 shrink-0" />
                                  <span className="truncate">{doc.contributor_name}</span>
-                               </span>
+                               </Link>
                              </>
                            )}
                         </div>

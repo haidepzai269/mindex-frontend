@@ -40,6 +40,7 @@ export const metadata: Metadata = {
     icon: "/logo.png?v=1",
     apple: "/logo.png?v=1",
   },
+  manifest: "/manifest.json",
   openGraph: {
     title: "Mindex - AI Document Assistant for Students",
     description:

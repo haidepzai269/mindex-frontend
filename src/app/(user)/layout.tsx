@@ -13,7 +13,10 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Users,
+  TrendingUp,
+  Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -29,9 +32,11 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { MobileNavigation } from "@/components/user/MobileNavigation";
 import { MobileHeader } from "@/components/user/MobileHeader";
 import { formatTimeAgo } from "@/lib/time";
+import { useServiceWorker } from "@/hooks/useServiceWorker";
 
 export default function UserLayout({ children }: { children: ReactNode }) {
   useNotifications();
+  useServiceWorker();
 
   const pathname = usePathname();
   const logout = useAuthStore((state) => state.logout);
@@ -41,6 +46,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
+  const [isToolsExpanded, setIsToolsExpanded] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
@@ -54,7 +60,8 @@ export default function UserLayout({ children }: { children: ReactNode }) {
   };
 
   const { data: meData } = useSWR<{ success: boolean; data: any }>(user ? "/auth/me" : null, fetcher as any, {
-    refreshInterval: 30000,
+    refreshInterval: 300000, // 5 phút thay vì 30s — tránh poll liên tục
+    revalidateOnFocus: true,  // Vẫn refresh khi user quay lại tab
   });
 
   useEffect(() => {
@@ -172,32 +179,85 @@ export default function UserLayout({ children }: { children: ReactNode }) {
               <NavItem href="/upload" icon={<Upload size={20} />} label="Tài liệu mới" active={pathname.startsWith("/upload")} collapsed={isCollapsed} />
               <NavItem href="/rooms" icon={<Users size={20} />} label="Phòng học nhóm" active={pathname.startsWith("/rooms")} collapsed={isCollapsed} />
               <NavItem href="/community" icon={<Globe size={20} />} label="Thư viện chung" active={pathname === "/community"} collapsed={isCollapsed} />
-              <NavItem href="/settings" icon={<Settings size={20} />} label="Cài đặt" active={pathname.startsWith("/settings")} collapsed={isCollapsed} />
             </div>
 
-            {!isCollapsed && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-0 flex-1 flex-col">
-                <Separator className="my-4 bg-border/70" />
-                <div className="mb-3 mt-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  Tài liệu gần đây
-                </div>
-                <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto pr-1 pb-4">
-                  {recentDocs.length > 0 ? (
-                    recentDocs.map((doc) => (
-                      <RecentDoc
-                        key={doc.id}
-                        id={doc.id}
-                        title={doc.title}
-                        expiring={!!doc.expired_at}
-                        time={doc.shared_at || doc.created_at}
-                      />
-                    ))
-                  ) : (
-                    <div className="px-4 py-2 text-[10px] italic text-muted-foreground">Chưa có tài liệu nào</div>
-                  )}
-                </div>
-              </motion.div>
-            )}
+            <AnimatePresence initial={false}>
+              {!isCollapsed && !isToolsExpanded && (
+                <motion.div
+                  key="recent-docs"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.28, ease: "easeInOut" }}
+                  className="flex min-h-0 flex-1 flex-col overflow-hidden"
+                >
+                  <Separator className="my-4 bg-border/70" />
+                  <div className="mb-3 mt-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    Tài liệu gần đây
+                  </div>
+                  <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto pr-1 pb-4">
+                    {recentDocs.length > 0 ? (
+                      recentDocs.map((doc) => (
+                        <RecentDoc
+                          key={doc.id}
+                          id={doc.id}
+                          title={doc.title}
+                          expiring={!!doc.expired_at}
+                          time={doc.shared_at || doc.created_at}
+                        />
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-[10px] italic text-muted-foreground">Chưa có tài liệu nào</div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Toggle accordion cho Tools */}
+            <div className={cn("mt-auto shrink-0", isCollapsed ? "flex flex-col items-center gap-1.5 py-2" : "pb-2")}>
+              {isCollapsed ? (
+                <>
+                  <NavItem href="/analytics" icon={<TrendingUp size={20} />} label="Tiến trình" active={pathname === "/analytics"} collapsed={isCollapsed} />
+                  <NavItem href="/planner" icon={<Calendar size={20} />} label="Kế hoạch học" active={pathname === "/planner"} collapsed={isCollapsed} />
+                  <NavItem href="/settings" icon={<Settings size={20} />} label="Cài đặt" active={pathname.startsWith("/settings")} collapsed={isCollapsed} />
+                </>
+              ) : (
+                <>
+                  <AnimatePresence initial={false}>
+                    {isToolsExpanded && (
+                      <motion.div
+                        key="tools-panel"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.28, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex flex-col space-y-1.5 pb-1">
+                          <NavItem href="/analytics" icon={<TrendingUp size={20} />} label="Tiến trình" active={pathname === "/analytics"} collapsed={isCollapsed} />
+                          <NavItem href="/planner" icon={<Calendar size={20} />} label="Kế hoạch học" active={pathname === "/planner"} collapsed={isCollapsed} />
+                          <NavItem href="/settings" icon={<Settings size={20} />} label="Cài đặt" active={pathname.startsWith("/settings")} collapsed={isCollapsed} />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <button
+                    onClick={() => setIsToolsExpanded((v) => !v)}
+                    className="flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground transition-all hover:bg-accent/40 hover:text-foreground"
+                  >
+                    <span>Công cụ</span>
+                    <motion.span
+                      animate={{ rotate: isToolsExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                      className="flex items-center"
+                    >
+                      <ChevronDown size={15} />
+                    </motion.span>
+                  </button>
+                </>
+              )}
+            </div>
           </nav>
 
           <div

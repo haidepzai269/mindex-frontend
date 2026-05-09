@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Library, Globe, Settings, Plus, Upload, Link as LinkIcon, FolderPlus } from "lucide-react";
+import { Library, Globe, Settings, Plus, Upload, Link as LinkIcon, FolderPlus, TrendingUp, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ImportLinkDialog } from "./ImportLinkDialog";
@@ -124,7 +124,7 @@ export function MobileNavigation({ isSheetOpen = false }: { isSheetOpen?: boolea
 
                   <div className="h-[1px] bg-white/5 my-1" />
 
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => setIsCreateModalOpen(true)}
                     className="flex items-center gap-3 p-3 cursor-pointer rounded-xl hover:bg-accent focus:bg-accent text-foreground"
                   >
@@ -134,6 +134,34 @@ export function MobileNavigation({ isSheetOpen = false }: { isSheetOpen?: boolea
                     <div>
                       <div className="font-bold text-sm">Tạo bộ sưu tập</div>
                       <div className="text-[10px] text-white/40">Gom nhóm nhiều tài liệu</div>
+                    </div>
+                  </DropdownMenuItem>
+
+                  <div className="h-[1px] bg-white/5 my-1" />
+
+                  <DropdownMenuItem
+                    onClick={() => router.push('/analytics')}
+                    className="flex items-center gap-3 p-3 cursor-pointer rounded-xl hover:bg-accent focus:bg-accent text-foreground"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400">
+                      <TrendingUp size={16} />
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm">Tiến trình học</div>
+                      <div className="text-[10px] text-white/40">Thống kê & huy hiệu</div>
+                    </div>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => router.push('/planner')}
+                    className="flex items-center gap-3 p-3 cursor-pointer rounded-xl hover:bg-accent focus:bg-accent text-foreground"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                      <Calendar size={16} />
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm">Kế hoạch học</div>
+                      <div className="text-[10px] text-white/40">Study Planner</div>
                     </div>
                   </DropdownMenuItem>
                 </DropdownMenuContent>

@@ -2,10 +2,11 @@
 
 import { use, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, fetcher } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft, CheckCircle, XCircle, ChevronRight, Trophy, RotateCcw, Sparkles } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, XCircle, ChevronRight, Trophy, RotateCcw, Sparkles, History, Star, Clock } from "lucide-react";
+import useSWR from "swr";
 
 type QuizQuestion = {
   id: string;
@@ -43,6 +44,13 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
   const [qType, setQType] = useState<"mcq" | "essay" | "mix">("mcq");
   const [difficulty, setDifficulty] = useState("mix");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const { data: historyData, isLoading: historyLoading } = useSWR(
+    showHistory ? `/study/docs/${docId}/quiz/history` : null,
+    fetcher as any
+  ) as { data: any; isLoading: boolean };
+  const quizHistory: any[] = historyData?.data || [];
 
   const currentQ = questions[currentIdx];
   const progress = questions.length ? ((currentIdx) / questions.length) * 100 : 0;
@@ -110,6 +118,65 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
 
   const resultMap = results.reduce((m, r) => ({ ...m, [r.question_id]: r }), {} as Record<string, AnswerResult>);
 
+  // ─── History Screen ───────────────────────────────────────────────────────
+  if (state === "config" && showHistory) return (
+    <div className="h-full w-full bg-background text-foreground overflow-y-auto">
+      <div className="min-h-full flex flex-col px-4 py-8 max-w-2xl mx-auto">
+        <button onClick={() => setShowHistory(false)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm font-bold mb-6">
+          <ArrowLeft size={16} /> Quay lại tạo quiz
+        </button>
+        <h2 className="text-xl font-black mb-6 flex items-center gap-2"><History size={20} className="text-primary" /> Lịch sử Quiz</h2>
+        {historyLoading ? (
+          <div className="flex items-center justify-center py-20"><Loader2 size={28} className="animate-spin text-primary" /></div>
+        ) : quizHistory.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground text-sm">Chưa có lần làm quiz nào.</div>
+        ) : (
+          <div className="space-y-3">
+            {quizHistory.map((q: any) => (
+              <div key={q.id} className="p-4 rounded-2xl border border-border bg-card/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-sm truncate">{q.title || `Quiz ${q.question_count} câu`}</span>
+                  <span className="text-xs text-muted-foreground shrink-0 ml-2">{q.question_count} câu</span>
+                </div>
+                {q.attempt_count > 0 ? (
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <History size={12} /> {q.attempt_count} lần
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Star size={12} className="text-amber-500" />
+                      <span className="font-bold text-amber-500">Cao nhất: {Math.round(q.best_score || 0)}%</span>
+                    </span>
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <Clock size={12} /> Gần nhất: {Math.round(q.last_score || 0)}%
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Chưa làm lần nào</p>
+                )}
+                <button
+                  onClick={async () => {
+                    const quizData: any = await fetchApi(`/study/quiz/${q.id}`);
+                    setQuizId(q.id);
+                    setQuestions(quizData.questions || []);
+                    setStartTime(Date.now());
+                    setAnswers({});
+                    setCurrentIdx(0);
+                    setShowHistory(false);
+                    setState("playing");
+                  }}
+                  className="text-xs font-bold text-primary hover:underline"
+                >
+                  Làm lại →
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   // ─── Config Screen ────────────────────────────────────────────────────────
   if (state === "config") return (
     <div className="h-full w-full bg-background text-foreground overflow-y-auto">
@@ -169,6 +236,10 @@ export default function QuizPage({ params }: { params: Promise<{ id: string }> }
           <Sparkles size={16} /> Bắt đầu Quiz AI
         </button>
         <p className="text-center text-[11px] text-muted-foreground/50 mt-3 italic">Hạn mức: Free (1) · Pro (3) · Ultra (10) lượt/ngày</p>
+        <button onClick={() => setShowHistory(true)}
+          className="w-full mt-3 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground text-xs font-bold flex items-center justify-center gap-2 transition-all">
+          <History size={14} /> Xem lịch sử quiz
+        </button>
       </div>
       </div>
     </div>

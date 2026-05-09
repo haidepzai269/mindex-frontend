@@ -113,23 +113,23 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-blob"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px] animate-blob" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px] animate-blob"></div>
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 dark:bg-secondary/20 rounded-full blur-[120px] animate-blob" style={{ animationDelay: '2s' }}></div>
 
       <div className="w-full max-w-md p-8 glass-card relative z-10 mx-4">
         <div className="flex flex-col items-center mb-8">
           <div className="w-12 h-12 rounded-xl bg-secondary border border-border flex items-center justify-center mb-4 transition-all group-hover:bg-secondary/80">
             <BookOpen className="w-6 h-6 text-muted-foreground" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Tạo tài khoản mới</h1>
-          <p className="text-sm text-white/50 mt-1">Bắt đầu hành trình học tập cùng Mindex</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Tạo tài khoản mới</h1>
+          <p className="text-sm text-muted-foreground mt-1">Bắt đầu hành trình học tập cùng Mindex</p>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase text-white/60">Họ và tên</label>
+            <label className="text-xs font-semibold uppercase text-muted-foreground">Họ và tên</label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
               <Input 
                 placeholder="Nguyễn Văn A" 
                 className="glass-input pl-10" 
@@ -141,9 +141,9 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase text-white/60">Email sinh viên</label>
+            <label className="text-xs font-semibold uppercase text-muted-foreground">Email sinh viên</label>
             <div className="relative group">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 group-focus-within:text-primary transition-colors" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 group-focus-within:text-primary transition-colors" />
               <Input 
                 type="email" 
                 placeholder="2112xxxx@student.hcmus.edu.vn" 
@@ -178,9 +178,9 @@ export default function RegisterPage() {
           </div>
           
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase text-white/60">Mật khẩu</label>
+            <label className="text-xs font-semibold uppercase text-muted-foreground">Mật khẩu</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
               <Input 
                 type="password" 
                 placeholder="Tối thiểu 8 ký tự" 
@@ -209,8 +209,8 @@ export default function RegisterPage() {
           <GoogleLoginButton intent="register" />
         </form>
 
-        <div className="mt-8 text-center text-sm text-white/50">
-          Đã có tài khoản? <a href="/login" className="text-white hover:text-primary transition-colors font-medium">Đăng nhập</a>
+        <div className="mt-8 text-center text-sm text-muted-foreground">
+          Đã có tài khoản? <a href="/login" className="text-foreground hover:text-primary transition-colors font-medium">Đăng nhập</a>
         </div>
       </div>
     </div>

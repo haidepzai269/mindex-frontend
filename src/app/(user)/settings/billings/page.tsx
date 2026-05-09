@@ -1,22 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  AlertCircle,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 import useSWR from "swr";
-import { fetcher, fetchApi } from "@/lib/api";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Zap, ArrowRight, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAuthStore } from "@/store/useAuthStore";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { fetchApi, fetcher } from "@/lib/api";
+import { PaymentHistorySection, type PaymentEntry } from "@/components/user/billing/PaymentHistorySection";
+import { useAuthStore } from "@/store/useAuthStore";
 import { cn } from "@/lib/utils";
 
 export default function UserBillingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data, isLoading } = useSWR<{ success: boolean; data: any }>("/billings/packages", fetcher as any);
+  const { data: historyData } = useSWR<{ success: boolean; data: PaymentEntry[] }>(
+    "/billings/history",
+    fetcher as any
+  );
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState(false);
   const user = useAuthStore((state) => state.user);
@@ -59,11 +73,11 @@ export default function UserBillingsPage() {
       if (res?.success && res?.data?.checkout_url) {
         window.location.href = res.data.checkout_url;
       } else {
-        toast.error("Không trả về link.");
+        toast.error("Không trả về link thanh toán.");
       }
-    } catch (e: any) {
+    } catch (error: any) {
       toast.dismiss("payos");
-      toast.error(e.message || e.response?.data?.message || "Lỗi tạo thanh toán");
+      toast.error(error.message || error.response?.data?.message || "Lỗi tạo thanh toán");
     } finally {
       setIsProcessing(false);
     }
@@ -73,40 +87,80 @@ export default function UserBillingsPage() {
   const ultraPrice = data?.data?.ULTRA || 10000;
   const isPro = user?.tier === "PRO";
   const isUltra = user?.tier === "ULTRA";
+  const paymentHistory = historyData?.data || [];
+
+  const historySummary = useMemo(() => {
+    const paidCount = paymentHistory.filter((item) => item.status === "PAID").length;
+    const latestPayment = paymentHistory[0];
+
+    return {
+      paidCount,
+      latestPayment,
+    };
+  }, [paymentHistory]);
 
   return (
-    <div className="relative mx-auto flex w-full max-w-5xl flex-1 flex-col space-y-8 p-8">
-      <div className="relative z-10 mb-10 mt-8 space-y-3 text-center">
+    <div className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col gap-8 p-4 md:p-8">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.08),transparent_24%),radial-gradient(circle_at_top_right,rgba(244,63,94,0.08),transparent_18%)] pointer-events-none" />
+
+      <div className="relative z-10 space-y-6">
         <AnimatePresence>
           {paymentError && (
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex justify-center">
-              <Alert variant="destructive" className="max-w-xl py-4 shadow-sm">
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center">
+              <Alert variant="destructive" className="max-w-2xl py-4 shadow-sm">
                 <AlertCircle className="h-5 w-5" />
                 <AlertTitle>Thanh toán thất bại</AlertTitle>
-                <AlertDescription>Giao dịch của bạn không thể hoàn tất hoặc đã bị hủy. Vui lòng kiểm tra lại và thử lại.</AlertDescription>
+                <AlertDescription>
+                  Giao dịch của bạn không thể hoàn tất hoặc đã bị hủy. Vui lòng kiểm tra lại và thử lại.
+                </AlertDescription>
               </Alert>
             </motion.div>
           )}
 
           {(isPro || isUltra) && !paymentError && (
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex justify-center">
-              <Alert className="max-w-xl border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center">
+              <Alert className="max-w-2xl border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                 <CheckCircle2 className="h-5 w-5" />
-                <AlertTitle>Giao dịch thành công</AlertTitle>
+                <AlertTitle>Gói hiện tại đang hoạt động</AlertTitle>
                 <AlertDescription>
-                  {isPro ? "Chúc mừng bạn đã nâng cấp lên gói PRO thành công!" : "Chúc mừng bạn đã nâng cấp lên gói ULTRA thành công!"}
+                  {isPro
+                    ? "Tài khoản của bạn đang sử dụng gói PRO."
+                    : "Tài khoản của bạn đang sử dụng gói ULTRA."}
                 </AlertDescription>
               </Alert>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <h1 className="mb-1 text-4xl font-extrabold tracking-tight text-foreground">
-          Nâng Cấp Gói <span className="bg-gradient-to-r from-primary to-fuchsia-500 bg-clip-text text-transparent">Trí Tuệ Mindex</span>
-        </h1>
-        <p className="mx-auto max-w-2xl text-base text-muted-foreground">
-          Mở khóa toàn bộ giới hạn và làm chủ lượng tri thức vô hạn. Chọn gói phù hợp với cường độ học tập của bạn.
-        </p>
+        {/* Tiêu đề trang */}
+        <div className="space-y-3 text-center">
+          <h1 className="text-3xl font-black tracking-tight text-foreground md:text-4xl">
+            Billing và lịch sử giao dịch
+          </h1>
+          <p className="mx-auto max-w-2xl text-sm text-muted-foreground md:text-base">
+            Chọn gói phù hợp với cường độ học tập của bạn và theo dõi toàn bộ giao dịch trong cùng một màn hình.
+          </p>
+        </div>
+
+        {/* Tóm tắt tài khoản */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm backdrop-blur">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Gói hiện tại</p>
+            <p className="mt-2 text-2xl font-black text-foreground">{user?.tier || "FREE"}</p>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm backdrop-blur">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Giao dịch thành công</p>
+            <p className="mt-2 text-2xl font-black text-foreground">{historySummary.paidCount}</p>
+          </div>
+          <div className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm backdrop-blur">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Lần thanh toán gần nhất</p>
+            <p className="mt-2 text-sm font-semibold text-foreground">
+              {historySummary.latestPayment
+                ? new Date(historySummary.latestPayment.created_at).toLocaleDateString("vi-VN")
+                : "Chưa có"}
+            </p>
+          </div>
+        </div>
       </div>
 
       {(isLoading || isProcessing) && (
@@ -115,11 +169,20 @@ export default function UserBillingsPage() {
         </div>
       )}
 
-      <div className="relative z-10 mx-auto grid max-w-4xl items-stretch gap-8 md:grid-cols-2">
-        <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.3 }} className="h-full">
+      {/* Khu vực 2 gói song song - full width */}
+      <div className="relative z-10">
+        <div className="mb-4 flex items-center justify-center gap-2">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-3">
+            Chọn gói nâng cấp
+          </span>
+          <div className="h-px flex-1 bg-gradient-to-l from-transparent via-border to-transparent" />
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2">
           <PackageCard
             title="Gói PRO"
-            description="Lựa chọn hàng đầu để quản lý tài nguyên học tập."
+            description="Lựa chọn cân bằng để mở rộng hạn mức học tập và ưu tiên AI."
             price={proPrice}
             accent="amber"
             active={isPro}
@@ -127,19 +190,17 @@ export default function UserBillingsPage() {
             features={[
               "Ghim tối đa 5 tài liệu quan trọng",
               "Chia sẻ template 5 tài liệu",
-              "Biểu tượng Vàng Gold VIP",
               "Ưu tiên phản hồi AI",
+              "Badge PRO trong hệ thống",
             ]}
             onClick={() => handleUpgrade("PRO")}
-            buttonLabel={isPro ? "Đang sử dụng" : isUltra ? "Bạn đã có gói cao hơn" : "Nâng cấp lên PRO"}
+            buttonLabel={isPro ? "Đang sử dụng" : isUltra ? "Bạn đang có gói cao hơn" : "Nâng cấp lên PRO"}
             icon={<Sparkles className="h-5 w-5 text-amber-500" />}
           />
-        </motion.div>
 
-        <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.3 }} className="h-full">
           <PackageCard
             title="Gói ULTRA"
-            description="Mở khóa sức mạnh tuyệt đối, dành cho power user."
+            description="Dành cho power user cần giới hạn cao nhất và trải nghiệm ưu tiên."
             price={ultraPrice}
             accent="rose"
             active={isUltra}
@@ -147,16 +208,42 @@ export default function UserBillingsPage() {
             badge="Đề xuất"
             features={[
               "Ghim tối đa 10 tài liệu quan trọng",
-              "Chia sẻ template lên đến 10 tài liệu",
-              "Biểu tượng Neon Đỏ đẳng cấp",
-              "Premium AI Model Access",
-              "Được support 1-1 riêng biệt",
+              "Chia sẻ template tối đa 10 tài liệu",
+              "Truy cập mô hình AI Premium",
+              "Hỗ trợ ưu tiên",
             ]}
             onClick={() => handleUpgrade("ULTRA")}
             buttonLabel={isUltra ? "Đang sử dụng" : "Nâng cấp lên ULTRA"}
             icon={<Zap className="h-5 w-5 text-rose-500" />}
           />
-        </motion.div>
+        </div>
+      </div>
+
+      {/* Quyền lợi + Lịch sử giao dịch bên dưới */}
+      <div className="relative z-10 grid gap-6 md:grid-cols-[1fr_1.6fr]">
+        <Card className="overflow-hidden border-border/60 bg-card/85 shadow-sm backdrop-blur">
+          <div className="h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
+          <div className="space-y-4 p-6">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold text-foreground">Quyền lợi nâng cấp</p>
+            </div>
+            <ul className="space-y-3">
+              {[
+                "Tăng quota tài liệu và tác vụ học tập",
+                "Mở rộng khả năng chia sẻ và ghim tài liệu",
+                "Tối ưu trải nghiệm AI cho nhu cầu học tập nặng",
+              ].map((feature) => (
+                <li key={feature} className="flex gap-3 text-sm text-muted-foreground">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Card>
+
+        <PaymentHistorySection paymentHistory={paymentHistory} />
       </div>
     </div>
   );
@@ -222,7 +309,7 @@ function PackageCard({
     <Card className={cn("relative flex h-full flex-col overflow-hidden backdrop-blur", style.shell, active ? style.ring : "")}>
       <div className={cn("absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent to-transparent", style.line)} />
 
-      <div className="relative z-10 flex flex-1 flex-col p-8">
+      <div className="relative z-10 flex flex-1 flex-col p-6 lg:p-8">
         {badge ? (
           <div className="absolute right-4 top-4">
             <span className={cn("rounded-full border px-3 py-1 text-xs font-bold", style.badge)}>{badge}</span>
@@ -233,23 +320,23 @@ function PackageCard({
           <span className={style.icon}>{icon}</span>
           <h3 className={cn("text-xl font-bold", style.title)}>{title}</h3>
         </div>
-        <p className={cn("mb-6 text-sm", style.desc)}>{description}</p>
+        <p className={cn("mb-5 text-sm leading-relaxed", style.desc)}>{description}</p>
 
-        <div className="mb-6 flex items-baseline gap-1">
+        <div className="mb-5 flex items-baseline gap-1">
           <span className={cn("text-4xl font-black", style.price)}>{price.toLocaleString()}đ</span>
           <span className={cn("font-medium", style.sub)}>/ tháng</span>
         </div>
 
-        <ul className="mb-8 flex-1 space-y-4">
+        <ul className="mb-6 flex-1 space-y-3">
           {features.map((feature) => (
             <li className={cn("flex gap-3 text-sm", style.feature)} key={feature}>
-              <Check className={cn("h-5 w-5 shrink-0", style.icon)} />
+              <Check className={cn("mt-0.5 h-4 w-4 shrink-0", style.icon)} />
               {feature}
             </li>
           ))}
         </ul>
 
-        <Button onClick={onClick} disabled={disabled} className={cn("w-full py-6 text-base font-bold transition-all", style.button)}>
+        <Button onClick={onClick} disabled={disabled} className={cn("w-full py-5 text-base font-bold transition-all", style.button)}>
           {buttonLabel}
           {!active && !disabled && <ArrowRight className="ml-2 h-4 w-4" />}
         </Button>

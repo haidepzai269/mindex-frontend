@@ -90,8 +90,8 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
       {/* Background decorations */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-blob"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px] animate-blob" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px] animate-blob"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 dark:bg-secondary/20 rounded-full blur-[120px] animate-blob" style={{ animationDelay: '2s' }}></div>
 
       <div className="w-full max-w-md p-8 glass-card relative z-10 mx-4">
         
@@ -99,8 +99,8 @@ export default function ResetPasswordPage() {
           <div className="w-12 h-12 rounded-xl bg-secondary border border-border flex items-center justify-center mb-4 transition-all group-hover:bg-secondary/80">
             <BookOpen className="w-6 h-6 text-muted-foreground" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Khôi phục mật khẩu</h1>
-          <p className="text-sm text-white/50 mt-1 text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Khôi phục mật khẩu</h1>
+          <p className="text-sm text-muted-foreground mt-1 text-center">
             {step === 1 && "Nhập email của bạn để nhận mã xác thực"}
             {step === 2 && `Mã xác thực đã được gửi tới ${formData.email}`}
             {step === 3 && "Mật khẩu của bạn đã được cập nhật"}
@@ -110,9 +110,9 @@ export default function ResetPasswordPage() {
         {step === 1 && (
           <form onSubmit={handleSendOTP} className="space-y-6">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase text-white/60">Email tài khoản</label>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Email tài khoản</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
                 <Input 
                   type="email" 
                   placeholder="2112xxxx@student.hcmus.edu.vn" 
@@ -128,7 +128,7 @@ export default function ResetPasswordPage() {
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Tiếp tục"}
             </Button>
 
-            <Link href="/login" className="flex items-center justify-center gap-2 text-sm text-white/40 hover:text-white transition-colors">
+            <Link href="/login" className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft size={16} /> Quay lại đăng nhập
             </Link>
           </form>
@@ -137,7 +137,7 @@ export default function ResetPasswordPage() {
         {step === 2 && (
           <form onSubmit={handleResetPassword} className="space-y-5">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase text-white/60">Mã xác thực (OTP)</label>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Mã xác thực (OTP)</label>
               <div className="flex gap-2">
                 <Input 
                   type="text" 
@@ -151,7 +151,7 @@ export default function ResetPasswordPage() {
                 <Button 
                   type="button" 
                   variant="outline" 
-                  className="glass-card border-white/10 hover:bg-white/5" 
+                  className="glass-card border-border hover:bg-muted" 
                   disabled={cooldown > 0 || loading}
                   onClick={() => handleSendOTP()}
                 >
@@ -161,9 +161,9 @@ export default function ResetPasswordPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase text-white/60">Mật khẩu mới</label>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Mật khẩu mới</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
                 <Input 
                   type="password" 
                   placeholder="••••••••" 
@@ -176,9 +176,9 @@ export default function ResetPasswordPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase text-white/60">Xác nhận mật khẩu</label>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Xác nhận mật khẩu</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
                 <Input 
                   type="password" 
                   placeholder="••••••••" 
@@ -202,12 +202,12 @@ export default function ResetPasswordPage() {
               <CheckCircle2 size={40} />
             </div>
             <div className="text-center">
-              <h3 className="text-xl font-bold text-white mb-2">Thành công!</h3>
-              <p className="text-sm text-white/50">Mật khẩu của bạn đã được khôi phục. Đang chuyển hướng về trang đăng nhập...</p>
+              <h3 className="text-xl font-bold text-foreground mb-2">Thành công!</h3>
+              <p className="text-sm text-muted-foreground">Mật khẩu của bạn đã được khôi phục. Đang chuyển hướng về trang đăng nhập...</p>
             </div>
             <Link 
               href="/login" 
-              className="inline-flex h-12 w-full items-center justify-center rounded-lg bg-white/90 px-4 text-sm font-bold text-black hover:bg-white transition-all shadow-md"
+              className="inline-flex h-12 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-all shadow-md"
             >
               Đến trang đăng nhập
             </Link>

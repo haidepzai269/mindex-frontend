@@ -35,7 +35,12 @@ export async function handleRefreshToken(): Promise<string> {
       if (refreshRes.ok) {
         const data = await refreshRes.json();
         const newToken = data.data.access_token;
-        
+
+        // Lưu token mới vào cookie để các request tiếp theo dùng được
+        if (newToken) {
+          Cookies.set('access_token', newToken, { expires: 1 / 24, sameSite: 'lax' }); // 1 giờ
+        }
+
         console.log("[API] Token refresh successful. New token received.");
         return newToken || "";
       } else {

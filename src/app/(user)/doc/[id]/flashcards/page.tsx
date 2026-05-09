@@ -17,6 +17,8 @@ import {
   BookOpen,
   CheckCircle,
   XCircle,
+  Brain,
+  Flame,
 } from "lucide-react";
 
 type Flashcard = {
@@ -85,6 +87,18 @@ export default function FlashcardsPage({
   const [generating, setGenerating] = useState(false);
   const [numCards, setNumCards] = useState(20);
   const [exporting, setExporting] = useState(false);
+
+  // SM-2 Review Mode
+  const [reviewMode, setReviewMode] = useState(false);
+  const [dueCards, setDueCards] = useState<Flashcard[]>([]);
+  const [reviewIdx, setReviewIdx] = useState(0);
+  const [reviewFlipped, setReviewFlipped] = useState(false);
+
+  const { data: dueData } = useSWR<{ success: boolean; data: Flashcard[]; due_count: number }>(
+    latestSet ? `/study/flashcards/${latestSet.id}/due` : null,
+    fetcher as any
+  );
+  const dueCount = dueData?.due_count ?? 0;
 
   const currentCard = cards[currentIdx];
   const remembered = cards.filter((c) => c.remembered).length;
@@ -212,6 +226,20 @@ export default function FlashcardsPage({
           <ArrowLeft size={18} /> Quay lại
         </button>
         <div className="flex items-center gap-2">
+          {dueCount > 0 && latestSet && (
+            <button
+              onClick={() => {
+                setDueCards(dueData?.data || []);
+                setReviewIdx(0);
+                setReviewFlipped(false);
+                setReviewMode(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-500 hover:bg-orange-500/30 text-[12px] font-bold transition-all"
+            >
+              <Flame size={12} />
+              Ôn tập hôm nay ({dueCount})
+            </button>
+          )}
           <button
             onClick={handleExportCSV}
             disabled={!latestSet || exporting}
@@ -454,6 +482,86 @@ export default function FlashcardsPage({
             Space = lật · ← → = chuyển card · (sau khi lật) ✓ = Nhớ rồi
           </p>
         </>
+      )}
+
+      {/* ── SM-2 Review Mode Overlay ── */}
+      {reviewMode && (
+        <div className="fixed inset-0 bg-background z-50 flex flex-col items-center justify-center px-4 py-8 overflow-y-auto">
+          {dueCards.length === 0 || reviewIdx >= dueCards.length ? (
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <CheckCircle size={36} className="text-emerald-400" />
+              </div>
+              <h2 className="text-2xl font-black">Hoàn thành! 🎉</h2>
+              <p className="text-muted-foreground text-sm">Bạn đã ôn tập xong tất cả thẻ đến hạn hôm nay.</p>
+              <button onClick={() => { setReviewMode(false); mutateCards(); }}
+                className="px-8 py-3 rounded-2xl bg-primary text-primary-foreground font-black text-sm">
+                Xong
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="w-full max-w-lg mb-4 flex items-center justify-between">
+                <button onClick={() => setReviewMode(false)} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm font-bold">
+                  <ArrowLeft size={14} /> Thoát
+                </button>
+                <span className="text-xs text-muted-foreground font-bold">
+                  <Brain size={12} className="inline mr-1" />
+                  Ôn tập: {reviewIdx + 1}/{dueCards.length}
+                </span>
+              </div>
+
+              {/* Review Card */}
+              <div className="w-full max-w-lg cursor-pointer" style={{ perspective: "1200px" }} onClick={() => setReviewFlipped(f => !f)}>
+                <div style={{
+                  position: "relative", transformStyle: "preserve-3d",
+                  transition: "transform 0.5s", height: 260,
+                  transform: reviewFlipped ? "rotateY(180deg)" : "rotateY(0deg)"
+                }}>
+                  <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden" }}
+                    className="flex flex-col items-center justify-center p-8 rounded-[28px] border border-border bg-card/80 text-center">
+                    <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest mb-3">MẶT TRƯỚC</p>
+                    <p className="text-lg font-black">{dueCards[reviewIdx]?.front}</p>
+                    <p className="text-xs text-muted-foreground mt-4">Nhấn để xem đáp án</p>
+                  </div>
+                  <div style={{ position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+                    className="flex flex-col items-center justify-center p-8 rounded-[28px] border border-primary/30 bg-primary/5 text-center">
+                    <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest mb-3">MẶT SAU</p>
+                    <p className="text-sm leading-relaxed">{dueCards[reviewIdx]?.back}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quality Rating */}
+              {reviewFlipped && (
+                <div className="mt-6 w-full max-w-lg">
+                  <p className="text-xs font-bold text-muted-foreground text-center mb-3">Bạn nhớ mức độ nào?</p>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[
+                      { q: 1, label: "Quên", color: "bg-red-500/20 border-red-500/40 text-red-400" },
+                      { q: 2, label: "Khó", color: "bg-orange-500/20 border-orange-500/40 text-orange-400" },
+                      { q: 3, label: "Nhớ mờ", color: "bg-amber-500/20 border-amber-500/40 text-amber-400" },
+                      { q: 4, label: "Tốt", color: "bg-emerald-500/20 border-emerald-500/40 text-emerald-400" },
+                      { q: 5, label: "Hoàn hảo", color: "bg-blue-500/20 border-blue-500/40 text-blue-400" },
+                    ].map(({ q, label, color }) => (
+                      <button key={q} onClick={async () => {
+                        await fetchApi(`/study/flashcards/${dueCards[reviewIdx].id}/mark`, {
+                          method: "PATCH",
+                          body: JSON.stringify({ remembered: q >= 3, quality: q }),
+                        });
+                        setReviewFlipped(false);
+                        setTimeout(() => setReviewIdx(i => i + 1), 150);
+                      }} className={`flex flex-col items-center gap-1 py-2 rounded-xl border font-bold text-xs transition-all hover:scale-105 ${color}`}>
+                        <span className="text-base">{q}</span>
+                        <span className="text-[9px]">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       )}
     </div>
   );

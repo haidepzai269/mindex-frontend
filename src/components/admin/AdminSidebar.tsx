@@ -11,6 +11,7 @@ import {
   LogOut,
   Shield,
   ThumbsDown,
+  Users,
 } from 'lucide-react'
 
 
@@ -18,6 +19,7 @@ const navItems = [
   { href: '/admin/system',   label: 'System Health',   icon: LayoutDashboard },
   { href: '/admin/tokens',   label: 'Token Monitor',   icon: Zap },
   { href: '/admin/quality',  label: 'AI Quality',      icon: ThumbsDown },
+  { href: '/admin/users',    label: 'User Management', icon: Users },
   { href: '/admin/feedbacks',label: 'User Feedbacks',  icon: MessageSquare },
   { href: '/admin/chats',    label: 'Chat Audit',      icon: MessageSquare },
   { href: '/admin/queue',    label: 'Queue Health',    icon: Activity },

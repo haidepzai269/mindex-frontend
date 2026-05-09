@@ -82,6 +82,8 @@ interface RoomDoc {
   id: string;
   title: string;
   owner_name: string;
+  owner_id?: string;
+  is_own?: boolean;
 }
 
 interface ApiResponse<T> {
@@ -522,10 +524,12 @@ export default function RoomPage() {
               {members.map((m) => (
                 <div
                   key={m.user_id}
-                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-accent/50 transition-colors group cursor-pointer"
-                  onClick={() => setInputText(prev => prev + (prev.endsWith(' ') || prev === '' ? `@${m.name.replace(/\s+/g, '')} ` : ` @${m.name.replace(/\s+/g, '')} `))}
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-accent/50 transition-colors group"
                 >
-                  <div className="relative">
+                  <div
+                    className="relative cursor-pointer"
+                    onClick={() => setInputText(prev => prev + (prev.endsWith(' ') || prev === '' ? `@${m.name.replace(/\s+/g, '')} ` : ` @${m.name.replace(/\s+/g, '')} `))}
+                  >
                     <Avatar className="w-8 h-8 border border-border">
                       {m.avatar_url && <AvatarImage src={m.avatar_url} alt={m.name} />}
                       <AvatarFallback className="bg-muted text-[10px]">{m.name.substring(0,2).toUpperCase()}</AvatarFallback>
@@ -536,10 +540,10 @@ export default function RoomPage() {
                     )} />
                   </div>
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="text-sm font-medium truncate flex items-center gap-1 text-foreground">
+                    <Link href={`/profile/${m.user_id}`} className="text-sm font-medium truncate flex items-center gap-1 text-foreground hover:text-primary transition-colors">
                       {m.name}
                       {m.user_id === room.host_id && <Crown size={12} className="text-yellow-500 shrink-0" />}
-                    </span>
+                    </Link>
                     <span className="text-[10px] text-muted-foreground/70 truncate">
                       {m.is_online ? (
                         `${m.doc_count} tài liệu đã chia sẻ`
@@ -550,6 +554,24 @@ export default function RoomPage() {
                       )}
                     </span>
                   </div>
+                  {/* Kick button — chỉ host thấy, không kick chính mình */}
+                  {isHost && m.user_id !== user?.id && (
+                    <Button
+                      variant="ghost" size="icon"
+                      className="w-6 h-6 opacity-0 group-hover:opacity-100 rounded-md hover:bg-red-500/10 text-muted-foreground hover:text-red-500 shrink-0"
+                      title={`Kick ${m.name}`}
+                      onClick={async () => {
+                        if (!confirm(`Kick ${m.name} khỏi phòng?`)) return;
+                        try {
+                          await fetchApi(`/rooms/${id}/kick/${m.user_id}`, { method: 'POST' });
+                          toast.success(`Đã kick ${m.name}`);
+                          mutateRoom();
+                        } catch (e: any) { toast.error(e.message || 'Lỗi'); }
+                      }}
+                    >
+                      <X size={12} />
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -999,6 +1021,26 @@ export default function RoomPage() {
                       <p className="text-[10px] text-muted-foreground truncate mt-0.5">Tải lên bởi {doc.owner_name}</p>
                       <p className="text-[9px] text-muted-foreground/50 mt-0.5 italic">Kéo vào ô chat để đính kèm</p>
                     </div>
+                    {/* Unlink button — host hoặc owner của doc */}
+                    {(isHost || doc.is_own) && (
+                      <Button
+                        variant="ghost" size="icon"
+                        className="w-6 h-6 opacity-0 group-hover:opacity-100 shrink-0 rounded-md hover:bg-red-500/10 text-muted-foreground hover:text-red-500"
+                        title="Gỡ tài liệu"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          if (!confirm(`Gỡ "${doc.title}" khỏi phòng?`)) return;
+                          try {
+                            await fetchApi(`/rooms/${id}/docs/${doc.id}`, { method: 'DELETE' });
+                            toast.success('Đã gỡ tài liệu');
+                            mutateDocs();
+                          } catch (err: any) { toast.error(err.message || 'Lỗi'); }
+                        }}
+                      >
+                        <Trash2 size={12} />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

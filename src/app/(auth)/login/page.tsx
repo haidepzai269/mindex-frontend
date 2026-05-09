@@ -92,8 +92,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
       
       {/* Background decorations */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-blob"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px] animate-blob" style={{ animationDelay: '2s' }}></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 dark:bg-primary/20 rounded-full blur-[120px] animate-blob"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 dark:bg-secondary/20 rounded-full blur-[120px] animate-blob" style={{ animationDelay: '2s' }}></div>
 
       <div className="w-full max-w-md p-8 glass-card relative z-10 mx-4">
         
@@ -101,15 +101,15 @@ export default function LoginPage() {
           <div className="w-12 h-12 rounded-xl bg-secondary border border-border flex items-center justify-center mb-4 transition-all group-hover:bg-secondary/80">
             <BookOpen className="w-6 h-6 text-muted-foreground" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Chào mừng đến Mindex</h1>
-          <p className="text-sm text-white/50 mt-1">Đăng nhập tài khoản sinh viên</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Chào mừng đến Mindex</h1>
+          <p className="text-sm text-muted-foreground mt-1">Đăng nhập tài khoản sinh viên</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold uppercase text-white/60">Email sinh viên</label>
+            <label className="text-xs font-semibold uppercase text-muted-foreground">Email sinh viên</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
               <Input 
                 type="email" 
                 placeholder="2112xxxx@student.hcmus.edu.vn" 
@@ -123,11 +123,11 @@ export default function LoginPage() {
           
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-semibold uppercase text-white/60">Mật khẩu</label>
-              <Link href="/reset-password" className="text-xs text-primary hover:text-white transition-colors">Quên mật khẩu?</Link>
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Mật khẩu</label>
+              <Link href="/reset-password" className="text-xs text-primary hover:text-foreground transition-colors">Quên mật khẩu?</Link>
             </div>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
               <Input 
                 type="password" 
                 placeholder="••••••••" 
@@ -143,11 +143,11 @@ export default function LoginPage() {
             <input 
               type="checkbox" 
               id="remember" 
-              className="w-4 h-4 rounded border-white/20 bg-white/5 accent-primary cursor-pointer"
+              className="w-4 h-4 rounded border-border bg-muted accent-primary cursor-pointer"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
             />
-            <label htmlFor="remember" className="text-xs text-white/60 cursor-pointer select-none">
+            <label htmlFor="remember" className="text-xs text-muted-foreground cursor-pointer select-none">
               Duy trì đăng nhập (10 ngày)
             </label>
           </div>
@@ -164,8 +164,8 @@ export default function LoginPage() {
           <GoogleLoginButton intent="login" />
         </form>
 
-        <div className="mt-8 text-center text-sm text-white/50">
-          Chưa có tài khoản? <a href="/register" className="text-white hover:text-primary transition-colors font-medium">Đăng ký ngay</a>
+        <div className="mt-8 text-center text-sm text-muted-foreground">
+          Chưa có tài khoản? <a href="/register" className="text-foreground hover:text-primary transition-colors font-medium">Đăng ký ngay</a>
         </div>
       </div>
 
