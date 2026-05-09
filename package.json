@@ -2,6 +2,7 @@
   "name": "mindex-frontend",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.30.1",
   "scripts": {
     "build": "next build",
     "build:worker": "opennextjs-cloudflare build",
