@@ -1,7 +1,7 @@
 "use client";
 
 import { Activity, BarChart3 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
@@ -25,14 +25,18 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function AnalyticsActivityChart({ activity }: { activity: ActivityDatum[] }) {
+export function AnalyticsActivityChart({
+  activity,
+}: {
+  activity: ActivityDatum[];
+}) {
   if (activity.length === 0) {
     return (
       <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur">
         <CardHeader className="border-b border-border/50 pb-4">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
             <BarChart3 className="h-4 w-4 text-primary" />
-            Hoat dong 30 ngay gan nhat
+            Hoạt động 30 ngày gần nhất
           </CardTitle>
         </CardHeader>
         <CardContent className="flex min-h-[260px] flex-col items-center justify-center gap-3">
@@ -40,9 +44,11 @@ export function AnalyticsActivityChart({ activity }: { activity: ActivityDatum[]
             <Activity className="h-6 w-6 text-muted-foreground/60" />
           </div>
           <div className="space-y-1 text-center">
-            <p className="text-sm font-semibold text-foreground">Chua co du lieu hoat dong</p>
+            <p className="text-sm font-semibold text-foreground">
+              Chưa có dữ liệu hoạt động
+            </p>
             <p className="text-sm text-muted-foreground">
-              Hoan thanh quiz de Mindex bat dau ve nhip hoc tap cua ban.
+              Hoàn thành quiz để Mindex bắt đầu về nhịp học tập của bạn.
             </p>
           </div>
         </CardContent>
@@ -55,12 +61,12 @@ export function AnalyticsActivityChart({ activity }: { activity: ActivityDatum[]
       <CardHeader className="border-b border-border/50 pb-4">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
           <BarChart3 className="h-4 w-4 text-primary" />
-          Hoat dong quiz 30 ngay gan nhat
+          Hoạt động quiz 30 ngày gần nhất
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-5">
         <ChartContainer config={chartConfig} className="h-[280px] w-full">
-          <BarChart data={activity} margin={{ left: -18, right: 8, top: 12 }}>
+          <AreaChart data={activity} margin={{ left: -18, right: 8, top: 12 }}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
               dataKey="day"
@@ -70,13 +76,29 @@ export function AnalyticsActivityChart({ activity }: { activity: ActivityDatum[]
               minTickGap={18}
               tickFormatter={(value: string) => value.slice(5)}
             />
-            <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={32} />
+            <YAxis
+              allowDecimals={false}
+              tickLine={false}
+              axisLine={false}
+              width={32}
+            />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent labelFormatter={(value) => `Ngay ${value}`} />}
+              content={
+                <ChartTooltipContent
+                  labelFormatter={(value) => `Ngày ${value}`}
+                />
+              }
             />
-            <Bar dataKey="quizzes" radius={[10, 10, 4, 4]} fill="var(--color-quizzes)" />
-          </BarChart>
+            <Area
+              dataKey="quizzes"
+              type="monotone"
+              stroke="var(--color-quizzes)"
+              fill="var(--color-quizzes)"
+              fillOpacity={0.3}
+              strokeWidth={2}
+            />
+          </AreaChart>
         </ChartContainer>
       </CardContent>
     </Card>
