@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -48,6 +48,8 @@ import { vi } from "date-fns/locale";
 import Cookies from "js-cookie";
 import { LibraryPickerDialog } from "@/components/user/LibraryPickerDialog";
 import { AIThinkingIndicator } from "@/components/user/AIThinkingIndicator";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
+import { VoiceInputButton } from "@/components/user/VoiceInputButton";
 
 interface RoomMessage {
   id: string;
@@ -92,10 +94,21 @@ interface ApiResponse<T> {
   message?: string;
 }
 
+declare global {
+  interface Window {
+    __mindexActiveRoomWS?: {
+      ownerId: string;
+      roomId: string;
+      socket: WebSocket | null;
+    };
+  }
+}
+
 export default function RoomPage() {
   const { id } = useParams();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const wsOwnerIdRef = useRef(`roomws_${Date.now()}_${Math.random().toString(36).slice(2)}`);
   
   const { data: roomData, error: roomError, mutate: mutateRoom } = useSWR<ApiResponse<Room>>(`/rooms/${id}`, fetcher as any, { revalidateOnFocus: false });
   const { data: docsData, mutate: mutateDocs } = useSWR<ApiResponse<RoomDoc[]>>(`/rooms/${id}/docs`, fetcher as any, { revalidateOnFocus: false });
@@ -113,6 +126,9 @@ export default function RoomPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const intentionalClose = useRef(false);
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const aiMessageCounterRef = useRef(0);
+  const lastAiMessageRef = useRef<{ text: string; at: number } | null>(null);
 
   // Layout states
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
@@ -128,9 +144,57 @@ export default function RoomPage() {
   const [droppedDocs, setDroppedDocs] = useState<{id: string, title: string}[]>([]);
   const [isDragOverInput, setIsDragOverInput] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
+  const [voiceBaseInput, setVoiceBaseInput] = useState("");
   const dragCounterRef = useRef(0);
   const typingTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const typingThrottleRef = useRef<number>(0);
+
+  const updateInputValue = useCallback((value: string, cursorPosition?: number) => {
+    setInputText(value);
+
+    if (value.trim() && ws.current?.readyState === WebSocket.OPEN) {
+      const now = Date.now();
+      if (now - typingThrottleRef.current > 2000) {
+        typingThrottleRef.current = now;
+        ws.current.send(JSON.stringify({ type: "typing" }));
+      }
+    }
+
+    if (typeof cursorPosition !== "number") {
+      setShowMentionSuggestions(false);
+      return;
+    }
+
+    const lastAtPos = value.lastIndexOf("@", cursorPosition - 1);
+    if (lastAtPos !== -1) {
+      const textAfterAt = value.substring(lastAtPos + 1, cursorPosition);
+      if (!textAfterAt.includes(" ")) {
+        setMentionSearch(textAfterAt);
+        setMentionStartIndex(lastAtPos);
+        setShowMentionSuggestions(true);
+        setSelectedMentionIndex(0);
+        return;
+      }
+    }
+
+    setShowMentionSuggestions(false);
+  }, []);
+
+  const {
+    error: voiceError,
+    isListening,
+    isSupported,
+    stopListening,
+    toggleListening,
+  } = useSpeechToText({
+    onTranscriptChange: (transcript) => {
+      updateInputValue(
+        transcript
+          ? [voiceBaseInput.trimEnd(), transcript].filter(Boolean).join(" ")
+          : voiceBaseInput
+      );
+    },
+  });
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -156,13 +220,58 @@ export default function RoomPage() {
     }
   };
 
+  const appendAiMessage = (text: string) => {
+    const messageText = text.trim() || "MindexAI hiện chưa tạo được câu trả lời. Vui lòng thử lại sau.";
+    const now = Date.now();
+    const lastAiMessage = lastAiMessageRef.current;
+
+    if (lastAiMessage && lastAiMessage.text === messageText && now - lastAiMessage.at < 1500) {
+      setIsAiTyping(false);
+      setAiStreamingText("");
+      return;
+    }
+
+    lastAiMessageRef.current = { text: messageText, at: now };
+    setMessages(prev => [...prev, {
+      id: `ai_local_${now}_${aiMessageCounterRef.current++}`,
+      user_id: "ai",
+      user_name: "MindexAI",
+      text: messageText,
+      timestamp: new Date(now).toISOString(),
+      is_ai: true,
+      mentions_ai: false
+    }]);
+    setIsAiTyping(false);
+    setAiStreamingText("");
+  };
+
   useEffect(() => {
-    if (!id || !user) return;
+    if (!id || !user?.id) return;
 
     intentionalClose.current = false;
     const wsBaseUrl = API_BASE_URL.replace(/^http/, "ws");
+    const roomId = String(id);
+    const initialConnectDelayMs = 150;
+    let initialConnectTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const getActiveRoomWS = () => {
+      if (typeof window === "undefined") return null;
+      if (!window.__mindexActiveRoomWS) {
+        window.__mindexActiveRoomWS = {
+          ownerId: "",
+          roomId: "",
+          socket: null,
+        };
+      }
+      return window.__mindexActiveRoomWS;
+    };
 
     const connectWS = async () => {
+      if (intentionalClose.current) return;
+      if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+
       let token = Cookies.get("access_token");
 
       if (!token) {
@@ -176,27 +285,31 @@ export default function RoomPage() {
 
       if (!token || intentionalClose.current) return;
 
-      const wsUrl = `${wsBaseUrl}/rooms/${id}/ws?token=${token}`;
+      const activeRoomWS = getActiveRoomWS();
+      if (activeRoomWS && activeRoomWS.ownerId !== wsOwnerIdRef.current) {
+        const previousSocket = activeRoomWS.socket;
+        if (previousSocket && (previousSocket.readyState === WebSocket.OPEN || previousSocket.readyState === WebSocket.CONNECTING)) {
+          previousSocket.close(4000, "superseded_by_new_room_socket");
+        }
+      }
+
+      const wsUrl = `${wsBaseUrl}/rooms/${roomId}/ws?token=${token}`;
       const socket = new WebSocket(wsUrl);
       ws.current = socket;
+      if (activeRoomWS) {
+        activeRoomWS.ownerId = wsOwnerIdRef.current;
+        activeRoomWS.roomId = roomId;
+        activeRoomWS.socket = socket;
+      }
 
       socket.onopen = () => {
         setIsConnected(true);
-        const pingInterval = setInterval(() => {
+        if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = setInterval(() => {
           if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ type: "ping" }));
           }
         }, 20000);
-
-        socket.onclose = () => {
-          clearInterval(pingInterval);
-          setIsConnected(false);
-          setIsAiTyping(false);
-          setAiStreamingText("");
-          if (!intentionalClose.current) {
-            reconnectTimeout.current = setTimeout(connectWS, 3000);
-          }
-        };
       };
 
       socket.onmessage = (event) => {
@@ -205,18 +318,55 @@ export default function RoomPage() {
       };
 
       socket.onclose = () => {
+        const activeSocket = getActiveRoomWS();
+        const isActiveOwner = activeSocket?.ownerId === wsOwnerIdRef.current && activeSocket.socket === socket;
+
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+          pingIntervalRef.current = null;
+        }
+        if (ws.current === socket) {
+          ws.current = null;
+        }
+        if (isActiveOwner && activeSocket) {
+          activeSocket.socket = null;
+        }
         setIsConnected(false);
+        setIsAiTyping(false);
+        setAiStreamingText("");
+        if (!intentionalClose.current && isActiveOwner) {
+          reconnectTimeout.current = setTimeout(connectWS, 3000);
+        }
       };
     };
 
-    connectWS();
+    initialConnectTimeout = setTimeout(() => {
+      void connectWS();
+    }, initialConnectDelayMs);
 
     return () => {
       intentionalClose.current = true;
+      if (initialConnectTimeout) {
+        clearTimeout(initialConnectTimeout);
+        initialConnectTimeout = null;
+      }
       if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
-      ws.current?.close();
+      reconnectTimeout.current = null;
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
+      }
+      const currentSocket = ws.current;
+      ws.current = null;
+      const activeSocket = getActiveRoomWS();
+      if (activeSocket?.ownerId === wsOwnerIdRef.current) {
+        activeSocket.ownerId = "";
+        activeSocket.roomId = "";
+        activeSocket.socket = null;
+      }
+      currentSocket?.close();
     };
-  }, [id, user]);
+  }, [id, user?.id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -237,20 +387,18 @@ export default function RoomPage() {
         setIsAiTyping(true);
         break;
       case "ai_chunk":
+        if (!event.payload?.chunk) break;
         setIsAiTyping(false);
         setAiStreamingText(prev => prev + event.payload.chunk);
         break;
       case "ai_done":
-        setMessages(prev => [...prev, {
-          id: `ai_${Date.now()}`,
-          user_id: "ai",
-          user_name: "MindexAI",
-          text: event.payload.full_text,
-          timestamp: new Date().toISOString(),
-          is_ai: true,
-          mentions_ai: false
-        }]);
-        setAiStreamingText("");
+        appendAiMessage(typeof event.payload?.full_text === "string" ? event.payload.full_text : "");
+        break;
+      case "ai_error":
+        appendAiMessage(typeof event.payload?.message === "string" ? event.payload.message : "MindexAI không phản hồi, thử lại sau.");
+        break;
+      case "ai_busy":
+        appendAiMessage(typeof event.payload?.message === "string" ? event.payload.message : "MindexAI đang bận trả lời câu hỏi trước, vui lòng chờ.");
         break;
       case "user_typing": {
         const { user_id, name } = event.payload;
@@ -292,6 +440,9 @@ export default function RoomPage() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    updateInputValue(e.target.value, e.target.selectionStart);
+  };
+/*
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart;
     setInputText(value);
@@ -321,6 +472,7 @@ export default function RoomPage() {
     setShowMentionSuggestions(false);
   };
 
+*/
   const insertMention = (name: string) => {
     const beforeAt = inputText.substring(0, mentionStartIndex);
     const afterAt = inputText.substring(mentionStartIndex + mentionSearch.length + 1);
@@ -350,8 +502,18 @@ export default function RoomPage() {
       reply_to_id: replyingTo?.id
     }));
     setInputText("");
+    setVoiceBaseInput("");
     setDroppedDocs([]);
     setReplyingTo(null);
+    stopListening();
+  };
+
+  const handleToggleVoice = () => {
+    if (!isListening) {
+      setVoiceBaseInput(inputText);
+    }
+
+    toggleListening();
   };
 
   const sendReaction = (msgId: string, emoji: string) => {
@@ -933,6 +1095,12 @@ export default function RoomPage() {
                     }
                   }}
                 />
+                <VoiceInputButton
+                  disabled={!isConnected}
+                  isListening={isListening}
+                  isSupported={isSupported}
+                  onClick={handleToggleVoice}
+                />
 
                 {/* MENTION SUGGESTIONS */}
                 {showMentionSuggestions && mentionOptions.length > 0 && (
@@ -975,6 +1143,11 @@ export default function RoomPage() {
                   <Send size={18} />
                 </Button>
                 </div>
+                {voiceError && (
+                  <p className="px-3 pb-3 text-[11px] font-medium text-red-500">
+                    {voiceError}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -1124,6 +1297,7 @@ export default function RoomPage() {
         onOpenChange={setIsLibraryPickerOpen}
         roomId={id as string}
         alreadyLinkedIds={docs.map((d) => d.id)}
+        myDocCount={docs.filter((d) => d.is_own).length}
         onSuccess={(docTitle) => {
           toast.success(`Đã thêm "${docTitle}" vào phòng!`);
           mutateDocs();

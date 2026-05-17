@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
-import { AdminSidebar } from '@/components/admin/AdminSidebar'
 
-export const metadata: Metadata = {
+import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { noIndexMetadata } from '@/lib/seo'
+
+export const metadata: Metadata = noIndexMetadata({
   title: 'Mindex Admin',
   description: 'Mindex Administration Dashboard',
-}
+})
 
 export default function AdminLayout({
   children,
@@ -23,7 +25,7 @@ export default function AdminLayout({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
-            <span className="text-xs text-zinc-500">Live · Auto-refresh 30s</span>
+            <span className="text-xs text-zinc-500">Live Â· Auto-refresh 30s</span>
           </div>
         </header>
 

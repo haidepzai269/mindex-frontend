@@ -4,13 +4,15 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
-      allow: ['/', '/community'],
+      allow: ['/', '/community', '/shared/'],
       disallow: [
         '/api/',
-        '/settings/',
         '/library/',
-        '/doc/',
         '/admin/',
+        '/doc/',
+        '/rooms/',
+        '/settings/',
+        '/upload/',
         '/login',
         '/register',
         '/reset-password',

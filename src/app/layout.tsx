@@ -1,7 +1,21 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import "./globals.css";
+
+import { Providers } from "@/components/Providers";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import {
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_ORIGIN,
+  TWITTER_HANDLE,
+  absoluteUrl,
+  defaultOgImage,
+} from "@/lib/seo";
+import NextTopLoader from "nextjs-toploader";
+
+import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const jetbrainsMono = JetBrains_Mono({
@@ -11,18 +25,18 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Mindex - AI Document Assistant for Students",
+    default: SITE_NAME,
     template: "%s | Mindex",
   },
   description:
-    "Mindex là trợ lý tài liệu AI thông minh giúp sinh viên quản lý, tra cứu và tổng hợp kiến thức từ tài liệu học tập một cách hiệu quả.",
+    "Mindex la tro ly tai lieu AI giup sinh vien quan ly, tra cuu va tong hop kien thuc tu tai lieu hoc tap mot cach hieu qua.",
   keywords: [
     "Mindex",
     "AI Assistant",
     "Student Tools",
     "Document Analysis",
-    "Học tập thông minh",
-    "Trợ lý ảo sinh viên",
+    "hoc tap thong minh",
+    "tro ly hoc tap",
   ],
   authors: [{ name: "Mindex Team" }],
   creator: "Mindex Team",
@@ -32,44 +46,38 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://mindex.io.vn"),
-  alternates: {
-    canonical: "/",
-  },
+  metadataBase: SITE_ORIGIN,
   icons: {
-    icon: "/logo.png?v=1",
-    apple: "/logo.png?v=1",
-  },
-  manifest: "/manifest.json",
-  openGraph: {
-    title: "Mindex - AI Document Assistant for Students",
-    description:
-      "Trợ lý AI giúp tối ưu hóa việc học tập và quản lý tài liệu cho sinh viên.",
-    url: "https://mindex.io.vn",
-    siteName: "Mindex",
-    locale: "vi_VN",
-    type: "website",
-    images: [
-      {
-        url: "/logo.png",
-        width: 800,
-        height: 600,
-        alt: "Mindex Logo",
-      },
+    icon: [
+      { url: "/favicon.png", type: "image/png", sizes: "32x32" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
     ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
+  manifest: "/manifest.webmanifest",
+  openGraph: {
+    title: SITE_NAME,
+    description:
+      "Tro ly AI giup toi uu hoa viec hoc tap va quan ly tai lieu cho sinh vien.",
+    url: absoluteUrl("/"),
+    siteName: SITE_NAME,
+    locale: SITE_LOCALE,
+    type: "website",
+    images: defaultOgImage("Mindex"),
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mindex - AI Document Assistant for Students",
+    title: SITE_NAME,
     description:
-      "Trợ lý AI giúp tối ưu hóa việc học tập và quản lý tài liệu cho sinh viên.",
-    creator: "@mindex",
-    images: ["/logo.png"],
+      "Tro ly AI giup toi uu hoa viec hoc tap va quan ly tai lieu cho sinh vien.",
+    creator: TWITTER_HANDLE,
+    images: [absoluteUrl("/twitter-image")],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Mindex",
+    title: SITE_NAME,
   },
   robots: {
     index: true,
@@ -83,14 +91,9 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: "pWim0WIvbXwCFonVj6J6jcmNpsotnsmUx52jD56aty4", // Thay mã này bằng mã từ Google Search Console
+    google: "pWim0WIvbXwCFonVj6J6jcmNpsotnsmUx52jD56aty4",
   },
 };
-
-import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
-import { Providers } from "@/components/Providers";
-import NextTopLoader from "nextjs-toploader";
 
 export default function RootLayout({
   children,
@@ -98,7 +101,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning>
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased",

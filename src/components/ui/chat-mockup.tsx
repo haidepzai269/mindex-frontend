@@ -1,92 +1,142 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { 
-  Search, 
-  Plus, 
-  FileText, 
-  Clock, 
-  Star, 
-  ChevronRight, 
-  Zap, 
+import React, { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  FileText,
+  Loader2,
+  Plus,
+  Search,
   Send,
-  Loader2
+  Star,
+  Zap,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
 
-export function ChatMockup({ lang = 'en' }: { lang?: 'en' | 'vi' }) {
-  const [messages, setMessages] = useState<any[]>([]);
+import { cn } from "@/lib/utils";
+
+type Language = "en" | "vi";
+
+const MOCKUP_COPY = {
+  en: {
+    scenario: [
+      {
+        question: "How do I start the server and open the website?",
+        answer: "Run `node server.js` first. Then open `http://localhost:3000` in your browser. You can start exploring immediately.",
+      },
+      {
+        question: "How can Mindex help with my studies?",
+        answer: "Mindex summarizes documents, extracts key points and creates practice questions from PDFs or slides, which can cut research time dramatically.",
+      },
+    ],
+    inbox: "Inbox",
+    searchPlaceholder: "Search documents...",
+    nav: [
+      { title: "Website Launch Guide.pdf", status: "READY", pinned: true },
+      { title: "CCNA Roadmap.pdf", status: "READY", pinned: true },
+      { title: "How to Read Source Code...", time: "12h left" },
+      { title: "Detailed Report...", time: "643h left" },
+    ],
+    navReady: "Ready for chat.",
+    documentTitle: "Website Launch Guide.pdf",
+    overlayTitle: "Run `node server.js`",
+    overlayBody: "to start the server. Then open `http://localhost:3000` in your browser to access the website.",
+    thinking: "Mindex Intelligence is thinking...",
+    inputPlaceholder: "Ask anything about this document...",
+    footerTags: ["Logic", "Fast", "Precise"],
+  },
+  vi: {
+    scenario: [
+      {
+        question: "Làm thế nào để khởi động server và mở website?",
+        answer: "Hãy chạy `node server.js` trước. Sau đó mở `http://localhost:3000` trên trình duyệt là bạn có thể bắt đầu ngay.",
+      },
+      {
+        question: "Mindex có thể hỗ trợ việc học của tôi như thế nào?",
+        answer: "Mindex giúp tóm tắt tài liệu, trích xuất ý chính và tạo câu hỏi luyện tập từ PDF hoặc slide, nhờ đó giảm đáng kể thời gian nghiên cứu.",
+      },
+    ],
+    inbox: "Hộp thư",
+    searchPlaceholder: "Tìm tài liệu...",
+    nav: [
+      { title: "Hướng Dẫn Khởi Tạo Website.pdf", status: "SẴN SÀNG", pinned: true },
+      { title: "Lộ Trình CCNA.pdf", status: "SẴN SÀNG", pinned: true },
+      { title: "Cách Đọc Source Code...", time: "Còn 12 giờ" },
+      { title: "Báo Cáo Chi Tiết...", time: "Còn 643 giờ" },
+    ],
+    navReady: "Sẵn sàng để chat.",
+    documentTitle: "Hướng Dẫn Khởi Tạo Website.pdf",
+    overlayTitle: "Chạy lệnh `node server.js`",
+    overlayBody: "để khởi động server. Sau đó mở `http://localhost:3000` trên trình duyệt để truy cập website.",
+    thinking: "Mindex Intelligence đang suy luận...",
+    inputPlaceholder: "Hỏi bất cứ điều gì về tài liệu này...",
+    footerTags: ["Logic", "Nhanh", "Chính xác"],
+  },
+};
+
+export function ChatMockup({ lang = "en" }: { lang?: Language }) {
+  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const DEMO_SCENARIO = lang === 'en' ? [
-    { 
-      question: "How to start the server and access the website?", 
-      answer: "To start, run `node server.js`. Then access `http://localhost:3000` in your browser. Good luck!" 
-    },
-    { 
-      question: "How can Mindex help with my studies?", 
-      answer: "Mindex helps you summarize documents, extract key points, and create automatic study questions from PDFs/Slides, saving up to 70% of research time." 
-    }
-  ] : [
-    { 
-      question: "Cách khởi động server và truy cập website?", 
-      answer: "Để khởi động, bạn chạy lệnh `node server.js`. Sau đó truy cập `http://localhost:3000` trên trình duyệt. Chúc bạn thành công!" 
-    },
-    { 
-      question: "Mindex có thể giúp gì cho việc học của tôi?", 
-      answer: "Mindex giúp bạn tóm tắt tài liệu, trích xuất ý chính và tạo câu hỏi ôn tập tự động từ PDF/Slide, giúp tiết kiệm 70% thời gian nghiên cứu." 
-    }
-  ];
+  const copy = MOCKUP_COPY[lang];
 
   useEffect(() => {
-    let scenarioIdx = 0;
-    let isMounted = true;
+    let scenarioIndex = 0;
+    let active = true;
+
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
     async function runLoop() {
-      while (isMounted) {
+      while (active) {
         setMessages([]);
-        const current = DEMO_SCENARIO[scenarioIdx];
-        
-        // 1. Gõ câu hỏi
-        let text = "";
+        setInput("");
+        setIsTyping(false);
+        const current = copy.scenario[scenarioIndex];
+
+        let typed = "";
         for (const char of current.question) {
-          if (!isMounted) return;
-          text += char;
-          setInput(text);
-          await new Promise(r => setTimeout(r, 50));
+          if (!active) {
+            return;
+          }
+          typed += char;
+          setInput(typed);
+          await wait(42);
         }
 
-        await new Promise(r => setTimeout(r, 500));
-        if (!isMounted) return;
+        await wait(450);
+        if (!active) {
+          return;
+        }
 
-        // 2. Gửi câu hỏi
         setMessages([{ role: "user", content: current.question }]);
         setInput("");
-        
-        await new Promise(r => setTimeout(r, 800));
-        if (!isMounted) return;
 
-        // 3. AI trả lời
+        await wait(700);
+        if (!active) {
+          return;
+        }
+
         setIsTyping(true);
-        await new Promise(r => setTimeout(r, 1500));
-        if (!isMounted) return;
+        await wait(1300);
+        if (!active) {
+          return;
+        }
 
-        setMessages(prev => [...prev, { role: "assistant", content: current.answer }]);
+        setMessages((previous) => [...previous, { role: "assistant", content: current.answer }]);
         setIsTyping(false);
 
-        // 4. Chờ xem kết quả rồi lặp lại
-        await new Promise(r => setTimeout(r, 5000));
-        
-        scenarioIdx = (scenarioIdx + 1) % DEMO_SCENARIO.length;
+        await wait(4600);
+        scenarioIndex = (scenarioIndex + 1) % copy.scenario.length;
       }
     }
 
     runLoop();
-    return () => { isMounted = false; };
-  }, []);
+
+    return () => {
+      active = false;
+    };
+  }, [copy]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -95,44 +145,48 @@ export function ChatMockup({ lang = 'en' }: { lang?: 'en' | 'vi' }) {
   }, [messages, isTyping]);
 
   return (
-    <div className="w-full h-full bg-[#050505] text-zinc-50 flex overflow-hidden rounded-xl border border-white/5 shadow-2xl relative">
-      {/* Sidebar Mockup */}
-      <aside className="hidden md:flex w-64 h-full flex-col bg-zinc-900/30 border-r border-white/5 p-4 flex-shrink-0">
-        <div className="flex items-center justify-between mb-6 px-1">
-          <h2 className="text-sm font-bold tracking-tight text-white flex items-center gap-2">
-            Inbox
-            <div className="w-1 h-1 rounded-full bg-primary shadow-[0_0_5px_rgba(184,41,255,1)]" />
+    <div className="relative flex h-full w-full overflow-hidden rounded-xl border border-white/5 bg-[#050505] text-zinc-50 shadow-2xl">
+      <aside className="hidden h-full w-64 flex-shrink-0 flex-col border-r border-white/5 bg-zinc-900/30 p-4 md:flex">
+        <div className="mb-6 flex items-center justify-between px-1">
+          <h2 className="flex items-center gap-2 text-sm font-bold tracking-tight text-white">
+            {copy.inbox}
+            <div className="h-1 w-1 rounded-full bg-primary shadow-[0_0_5px_rgba(184,41,255,1)]" />
           </h2>
           <Plus size={14} className="text-zinc-500" />
         </div>
 
         <div className="relative mb-4">
           <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" />
-          <div className="h-8 bg-white/5 border border-white/5 rounded-lg w-full flex items-center pl-8 text-[10px] text-zinc-600">
-            Tìm tài liệu...
+          <div className="flex h-8 w-full items-center rounded-lg border border-white/5 bg-white/5 pl-8 text-[10px] text-zinc-600">
+            {copy.searchPlaceholder}
           </div>
         </div>
 
         <div className="space-y-2 overflow-y-auto pr-1">
-          <MockNavItem active title="Hướng Dẫn Xây Dựng Website..." status="READY" pinned />
-          <MockNavItem title="Lộ trình CCNA.pdf" status="READY" pinned />
-          <MockNavItem title="Cách đọc Source Code..." time="Còn 12h" />
-          <MockNavItem title="Báo cáo chi tiết..." time="Còn 643h" />
+          {copy.nav.map((item, index) => (
+            <MockNavItem
+              key={`${item.title}-${index}`}
+              active={index === 0}
+              title={item.title}
+              status={item.status}
+              pinned={item.pinned}
+              time={item.time}
+              readyText={copy.navReady}
+            />
+          ))}
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-full relative overflow-hidden">
-        {/* Header */}
-        <header className="h-14 border-b border-white/[0.03] bg-black/40 flex items-center justify-between px-6">
+      <main className="relative flex h-full flex-1 flex-col overflow-hidden">
+        <header className="flex h-14 items-center justify-between border-b border-white/[0.03] bg-black/40 px-6">
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <FileText size={12} className="text-primary opacity-60" />
-              <h3 className="text-[12px] font-bold text-white tracking-tight">Hướng Dẫn Xây Dựng Website Bán Hàng Nhỏ.pdf</h3>
+              <h3 className="text-[12px] font-bold tracking-tight text-white">{copy.documentTitle}</h3>
             </div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[8px] font-bold text-zinc-600 tracking-wider uppercase">BY MINDEX INTELLIGENCE ENGINE</span>
-              <div className="px-1 py-0 text-[6px] font-black bg-white/5 border border-white/10 rounded text-emerald-400">READY</div>
+            <div className="mt-0.5 flex items-center gap-2">
+              <span className="text-[8px] font-bold uppercase tracking-wider text-zinc-600">BY MINDEX INTELLIGENCE ENGINE</span>
+              <div className="rounded border border-white/10 bg-white/5 px-1 py-0 text-[6px] font-black text-emerald-400">READY</div>
             </div>
           </div>
           <div className="flex items-center gap-3 text-zinc-500">
@@ -141,52 +195,46 @@ export function ChatMockup({ lang = 'en' }: { lang?: 'en' | 'vi' }) {
           </div>
         </header>
 
-        {/* Chat / Content Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-6 pt-10 pb-32 space-y-6 custom-scrollbar" ref={scrollRef}>
-          {/* Mock Document Content Overlay - To make it look like the user screenshot */}
-          <div className="max-w-2xl mx-auto space-y-4 opacity-10 select-none pointer-events-none mb-4">
-            <h1 className="text-xl font-bold">Chạy lệnh `node server.js`</h1>
-            <p className="text-sm">để khởi động server. Mở trình duyệt và nhập địa chỉ `http://localhost:3000` để truy cập vào website bán hàng.</p>
+        <div ref={scrollRef} className="custom-scrollbar flex-1 space-y-6 overflow-y-auto px-6 pb-32 pt-10">
+          <div className="pointer-events-none mb-4 max-w-2xl select-none space-y-4 opacity-10">
+            <h1 className="text-xl font-bold">{copy.overlayTitle}</h1>
+            <p className="text-sm">{copy.overlayBody}</p>
           </div>
 
-          <div className="max-w-2xl mx-auto space-y-6">
+          <div className="mx-auto max-w-2xl space-y-6">
             <AnimatePresence>
-              {messages.map((msg, i) => (
-                <motion.div 
-                  key={i}
+              {messages.map((message, index) => (
+                <motion.div
+                  key={`${message.role}-${index}`}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "flex gap-4",
-                    msg.role === "user" ? "flex-row-reverse" : ""
-                  )}
+                  className={cn("flex gap-4", message.role === "user" ? "flex-row-reverse" : "")}
                 >
-                  <div className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border",
-                    msg.role === "assistant" ? "bg-primary/10 border-primary/20" : "bg-white/5 border-white/10"
-                  )}>
-                    {msg.role === "assistant" ? <Zap size={14} className="text-primary fill-primary" /> : <div className="text-[10px] font-bold">U</div>}
+                  <div
+                    className={cn(
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
+                      message.role === "assistant" ? "border-primary/20 bg-primary/10" : "border-white/10 bg-white/5",
+                    )}
+                  >
+                    {message.role === "assistant" ? <Zap size={14} className="fill-primary text-primary" /> : <div className="text-[10px] font-bold">U</div>}
                   </div>
-                  <div className={cn(
-                    "p-4 rounded-2xl max-w-[80%] text-sm leading-relaxed",
-                    msg.role === "assistant" ? "bg-zinc-900/50 text-zinc-200 shadow-xl" : "bg-primary text-primary-foreground font-medium"
-                  )}>
-                    {msg.content}
+                  <div
+                    className={cn(
+                      "max-w-[80%] rounded-2xl p-4 text-sm leading-relaxed",
+                      message.role === "assistant" ? "bg-zinc-900/50 text-zinc-200 shadow-xl" : "bg-primary font-medium text-primary-foreground",
+                    )}
+                  >
+                    {message.content}
                   </div>
                 </motion.div>
               ))}
               {isTyping && (
-                <motion.div 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  exit={{ opacity: 0 }}
-                  className="flex gap-4"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex gap-4">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
                     <Loader2 size={14} className="animate-spin text-primary" />
                   </div>
-                  <div className="p-4 rounded-2xl bg-zinc-900/50 text-zinc-500 italic text-xs">
-                    Mindex Intelligence is thinking...
+                  <div className="rounded-2xl bg-zinc-900/50 p-4 text-xs italic text-zinc-500">
+                    {copy.thinking}
                   </div>
                 </motion.div>
               )}
@@ -194,27 +242,26 @@ export function ChatMockup({ lang = 'en' }: { lang?: 'en' | 'vi' }) {
           </div>
         </div>
 
-        {/* Chat Input Floating */}
-        <div className="absolute bottom-6 inset-x-0 px-6">
-          <div className="max-w-2xl mx-auto bg-zinc-900/80 backdrop-blur-xl rounded-2xl border border-white/10 p-2 flex flex-col gap-2 shadow-2xl transition-all duration-500">
-            <div className="flex items-center gap-2 flex-1 px-2">
-              <div className="flex-1 text-sm h-10 flex items-center text-zinc-400">
-                {input || <span className="text-zinc-600 italic">Hỏi bất cứ điều gì về tài liệu này...</span>}
-                <motion.div 
+        <div className="absolute inset-x-0 bottom-6 px-6">
+          <div className="mx-auto flex max-w-2xl flex-col gap-2 rounded-2xl border border-white/10 bg-zinc-900/80 p-2 shadow-2xl backdrop-blur-xl transition-all duration-500">
+            <div className="flex flex-1 items-center gap-2 px-2">
+              <div className="flex h-10 flex-1 items-center text-sm text-zinc-400">
+                {input || <span className="italic text-zinc-600">{copy.inputPlaceholder}</span>}
+                <motion.div
                   animate={{ opacity: [1, 0] }}
                   transition={{ repeat: Infinity, duration: 0.8 }}
-                  className="w-[2px] h-4 bg-primary ml-1"
+                  className="ml-1 h-4 w-[2px] bg-primary"
                 />
               </div>
-              <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-zinc-600">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-600">
                 <Send size={16} />
               </div>
             </div>
-            <div className="flex items-center justify-center gap-4 text-[8px] font-bold text-zinc-600 uppercase tracking-[0.2em] border-t border-white/5 pt-2">
-              <span>• LOGIC</span>
-              <span>• NHANH CHÓNG</span>
-              <span>• CHUẨN XÁC</span>
-              <Sparkles size={8} className="animate-pulse" />
+            <div className="flex items-center justify-center gap-4 border-t border-white/5 pt-2 text-[8px] font-bold uppercase tracking-[0.2em] text-zinc-600">
+              {copy.footerTags.map((tag) => (
+                <span key={tag}>* {tag}</span>
+              ))}
+              <SparkleGlyph size={8} className="animate-pulse" />
             </div>
           </div>
         </div>
@@ -223,36 +270,47 @@ export function ChatMockup({ lang = 'en' }: { lang?: 'en' | 'vi' }) {
   );
 }
 
-function MockNavItem({ title, status, pinned, time, active }: { title: string, status?: string, pinned?: boolean, time?: string, active?: boolean }) {
+function MockNavItem({
+  title,
+  status,
+  pinned,
+  time,
+  active,
+  readyText,
+}: {
+  title: string;
+  status?: string;
+  pinned?: boolean;
+  time?: string;
+  active?: boolean;
+  readyText: string;
+}) {
   return (
-    <div className={cn(
-      "p-3 rounded-xl transition-all border",
-      active ? "bg-primary/10 border-primary/20" : "bg-white/[0.02] border-white/5"
-    )}>
-      <div className="flex justify-between items-start mb-1">
-        <div className="flex items-center gap-1.5 truncate flex-1">
-          <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", status ? "bg-emerald-400" : "bg-zinc-600")} />
-          <span className="text-[10px] font-bold truncate text-zinc-300">{title}</span>
+    <div className={cn("rounded-xl border p-3 transition-all", active ? "border-primary/20 bg-primary/10" : "border-white/5 bg-white/[0.02]")}>
+      <div className="mb-1 flex items-start justify-between">
+        <div className="flex flex-1 items-center gap-1.5 truncate">
+          <div className={cn("h-1.5 w-1.5 flex-shrink-0 rounded-full", status ? "bg-emerald-400" : "bg-zinc-600")} />
+          <span className="truncate text-[10px] font-bold text-zinc-300">{title}</span>
         </div>
-        {pinned && <div className="text-[6px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/10 px-1 rounded">PINNED</div>}
-        {time && <span className="text-[8px] text-zinc-600 font-bold">{time}</span>}
+        {pinned && <div className="rounded border border-amber-500/10 bg-amber-500/10 px-1 text-[6px] font-black text-amber-500">PINNED</div>}
+        {time && <span className="text-[8px] font-bold text-zinc-600">{time}</span>}
       </div>
-      <p className="text-[8px] text-zinc-500 truncate">Sẵn sàng để chat.</p>
+      <p className="truncate text-[8px] text-zinc-500">{readyText}</p>
     </div>
   );
 }
 
-function Sparkles({ size, className }: { size: number, className?: string }) {
+function SparkleGlyph({ size, className }: { size: number; className?: string }) {
   return (
-    <svg 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
     >
       <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />

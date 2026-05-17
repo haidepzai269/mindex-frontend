@@ -24,6 +24,7 @@ interface LibraryPickerDialogProps {
   onOpenChange: (open: boolean) => void;
   roomId: string;
   alreadyLinkedIds: string[];
+  myDocCount: number;
   onSuccess: (docTitle: string) => void;
 }
 
@@ -40,6 +41,7 @@ export function LibraryPickerDialog({
   onOpenChange,
   roomId,
   alreadyLinkedIds,
+  myDocCount,
   onSuccess,
 }: LibraryPickerDialogProps) {
   const [search, setSearch] = useState("");
@@ -55,7 +57,7 @@ export function LibraryPickerDialog({
 
   const docs = data?.data ?? [];
   const maxRoomDocs = 3;
-  const remainingSlots = Math.max(0, maxRoomDocs - alreadyLinkedIds.length);
+  const remainingSlots = Math.max(0, maxRoomDocs - myDocCount);
   const selectedCount = selected.size;
 
   const filtered = useMemo(() => {
@@ -81,7 +83,7 @@ export function LibraryPickerDialog({
       }
 
       if (remainingSlots === 0) {
-        toast.error("Phòng này đã đủ 3 tài liệu");
+        toast.error("Bạn đã đạt giới hạn 3 tài liệu/người trong phòng");
         return prev;
       }
 
@@ -308,7 +310,7 @@ export function LibraryPickerDialog({
         <DialogFooter className="mx-0 mb-0 flex flex-row flex-wrap items-center gap-3 rounded-none border-t border-border/60 px-6 py-4 sm:flex-row sm:justify-between">
           <span className="min-w-0 flex-1 text-[12px] text-muted-foreground">
             {remainingSlots === 0
-              ? "Phòng này đã đủ 3 tài liệu"
+              ? "Bạn đã đạt giới hạn 3 tài liệu/người trong phòng"
               : selectedCount > 0
                 ? `Đã chọn ${selectedCount} / ${remainingSlots} tài liệu`
                 : `Còn có thể thêm ${remainingSlots} / ${maxRoomDocs} tài liệu vào phòng`}

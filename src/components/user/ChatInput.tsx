@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Loader2, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
+import { VoiceInputButton } from "@/components/user/VoiceInputButton";
 
 interface ChatInputProps {
   onSendMessage: (message: string, model: string) => void;
@@ -14,14 +16,57 @@ interface ChatInputProps {
 export function ChatInput({ onSendMessage, disabled, isLoading, placeholder }: ChatInputProps) {
   const [input, setInput] = useState("");
   const [model, setModel] = useState("Mindex-1");
+  const [voiceBaseInput, setVoiceBaseInput] = useState("");
+  const [showMainPlaceholder, setShowMainPlaceholder] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const shouldAnimatePlaceholder = !placeholder;
+
+  useEffect(() => {
+    if (!shouldAnimatePlaceholder) return;
+
+    const intervalId = window.setInterval(() => {
+      setShowMainPlaceholder((prev) => !prev);
+    }, 3000);
+
+    return () => window.clearInterval(intervalId);
+  }, [shouldAnimatePlaceholder]);
+
+  const updateInput = useCallback((value: string) => {
+    setInput(value);
+  }, []);
+
+  const {
+    error: voiceError,
+    isListening,
+    isSupported,
+    stopListening,
+    toggleListening,
+  } = useSpeechToText({
+    onTranscriptChange: (transcript) => {
+      updateInput(
+        transcript
+          ? [voiceBaseInput.trimEnd(), transcript].filter(Boolean).join(" ")
+          : voiceBaseInput
+      );
+    },
+  });
 
   const handleSend = useCallback(() => {
     if (input.trim() && !disabled && !isLoading) {
       onSendMessage(input.trim(), model);
       setInput("");
+      setVoiceBaseInput("");
+      stopListening();
     }
-  }, [input, onSendMessage, disabled, isLoading, model]);
+  }, [disabled, input, isLoading, model, onSendMessage, stopListening]);
+
+  const handleToggleVoice = useCallback(() => {
+    if (!isListening) {
+      setVoiceBaseInput(input);
+    }
+
+    toggleListening();
+  }, [input, isListening, toggleListening]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -44,47 +89,69 @@ export function ChatInput({ onSendMessage, disabled, isLoading, placeholder }: C
         "focus-within:border-primary/40 focus-within:ring-[4px] focus-within:ring-primary/5",
         disabled || isLoading ? "opacity-50 grayscale" : ""
       )}>
-        <textarea
-          ref={textareaRef}
-          rows={1}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder || "Hỏi bất cứ điều gì về tài liệu này..."}
-          disabled={disabled || isLoading}
-          className="w-full max-h-32 py-2 px-4 bg-transparent border-none focus:ring-0 text-[14px] font-medium resize-none overflow-y-auto scrollbar-hide text-foreground placeholder:text-muted-foreground leading-normal outline-none"
-        />
+        <div className="relative w-full">
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={input}
+            onChange={(e) => updateInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={shouldAnimatePlaceholder ? "" : placeholder}
+            disabled={disabled || isLoading}
+            className="w-full max-h-32 py-2 px-4 bg-transparent border-none focus:ring-0 text-[14px] font-medium resize-none overflow-y-auto scrollbar-hide text-foreground placeholder:text-muted-foreground leading-normal outline-none"
+          />
+          {shouldAnimatePlaceholder && !input && (
+            <div className="pointer-events-none absolute inset-x-4 top-1/2 -translate-y-1/2 overflow-hidden h-5 text-[14px] font-medium text-muted-foreground">
+              <div
+                className={cn(
+                  "flex flex-col transition-transform duration-500 ease-out",
+                  showMainPlaceholder ? "-translate-y-5" : "translate-y-0"
+                )}
+              >
+                <span className="h-5 leading-5 whitespace-nowrap">Shift + Enter để xuống dòng</span>
+                <span className="h-5 leading-5 whitespace-nowrap">Hỏi bất cứ điều gì về tài liệu này...</span>
+              </div>
+            </div>
+          )}
+        </div>
 
-        <div className="flex items-center justify-between px-2 pb-1 pt-1 border-t border-border/20 mt-1">
-          <div className="flex items-center gap-2">
-             <div className="flex items-center bg-muted/40 rounded-lg p-0.5 border border-border/50">
-                <button
-                  onClick={() => setModel("Mindex-1")}
-                  className={cn(
-                    "px-3 py-1 rounded-md text-[10px] font-black transition-all duration-200",
-                    model === "Mindex-1"
-                      ? "bg-foreground text-background shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+        {voiceError && (
+          <p className="px-4 pb-1 text-[11px] font-medium text-red-500">
+            {voiceError}
+          </p>
+        )}
+
+        <div className="flex min-w-0 items-center justify-between gap-2 px-2 pb-1 pt-1 border-t border-border/20 mt-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+             <VoiceInputButton
+               disabled={disabled || isLoading}
+               isListening={isListening}
+               isSupported={isSupported}
+               onClick={handleToggleVoice}
+             />
+              <div className="flex min-w-0 items-center bg-muted/40 rounded-lg p-0.5 border border-border/50">
+                 <button
+                   onClick={() => setModel("Mindex-1")}
+                   className={cn(
+                     "min-w-0 whitespace-nowrap px-[clamp(0.4rem,1.4vw,0.75rem)] py-1 rounded-md text-[clamp(7px,1.35vw,10px)] leading-none font-black transition-all duration-200",
+                     model === "Mindex-1"
+                       ? "bg-foreground text-background shadow-sm"
+                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   )}
                 >
                   MINDEX-1
                 </button>
-                <button
-                  onClick={() => setModel("Mindex-2")}
-                  className={cn(
-                    "px-3 py-1 rounded-md text-[10px] font-black transition-all duration-200",
-                    model === "Mindex-2"
-                      ? "bg-foreground text-background shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                 <button
+                   onClick={() => setModel("Mindex-2")}
+                   className={cn(
+                     "min-w-0 whitespace-nowrap px-[clamp(0.4rem,1.4vw,0.75rem)] py-1 rounded-md text-[clamp(7px,1.35vw,10px)] leading-none font-black transition-all duration-200",
+                     model === "Mindex-2"
+                       ? "bg-foreground text-background shadow-sm"
+                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   )}
                 >
                   MINDEX-2
                 </button>
-             </div>
-             <div className="px-2 py-1 rounded-md bg-muted/40 text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest flex items-center gap-1.5 border border-border/30 hidden sm:flex">
-                <kbd className="opacity-40">SHIFT+ENTER</kbd>
-                <span className="opacity-20">|</span>
-                XUỐNG DÒNG
              </div>
           </div>
 
@@ -92,7 +159,7 @@ export function ChatInput({ onSendMessage, disabled, isLoading, placeholder }: C
             onClick={handleSend}
             disabled={!input.trim() || disabled || isLoading}
             className={cn(
-              "flex items-center gap-2 px-4 py-1.5 rounded-xl transition-all duration-300 font-black text-[11px] uppercase tracking-tighter",
+              "flex min-w-0 shrink-0 items-center gap-1.5 whitespace-nowrap px-[clamp(0.55rem,1.6vw,1rem)] py-1.5 rounded-xl transition-all duration-300 font-black text-[clamp(8px,1.35vw,11px)] leading-none uppercase tracking-tighter",
               input.trim() && !disabled && !isLoading
                 ? "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95"
                 : "bg-muted text-muted-foreground"
@@ -102,7 +169,7 @@ export function ChatInput({ onSendMessage, disabled, isLoading, placeholder }: C
               <Loader2 size={13} className="animate-spin text-primary" />
             ) : (
               <>
-                <span>Gửi câu hỏi</span>
+                <span className="whitespace-nowrap">Gửi câu hỏi</span>
                 <Send size={13} className={cn(input.trim() ? "text-primary fill-primary" : "")} />
               </>
             )}

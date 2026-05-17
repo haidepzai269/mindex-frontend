@@ -1,18 +1,20 @@
 import { MetadataRoute } from 'next'
 
+import { absoluteUrl } from '@/lib/seo'
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://mindex.io.vn'
+  const lastModified = new Date()
 
   return [
     {
-      url: baseUrl,
-      lastModified: new Date(),
+      url: absoluteUrl('/'),
+      lastModified,
       changeFrequency: 'daily',
       priority: 1,
     },
     {
-      url: `${baseUrl}/community`,
-      lastModified: new Date(),
+      url: absoluteUrl('/community'),
+      lastModified,
       changeFrequency: 'daily',
       priority: 0.8,
     },

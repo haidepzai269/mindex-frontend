@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
 // Define which routes require authentication
-const protectedRoutes = ['/library', '/upload', '/community', '/settings', '/doc'];
+const protectedRoutes = ['/library', '/upload', '/settings', '/doc'];
 const authRoutes = ['/login', '/register'];
 const adminRoutes = ['/admin'];
 

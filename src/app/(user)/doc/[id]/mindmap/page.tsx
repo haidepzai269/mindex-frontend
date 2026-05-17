@@ -30,7 +30,7 @@ const MindmapPdfViewer = dynamic(() => import("@/components/user/MindmapPdfViewe
   loading: () => <Loader2 className="animate-spin text-muted-foreground mt-10" />
 });
 
-interface MindmapNodeData {
+interface MindmapNodeData extends Record<string, unknown> {
   label: string;
   summary: string;
   chunk_id: string;
@@ -43,8 +43,8 @@ export default function MindmapPage({ params }: { params: Promise<{ id: string }
   const [isGenerating, setIsGenerating] = useState(false);
   const [mindmapData, setMindmapData] = useState<any>(null);
   
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<MindmapNodeData>>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   
   // PDF state
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -74,7 +74,7 @@ export default function MindmapPage({ params }: { params: Promise<{ id: string }
     
     // Auto-layout logic (simple radial/tree fallback or just list for now)
     // We'll place them in a basic grid if layout is not provided
-    const newNodes: Node[] = data.nodes.map((n: any, i: number) => ({
+    const newNodes: Node<MindmapNodeData>[] = data.nodes.map((n: any, i: number) => ({
       id: n.id,
       position: { x: (i % 5) * 250, y: Math.floor(i / 5) * 150 }, // simple grid layout
       data: {
@@ -152,8 +152,8 @@ export default function MindmapPage({ params }: { params: Promise<{ id: string }
     }
   };
 
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    const data = node.data as unknown as MindmapNodeData;
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node<MindmapNodeData>) => {
+    const data = node.data;
     setSelectedNodeData(data);
     if (data.page_number) {
       setCurrentPage(data.page_number);

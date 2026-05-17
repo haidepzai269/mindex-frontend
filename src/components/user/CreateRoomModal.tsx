@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Users, ShieldCheck, Copy, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { fetchApi } from "@/lib/api";
+import { APIError, fetchApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -44,7 +44,11 @@ export function CreateRoomModal({ isOpen, onClose }: CreateRoomModalProps) {
         toast.error(res.message || "Không thể tạo phòng");
       }
     } catch (err) {
-      toast.error("Lỗi kết nối máy chủ");
+      if (err instanceof APIError) {
+        toast.error(err.message || "Không thể tạo phòng");
+      } else {
+        toast.error("Lỗi kết nối máy chủ");
+      }
     } finally {
       setIsLoading(false);
     }

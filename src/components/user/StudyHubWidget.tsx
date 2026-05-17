@@ -11,6 +11,7 @@ import {
   Loader2,
   Network,
   Check,
+  Headphones,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +35,7 @@ export function StudyHubWidget({
   const { data: masteryData, isLoading } = useSWR(
     open ? `/study/docs/${docId}/mastery` : null,
     fetcher as any,
-    { revalidateOnFocus: false },
+    { revalidateOnFocus: false }
   );
 
   const mastery = masteryData?.data;
@@ -78,7 +79,10 @@ export function StudyHubWidget({
     <div className={`flex flex-col ${open ? "flex-1 min-h-0" : "mb-4"}`}>
       {/* Header toggle */}
       <button
-        onClick={() => onOpenChange(!open)}
+        onClick={() => {
+          console.log("[StudyHubWidget] Toggle clicked. Current open:", open);
+          onOpenChange(!open);
+        }}
         className="w-full flex items-center justify-between px-6 py-[18px] hover:bg-white/[0.02] transition-all duration-300 rounded-t-[2rem] border border-border bg-card/80 backdrop-blur-3xl shadow-md"
       >
         <div className="flex items-center gap-3">
@@ -101,7 +105,7 @@ export function StudyHubWidget({
                 "text-[11px] font-black px-2 py-0.5 rounded-full border",
                 level.color,
                 level.bg,
-                level.border,
+                level.border
               )}
             >
               {Math.round(masteryScore)}%
@@ -111,7 +115,7 @@ export function StudyHubWidget({
             size={14}
             className={cn(
               "text-muted-foreground/50 transition-transform duration-500 ease-out",
-              open && "rotate-90",
+              open && "rotate-90"
             )}
           />
         </div>
@@ -138,7 +142,7 @@ export function StudyHubWidget({
                   <h4
                     className={cn(
                       "text-lg font-black tracking-tight",
-                      level.color,
+                      level.color
                     )}
                   >
                     {level.label}
@@ -161,8 +165,8 @@ export function StudyHubWidget({
                     masteryScore >= 70
                       ? "bg-emerald-500"
                       : masteryScore >= 40
-                        ? "bg-amber-500"
-                        : "bg-primary",
+                      ? "bg-amber-500"
+                      : "bg-primary"
                   )}
                   style={{ width: `${masteryScore}%` }}
                 />
@@ -206,7 +210,7 @@ export function StudyHubWidget({
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest text-center">
+              <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest text-center mt-3">
                 Bắt đầu học tập
               </p>
               {/* Flashcards Button - chưa dùng */}
@@ -253,7 +257,7 @@ export function StudyHubWidget({
                 />
               </button>
 
-              {/* Mindmap Button - chưa dùng */}
+              {/* Mindmap Button */}
               <button
                 onClick={() => router.push(`/doc/${docId}/mindmap`)}
                 className="group/btn relative w-full flex items-center gap-3 px-4 py-3 rounded-[1.25rem] bg-muted/30 border border-border text-muted-foreground hover:text-foreground hover:border-emerald-500/30 transition-all duration-300"
@@ -272,6 +276,28 @@ export function StudyHubWidget({
                 <ChevronRight
                   size={13}
                   className="ml-auto text-zinc-700 group-hover/btn:text-emerald-500 group-hover/btn:translate-x-1 transition-all flex-shrink-0"
+                />
+              </button>
+
+              {/* Audio Overview Button */}
+              <button
+                onClick={() => router.push(`/doc/${docId}/audio`)}
+                className="group/btn relative w-full flex items-center gap-3 px-4 py-3 rounded-[1.25rem] bg-muted/30 border border-border text-muted-foreground hover:text-foreground hover:border-blue-500/30 transition-all duration-300"
+              >
+                <div className="w-6 h-6 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-500 group-hover/btn:scale-110 transition-transform flex-shrink-0">
+                  <Headphones size={13} />
+                </div>
+                <div className="flex flex-col items-start min-w-0 flex-1">
+                  <span className="text-[12px] font-black tracking-tight whitespace-nowrap">
+                    Audio Overview
+                  </span>
+                  <span className="text-[8px] text-muted-foreground/60 font-bold uppercase tracking-widest group-hover/btn:text-blue-500 transition-colors whitespace-nowrap">
+                    Podcast AI
+                  </span>
+                </div>
+                <ChevronRight
+                  size={13}
+                  className="ml-auto text-zinc-700 group-hover/btn:text-blue-500 group-hover/btn:translate-x-1 transition-all flex-shrink-0"
                 />
               </button>
             </div>
