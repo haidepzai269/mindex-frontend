@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
 
     const isProd = process.env.NODE_ENV === 'production';
-    const domain = isProd ? 'mindex.io.vn' : undefined;
+    const domain = process.env.COOKIE_DOMAIN || undefined;
 
     // Set MaxAge: 10 ngày nếu remember_me, ngược lại 7 ngày
     const refreshMaxAge = remember_me ? 10 * 24 * 60 * 60 : 7 * 24 * 60 * 60;

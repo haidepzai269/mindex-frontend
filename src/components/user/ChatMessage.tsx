@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { fetchApi } from "@/lib/api";
 import { AIThinkingIndicator } from "@/components/user/AIThinkingIndicator";
+import { useChatStore } from "@/store/useChatStore";
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -329,6 +330,7 @@ const markdownComponents: any = {
 export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
   const isUser = message.role === "user";
   const [showSources, setShowSources] = useState(false);
+  const streamStatus = useChatStore((state) => state.streamStatus);
 
   return (
     <div className={cn(
@@ -375,7 +377,7 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
           )}>
             {isStreaming && !message.content ? (
               <div className="py-2 px-1">
-                <AIThinkingIndicator />
+                <AIThinkingIndicator status={streamStatus} />
               </div>
             ) : isUser ? (
               // User messages: plain text (no markdown)
@@ -431,34 +433,59 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
               </button>
               {showSources && (
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                  {message.sources.map((source, i) => (
-                    <div
-                      key={i}
-                      className="flex flex-col p-6 bg-muted/20 border border-border/50 rounded-[2rem] hover:bg-muted/40 hover:border-border transition-all cursor-default group/src"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center border border-border group-hover/src:border-primary/50 transition-all">
-                            <span className="text-[11px] font-black text-primary uppercase">P{source.page_number}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-[13px] font-black text-foreground">Đoạn #{source.chunk_index}</span>
-                            {source.doc_title && (
-                              <span className="text-[10px] text-muted-foreground/60 font-bold truncate max-w-[150px] uppercase tracking-tighter">
-                                {source.doc_title}
+                  {message.sources.map((source, i) => {
+                    const isWebSource = source.type === "web";
+                    const page = source.page_number ?? source.page;
+                    const score = source.similarity ?? source.score;
+
+                    return (
+                      <div
+                        key={i}
+                        className="flex flex-col p-6 bg-muted/20 border border-border/50 rounded-[2rem] hover:bg-muted/40 hover:border-border transition-all cursor-default group/src"
+                      >
+                        <div className="flex items-center justify-between mb-4 gap-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 shrink-0 rounded-xl bg-muted flex items-center justify-center border border-border group-hover/src:border-primary/50 transition-all">
+                              {isWebSource ? (
+                                <ExternalLink size={13} className="text-primary" />
+                              ) : (
+                                <span className="text-[11px] font-black text-primary uppercase">P{page ?? "-"}</span>
+                              )}
+                            </div>
+                            <div className="flex min-w-0 flex-col">
+                              <span className="text-[13px] font-black text-foreground truncate">
+                                {isWebSource ? source.title || "Nguồn web" : `Đoạn #${source.chunk_index}`}
                               </span>
-                            )}
+                              <span className="text-[10px] text-muted-foreground/60 font-bold truncate max-w-[180px] uppercase tracking-tighter">
+                                {isWebSource ? source.provider || source.url : source.doc_title}
+                              </span>
+                            </div>
                           </div>
+                          <Badge variant="outline" className={cn(
+                            "text-[10px] font-black px-2 shrink-0",
+                            isWebSource
+                              ? "bg-blue-500/5 text-blue-500 border-blue-500/20"
+                              : "bg-emerald-500/5 text-emerald-500 border-emerald-500/20"
+                          )}>
+                            {isWebSource ? "WEB" : `${Math.round((score || 0) * 100)}% Match`}
+                          </Badge>
                         </div>
-                        <Badge variant="outline" className="bg-emerald-500/5 text-emerald-500 border-emerald-500/20 text-[10px] font-black px-2">
-                          {Math.round(source.similarity * 100)}% Match
-                        </Badge>
+                        <p className="text-[12.5px] text-muted-foreground leading-relaxed italic font-medium group-hover/src:text-foreground transition-colors">
+                          "{source.content}"
+                        </p>
+                        {isWebSource && source.url && (
+                          <a
+                            href={source.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-4 inline-flex w-fit items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary/80"
+                          >
+                            Mở nguồn <ExternalLink size={11} />
+                          </a>
+                        )}
                       </div>
-                      <p className="text-[12.5px] text-muted-foreground leading-relaxed italic font-medium group-hover/src:text-foreground transition-colors">
-                        "{source.content}"
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

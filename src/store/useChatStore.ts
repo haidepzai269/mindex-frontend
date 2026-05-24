@@ -14,6 +14,7 @@ interface ChatStore {
   messages: ChatMessage[];
   isStreaming: boolean;
   currentStreamText: string;
+  streamStatus: 'thinking' | 'searching';
   sessionId: string | null;
   pendingLogId: string | null; // log_id từ event done, chưa gắn vào message
   
@@ -24,6 +25,7 @@ interface ChatStore {
   setPendingLogId: (id: string | null) => void;
   setIsStreaming: (isStreaming: boolean) => void;
   setCurrentStreamText: (text: string) => void;
+  setStreamStatus: (status: 'thinking' | 'searching') => void;
   appendStreamText: (token: string) => void;
   clearChat: () => void;
 }
@@ -33,6 +35,7 @@ export const useChatStore = create<ChatStore>((set) => ({
   messages: [],
   isStreaming: false,
   currentStreamText: '',
+  streamStatus: 'thinking',
   sessionId: null as string | null,
   pendingLogId: null as string | null,
 
@@ -60,10 +63,11 @@ export const useChatStore = create<ChatStore>((set) => ({
 
   setCurrentStreamText: (text) => set({ currentStreamText: text }),
 
+  setStreamStatus: (streamStatus) => set({ streamStatus }),
+
   appendStreamText: (token) => set((state) => ({ 
     currentStreamText: state.currentStreamText + token 
   })),
 
-  clearChat: () => set({ messages: [], currentStreamText: '', isStreaming: false, sessionId: null, pendingLogId: null }),
+  clearChat: () => set({ messages: [], currentStreamText: '', streamStatus: 'thinking', isStreaming: false, sessionId: null, pendingLogId: null }),
  }));
-

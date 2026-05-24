@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Send, Loader2, Zap } from "lucide-react";
+import { BrainCircuit, Send, Loader2, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { VoiceInputButton } from "@/components/user/VoiceInputButton";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface ChatInputProps {
-  onSendMessage: (message: string, model: string) => void;
+  onSendMessage: (message: string, model: string, thinking: boolean) => void;
   disabled?: boolean;
   isLoading?: boolean;
   placeholder?: string;
@@ -16,10 +17,16 @@ interface ChatInputProps {
 export function ChatInput({ onSendMessage, disabled, isLoading, placeholder }: ChatInputProps) {
   const [input, setInput] = useState("");
   const [model, setModel] = useState("Mindex-1");
+  const [thinking, setThinking] = useState(false);
   const [voiceBaseInput, setVoiceBaseInput] = useState("");
   const [showMainPlaceholder, setShowMainPlaceholder] = useState(true);
+  const user = useAuthStore((state) => state.user);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const shouldAnimatePlaceholder = !placeholder;
+  const thinkingAvailable =
+    user?.role === "admin" ||
+    user?.tier === "PRO" ||
+    user?.tier === "ULTRA";
 
   useEffect(() => {
     if (!shouldAnimatePlaceholder) return;
@@ -53,12 +60,13 @@ export function ChatInput({ onSendMessage, disabled, isLoading, placeholder }: C
 
   const handleSend = useCallback(() => {
     if (input.trim() && !disabled && !isLoading) {
-      onSendMessage(input.trim(), model);
+      onSendMessage(input.trim(), model, thinkingAvailable && thinking);
       setInput("");
+      setThinking(false);
       setVoiceBaseInput("");
       stopListening();
     }
-  }, [disabled, input, isLoading, model, onSendMessage, stopListening]);
+  }, [disabled, input, isLoading, model, onSendMessage, stopListening, thinking, thinkingAvailable]);
 
   const handleToggleVoice = useCallback(() => {
     if (!isListening) {
@@ -129,6 +137,25 @@ export function ChatInput({ onSendMessage, disabled, isLoading, placeholder }: C
                isSupported={isSupported}
                onClick={handleToggleVoice}
              />
+             {thinkingAvailable && (
+               <button
+                 type="button"
+                 onClick={() => setThinking((value) => !value)}
+                 disabled={disabled || isLoading}
+                 title="Thinking"
+                 aria-label="Thinking"
+                 aria-pressed={thinking}
+                 className={cn(
+                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-200",
+                   thinking
+                     ? "border-primary/40 bg-primary/10 text-primary shadow-sm"
+                     : "border-border/50 bg-muted/40 text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                   disabled || isLoading ? "cursor-not-allowed opacity-50" : "active:scale-95"
+                 )}
+               >
+                 <BrainCircuit size={15} />
+               </button>
+             )}
               <div className="flex min-w-0 items-center bg-muted/40 rounded-lg p-0.5 border border-border/50">
                  <button
                    onClick={() => setModel("Mindex-1")}

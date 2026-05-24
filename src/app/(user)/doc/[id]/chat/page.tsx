@@ -96,7 +96,7 @@ export default function ChatPage({
     return new Date(doc.expired_at).getTime() < Date.now();
   }, [doc?.expired_at]);
 
-  const handleSendMessage = (q: string, model: string = "Mindex-1") => {
+  const handleSendMessage = (q: string, model: string = "Mindex-1", thinking: boolean = false) => {
     if (doc?.status !== "ready") {
       toast.warning("Tài liệu chưa sẵn sàng", {
         description: "Vui lòng đợi quá trình xử lý tài liệu hoàn tất.",
@@ -114,7 +114,7 @@ export default function ChatPage({
 
     // Truyền forkId chỉ lần đầu (khi chưa có session) để inject Shared Context
     const currentFork = !sessionId ? forkId : undefined;
-    sendMessage(id, q, currentFork, false, model);
+    sendMessage(id, q, currentFork, false, model, thinking);
   };
 
   // 1. Phục hồi lịch sử chat khi vào tài liệu
@@ -431,21 +431,29 @@ export default function ChatPage({
             <Plus size={14} /> Thêm vào bộ tài liệu
           </Button>
 
-          {/* Footer sync stats */}
-          <div className="mt-6 p-5 bg-muted/40 rounded-2xl border border-border/70">
+          {/* Neural Core Widget - Interactive */}
+          <div
+            onClick={() => router.push(`/doc/${id}/presentation`)}
+            className="mt-6 p-5 bg-muted/40 rounded-2xl border border-border/70 hover:bg-muted/60 hover:border-primary/30 cursor-pointer transition-all duration-300 group/neural relative overflow-hidden"
+          >
             <div className="mb-3 flex items-center justify-between px-1 py-0.5">
-              <h3 className="py-0.5 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-primary">
+              <h3 className="py-0.5 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-primary flex items-center gap-1.5">
+                <Sparkles size={8} className="text-primary animate-pulse" />
                 Neural Core
               </h3>
               <div className="flex gap-1">
                 <div className="w-1 h-1 rounded-full bg-primary/40" />
-                <div className="w-1 h-1 rounded-full bg-primary/40 animate-pulse" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/80 animate-pulse" />
               </div>
             </div>
-            <p className="text-[9px] text-muted-foreground/50 font-bold leading-relaxed">
+            <p className="text-[9px] text-muted-foreground/60 font-bold leading-relaxed mb-3">
               Syncing active documents with academic clusters via Mindex
               Intelligence.
             </p>
+            <div className="flex items-center gap-1 text-[10px] font-black text-primary uppercase tracking-wider group-hover/neural:translate-x-1 transition-transform">
+              Neural Slide &amp; Video
+              <ArrowRight size={10} />
+            </div>
           </div>
         </div>
       </aside>

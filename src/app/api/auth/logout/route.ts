@@ -4,13 +4,13 @@ import { NextResponse } from "next/server";
 export async function POST() {
   const cookieStore = await cookies();
   const isProd = process.env.NODE_ENV === 'production';
-  const domain = isProd ? 'mindex.io.vn' : undefined;
+  const domain = process.env.COOKIE_DOMAIN || undefined;
   
   const cookieOptions = {
     maxAge: 0,
     path: "/",
     domain: domain,
-    secure: true,
+    secure: isProd,
     sameSite: 'lax' as const
   };
 

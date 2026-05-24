@@ -10,6 +10,7 @@ export function useChatSSE() {
   const { 
     setIsStreaming, 
     setCurrentStreamText, 
+    setStreamStatus,
     appendStreamText, 
     addMessage,
     updateLastAssistantLogId,
@@ -18,12 +19,13 @@ export function useChatSSE() {
   } = useChatStore();
 
 
-  const sendMessage = useCallback(async (targetId: string, question: string, forkId?: string, isCollection: boolean = false, model?: string) => {
+  const sendMessage = useCallback(async (targetId: string, question: string, forkId?: string, isCollection: boolean = false, model?: string, thinking: boolean = false) => {
     if (!targetId || !question) return;
 
     setError(null);
     setIsStreaming(true);
     setCurrentStreamText('');
+    setStreamStatus('thinking');
 
     console.log(`[SSE] Sending message. TargetID: ${targetId}, SessionID: ${sessionId || 'NEW_SESSION'}, Model: ${model || 'default'}`);
 
@@ -49,6 +51,7 @@ export function useChatSSE() {
                 question: question,
                 ...(forkId ? { fork_id: forkId } : {}),
                 ...(model ? { model: model } : {}),
+                ...(thinking ? { thinking: true } : {}),
             };
 
             console.log(`[SSE] Sending request to ${API_BASE_URL}/chat/message:`, payload);
@@ -142,11 +145,21 @@ export function useChatSSE() {
                 try {
                     const parsed = JSON.parse(dataStr);
                     if (parsed.token) {
+                        setStreamStatus('thinking');
                         appendStreamText(parsed.token);
                         fullAnswerText += parsed.token;
                     }
                 } catch (e) {
                     console.warn("JSON error in token:", dataStr);
+                }
+            } else if (eventType === 'status') {
+                try {
+                    const parsed = JSON.parse(dataStr);
+                    if (parsed.status === 'searching' || parsed.status === 'thinking') {
+                        setStreamStatus(parsed.status);
+                    }
+                } catch (e) {
+                    console.warn("JSON error in status:", dataStr);
                 }
             } else if (eventType === 'done') {
                 try {
@@ -168,6 +181,7 @@ export function useChatSSE() {
                     });
                     setIsStreaming(false);
                     setCurrentStreamText('');
+                    setStreamStatus('thinking');
                     return; // Kết thúc hoàn toàn
                 } catch (e) {
                     console.error("[SSE] Error parsing done event:", e);
@@ -177,12 +191,14 @@ export function useChatSSE() {
                 console.error("[SSE] AI Engine Error event received");
                 setError("AI Engine Error");
                 setIsStreaming(false);
+                setStreamStatus('thinking');
             }
         }
       }
 
       // Finalize nếu loop kết thúc mà chưa nhận event: done
       setIsStreaming(false);
+      setStreamStatus('thinking');
 
     } catch (err: any) {
       if (err.name !== 'AbortError') {
@@ -190,8 +206,9 @@ export function useChatSSE() {
         setError("Kết nối AI bị gián đoạn.");
       }
       setIsStreaming(false);
+      setStreamStatus('thinking');
     }
-  }, [addMessage, updateLastAssistantLogId, setIsStreaming, setCurrentStreamText, appendStreamText, sessionId, setSessionId]);
+  }, [addMessage, updateLastAssistantLogId, setIsStreaming, setCurrentStreamText, setStreamStatus, appendStreamText, sessionId, setSessionId]);
 
 
   const stopStreaming = useCallback(() => {
@@ -199,8 +216,9 @@ export function useChatSSE() {
       console.log("[SSE] Manually stopping stream");
       abortControllerRef.current.abort();
       setIsStreaming(false);
+      setStreamStatus('thinking');
     }
-  }, [setIsStreaming]);
+  }, [setIsStreaming, setStreamStatus]);
 
   return { sendMessage, stopStreaming, error };
 }

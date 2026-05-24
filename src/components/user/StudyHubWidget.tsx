@@ -12,6 +12,7 @@ import {
   Network,
   Check,
   Headphones,
+  Presentation,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -298,6 +299,28 @@ export function StudyHubWidget({
                 <ChevronRight
                   size={13}
                   className="ml-auto text-zinc-700 group-hover/btn:text-blue-500 group-hover/btn:translate-x-1 transition-all flex-shrink-0"
+                />
+              </button>
+
+              {/* Slide & Video Button */}
+              <button
+                onClick={() => router.push(`/doc/${docId}/presentation`)}
+                className="group/btn relative w-full flex items-center gap-3 px-4 py-3 rounded-[1.25rem] bg-muted/30 border border-border text-muted-foreground hover:text-foreground hover:border-rose-500/30 transition-all duration-300"
+              >
+                <div className="w-6 h-6 rounded-lg bg-rose-500/20 flex items-center justify-center text-rose-500 group-hover/btn:scale-110 transition-transform flex-shrink-0">
+                  <Presentation size={13} />
+                </div>
+                <div className="flex flex-col items-start min-w-0 flex-1">
+                  <span className="text-[12px] font-black tracking-tight whitespace-nowrap">
+                    Slide &amp; Video AI
+                  </span>
+                  <span className="text-[8px] text-muted-foreground/60 font-bold uppercase tracking-widest group-hover/btn:text-rose-500 transition-colors whitespace-nowrap">
+                    Neural Presentation
+                  </span>
+                </div>
+                <ChevronRight
+                  size={13}
+                  className="ml-auto text-zinc-700 group-hover/btn:text-rose-500 group-hover/btn:translate-x-1 transition-all flex-shrink-0"
                 />
               </button>
             </div>

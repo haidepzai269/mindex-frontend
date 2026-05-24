@@ -94,12 +94,12 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
   }, [id, setMessages, setSessionId, clearChat]);
 
   // 2. Xử lý gửi tin
-  const handleSendMessage = (q: string, model: string = "Mindex-1") => {
+  const handleSendMessage = (q: string, model: string = "Mindex-1", thinking: boolean = false) => {
     if (!collection || collection.doc_count === 0) {
       toast.error("Bộ tài liệu trống. Vui lòng thêm tài liệu trước khi chat.");
       return;
     }
-    sendMessage(id, q, undefined, true, model);
+    sendMessage(id, q, undefined, true, model, thinking);
   };
 
   // 3. Auto Scroll
@@ -120,7 +120,7 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
     
     const grouped: Record<string, any[]> = {};
     lastMsg.sources.forEach(src => {
-        const title = src.doc_title || "Unknown Document";
+        const title = src.type === "web" ? "Web Search" : src.doc_title || "Unknown Document";
         if (!grouped[title]) grouped[title] = [];
         grouped[title].push(src);
     });
@@ -316,17 +316,36 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
                                     </span>
                                 </div>
                                 <div className="space-y-3 pl-2 border-l border-border/50 ml-2">
-                                    {srcs.map((src, idx) => (
+                                    {srcs.map((src, idx) => {
+                                      const isWebSource = src.type === "web";
+                                      const score = src.similarity ?? src.score ?? 0;
+
+                                      return (
                                         <div key={idx} className="p-4 bg-muted/20 border border-border/50 rounded-2xl hover:bg-accent/30 transition-all">
                                             <div className="flex items-center justify-between mb-3">
-                                                <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] px-2 h-5">P{src.page}</Badge>
-                                                <span className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-widest">{Math.round(src.similarity * 100)}% Match</span>
+                                                <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] px-2 h-5">
+                                                  {isWebSource ? "WEB" : `P${src.page ?? src.page_number ?? "-"}`}
+                                                </Badge>
+                                                <span className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-widest">
+                                                  {isWebSource ? src.provider || "web" : `${Math.round(score * 100)}% Match`}
+                                                </span>
                                             </div>
                                             <p className="text-[12px] text-muted-foreground line-clamp-3 leading-relaxed italic">
                                                 "{src.content}"
                                             </p>
+                                            {isWebSource && src.url && (
+                                              <a
+                                                href={src.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="mt-3 inline-flex text-[10px] font-black uppercase tracking-wider text-primary hover:text-primary/80"
+                                              >
+                                                Mở nguồn
+                                              </a>
+                                            )}
                                         </div>
-                                    ))}
+                                      );
+                                    })}
                                 </div>
                             </div>
                         ))}
