@@ -1,107 +1,25 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 import { ChatMessage as ChatMessageType } from "@/store/useChatStore";
-import { User, Zap, ChevronDown, ChevronUp, FileText, ThumbsUp, ThumbsDown, Copy, Check, ExternalLink } from "lucide-react";
+import { User, Zap, ChevronDown, ChevronUp, FileText, ThumbsUp, ThumbsDown, Copy, Check, ExternalLink, X } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { fetchApi } from "@/lib/api";
 import { AIThinkingIndicator } from "@/components/user/AIThinkingIndicator";
 import { useChatStore } from "@/store/useChatStore";
+import { usePdfStore } from "@/store/usePdfStore";
+import { toast } from "sonner";
 
 interface ChatMessageProps {
   message: ChatMessageType;
   isStreaming?: boolean;
 }
 
-// ── Rating ──────────────────────────────────────────────────────────────────
-function ResponseRating({ logId }: { logId: string }) {
-  const [voted, setVoted] = useState<"up" | "down" | null>(null);
-  const [showComment, setShowComment] = useState(false);
-  const [comment, setComment] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
-  const submitRating = useCallback(async (thumb: "up" | "down", commentText?: string) => {
-    if (submitting) return;
-    setSubmitting(true);
-    try {
-      await fetchApi("/feedbacks/rating", {
-        method: "POST",
-        body: JSON.stringify({ log_id: logId, thumbs: thumb === "up", comment: commentText || undefined }),
-      });
-      setVoted(thumb);
-      if (thumb === "up") setShowComment(false);
-    } catch (err) {
-      console.error("[Rating] Failed:", err);
-    } finally {
-      setSubmitting(false);
-    }
-  }, [logId, submitting]);
-
-  const handleThumbDown = () => {
-    if (voted === "down") { submitRating("up"); setShowComment(false); }
-    else setShowComment(true);
-  };
-
-  return (
-    <div className="mt-5 flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest mr-1">Phản hồi</span>
-        <button
-          onClick={() => voted !== "up" ? submitRating("up") : submitRating("down")}
-          disabled={submitting}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] font-bold transition-all duration-200",
-            voted === "up"
-              ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-600 dark:text-emerald-400"
-              : "bg-muted/30 border-border text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 hover:border-emerald-500/30 hover:bg-emerald-500/10"
-          )}
-        >
-          <ThumbsUp size={13} /><span>Hữu ích</span>
-        </button>
-        <button
-          onClick={handleThumbDown}
-          disabled={submitting}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[12px] font-bold transition-all duration-200",
-            voted === "down"
-              ? "bg-red-500/15 border-red-500/40 text-red-500"
-              : "bg-muted/30 border-border text-muted-foreground hover:text-red-500 hover:border-red-500/30 hover:bg-red-500/10"
-          )}
-        >
-          <ThumbsDown size={13} /><span>Không đúng</span>
-        </button>
-        {voted && (
-          <span className="text-[11px] text-muted-foreground font-medium animate-in fade-in duration-300">
-            {voted === "up" ? "✓ Cảm ơn phản hồi!" : "✓ Đã ghi nhận"}
-          </span>
-        )}
-      </div>
-      {showComment && (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-300 flex flex-col gap-2">
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Sai ở đâu? (tùy chọn — nhấn Gửi để bỏ qua)"
-            rows={2}
-            className="w-full max-w-md resize-none rounded-xl border border-border bg-muted/40 px-4 py-3 text-[13px] text-foreground placeholder:text-muted-foreground/50 focus:border-primary/30 focus:outline-none transition-colors"
-          />
-          <div className="flex gap-2">
-            <button onClick={() => submitRating("down", comment)} disabled={submitting} className="px-4 py-1.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-[12px] font-bold hover:bg-red-500/30 transition-all">
-              {submitting ? "Đang gửi..." : "Gửi phản hồi"}
-            </button>
-            <button onClick={() => setShowComment(false)} className="px-4 py-1.5 rounded-xl border border-border text-muted-foreground text-[12px] font-bold hover:text-foreground transition-all">
-              Bỏ qua
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Text extraction (for copy) ───────────────────────────────────────────────
 function extractText(children: any): string {
@@ -242,7 +160,7 @@ const markdownComponents: any = {
     const lang = langClass.replace("language-", "").toUpperCase() || "CODE";
 
     return (
-      <div className="relative group my-6 rounded-2xl overflow-hidden border border-border shadow-sm">
+      <div className="relative group my-6 rounded-2xl overflow-hidden border border-border shadow-sm w-full">
         {/* Header bar */}
         <div className="flex items-center justify-between px-4 py-2 bg-muted/70 border-b border-border/60">
           <div className="flex items-center gap-2">
@@ -329,8 +247,102 @@ const markdownComponents: any = {
 // ── Main ChatMessage component ───────────────────────────────────────────────
 export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
   const isUser = message.role === "user";
+  const hasSources = !!(message.sources && message.sources.length > 0);
   const [showSources, setShowSources] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedSource, setSelectedSource] = useState<any | null>(null);
+  const [showThinkingDetails, setShowThinkingDetails] = useState(true);
   const streamStatus = useChatStore((state) => state.streamStatus);
+  const streamInsights = useChatStore((state) => state.streamInsights);
+
+  const [copied, setCopied] = useState(false);
+  const [voted, setVoted] = useState<"up" | "down" | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const setActiveChunk = usePdfStore((s) => s.setActiveChunk);
+  const activeChunk = usePdfStore((s) => s.activeChunk);
+  const thinkingDetail =
+    streamStatus === "searching"
+      ? "Đang tìm nguồn liên quan và kiểm tra ngữ cảnh trước khi trả lời."
+      : "Đang phân tích câu hỏi, chọn ngữ cảnh phù hợp và chuẩn bị câu trả lời.";
+  const visibleThinkingInsights = streamInsights.length > 0 ? streamInsights : [thinkingDetail];
+
+  // Fetch rating state on mount
+  useEffect(() => {
+    if (isUser || isStreaming || !message.log_id) return;
+    let isMounted = true;
+    fetchApi(`/feedbacks/rating/${message.log_id}`)
+      .then((res: any) => {
+        if (isMounted && res && res.data) {
+          setVoted(res.data.thumbs ? "up" : "down");
+        }
+      })
+      .catch((err) => {
+        console.debug("Failed to fetch rating for message:", message.log_id, err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [message.log_id, isUser, isStreaming]);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      toast.success("Đã sao chép tin nhắn vào bộ nhớ tạm");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Không thể sao chép");
+    }
+  };
+
+  const handleRating = async (thumbs: boolean) => {
+    if (submitting || !message.log_id) return;
+    setSubmitting(true);
+    const voteType = thumbs ? "up" : "down";
+    const previousVote = voted;
+
+    // Optimistic UI update
+    setVoted(voteType === voted ? null : voteType);
+
+    try {
+      await fetchApi("/feedbacks/rating", {
+        method: "POST",
+        body: JSON.stringify({
+          log_id: message.log_id,
+          thumbs: thumbs,
+        }),
+      });
+      toast.success(thumbs ? "Đã đánh giá hữu ích" : "Đã đánh giá không hữu ích");
+    } catch (err) {
+      console.error("[Rating] Failed:", err);
+      setVoted(previousVote);
+      toast.error("Không thể lưu đánh giá");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const renderAssistantContent = (content: string) => (
+    <div className={cn(
+      "prose dark:prose-invert max-w-none",
+      "prose-headings:font-black prose-headings:tracking-tight",
+      "prose-p:leading-[1.8] prose-p:mb-4",
+      "prose-ul:my-3 prose-ol:my-3 prose-li:my-1",
+      "prose-code:not-prose",
+      "prose-pre:bg-transparent prose-pre:p-0 prose-pre:rounded-none prose-pre:my-0",
+      "prose-blockquote:not-italic prose-blockquote:border-0 prose-blockquote:p-0 prose-blockquote:my-0",
+      "prose-table:border-0 prose-table:my-0",
+      "prose-hr:my-0",
+      "prose-a:no-underline",
+    )}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={markdownComponents}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
 
   return (
     <div className={cn(
@@ -355,7 +367,7 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
 
         {/* Content */}
         <div className={cn(
-          "flex flex-col gap-3.5",
+          "flex flex-col gap-3.5 min-w-0",
           isUser ? "items-end" : "items-start pt-1"
         )}>
           {/* Header */}
@@ -375,9 +387,50 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
               ? "bg-primary text-primary-foreground px-6 py-4 rounded-[2rem] rounded-tr-sm border border-primary/20 shadow-sm text-[15px] leading-[1.65]"
               : "text-foreground w-full"
           )}>
-            {isStreaming && !message.content ? (
-              <div className="py-2 px-1">
-                <AIThinkingIndicator status={streamStatus} />
+            {isStreaming ? (
+              <div className="w-full max-w-2xl space-y-4">
+                <div className="overflow-hidden rounded-2xl border border-border/70 bg-muted/20">
+                <button
+                  type="button"
+                  onClick={() => setShowThinkingDetails((open) => !open)}
+                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                  aria-expanded={showThinkingDetails}
+                  title={showThinkingDetails ? "Ẩn phân tích AI" : "Mở phân tích AI"}
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+                    <Zap size={16} className="fill-primary" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <AIThinkingIndicator status={streamStatus} />
+                  </span>
+                  <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-background/70 text-muted-foreground">
+                    {showThinkingDetails ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                  </span>
+                </button>
+
+                {showThinkingDetails && (
+                  <div className="border-t border-border/60 px-4 py-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="space-y-3">
+                      {visibleThinkingInsights.map((insight, index) => (
+                        <div
+                          key={`${index}-${insight}`}
+                          className="relative pl-5 animate-in fade-in slide-in-from-bottom-1 duration-200"
+                        >
+                          <span className="absolute left-0 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
+                          {index < visibleThinkingInsights.length - 1 && (
+                            <span className="absolute left-[3px] top-5 bottom-[-0.75rem] w-px bg-border" />
+                          )}
+                          <p className="text-sm leading-6 text-muted-foreground">
+                            {insight}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                </div>
+
+                {message.content && renderAssistantContent(message.content)}
               </div>
             ) : isUser ? (
               // User messages: plain text (no markdown)
@@ -415,79 +468,246 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
             )}
           </div>
 
-          {/* Rating */}
-          {!isUser && !isStreaming && message.log_id && (
-            <ResponseRating logId={message.log_id} />
+          {/* Action toolbar for AI response */}
+          {!isUser && !isStreaming && (
+            <div className="flex items-center gap-1.5 mt-3 text-muted-foreground/60">
+              {/* 1. Sao chép */}
+              <button
+                onClick={handleCopy}
+                className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted hover:text-foreground transition-all duration-200"
+                title={copied ? "Đã sao chép" : "Sao chép tin nhắn"}
+              >
+                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+              </button>
+
+              {/* 2. Like */}
+              <button
+                onClick={() => handleRating(true)}
+                disabled={submitting || !message.log_id}
+                className={cn(
+                  "flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted transition-all duration-200",
+                  voted === "up"
+                    ? "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20"
+                    : "hover:text-foreground"
+                )}
+                title="Hữu ích"
+              >
+                <ThumbsUp size={14} fill={voted === "up" ? "currentColor" : "none"} />
+              </button>
+
+              {/* 3. Dislike */}
+              <button
+                onClick={() => handleRating(false)}
+                disabled={submitting || !message.log_id}
+                className={cn(
+                  "flex items-center justify-center w-8 h-8 rounded-lg hover:bg-muted transition-all duration-200",
+                  voted === "down"
+                    ? "text-red-500 bg-red-500/10 hover:bg-red-500/20"
+                    : "hover:text-foreground"
+                )}
+                title="Không hữu ích"
+              >
+                <ThumbsDown size={14} fill={voted === "down" ? "currentColor" : "none"} />
+              </button>
+
+              {/* 4. Nguồn (icon tài liệu kèm số lượng trong ngoặc) */}
+              {message.sources && message.sources.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (selectedSource) {
+                      setSelectedSource(null);
+                      setShowSources(true);
+                    } else {
+                      setShowSources(!showSources);
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center gap-1.5 h-8 px-2.5 rounded-lg hover:bg-muted transition-all duration-200 text-[12px] font-bold",
+                    (showSources || selectedSource) ? "text-primary bg-primary/10 hover:bg-primary/20" : "hover:text-foreground"
+                  )}
+                  title="Nguồn trích dẫn"
+                >
+                  <FileText size={14} />
+                  <span>({message.sources.length})</span>
+                </button>
+              )}
+            </div>
           )}
 
-          {/* Sources */}
-          {!isUser && message.sources && message.sources.length > 0 && (
-            <div className="mt-6 w-full group/sources">
-              <button
-                onClick={() => setShowSources(!showSources)}
-                className="flex items-center gap-2.5 px-4 py-2 bg-muted/40 hover:bg-muted border border-border/50 rounded-2xl text-[12px] font-black text-muted-foreground hover:text-foreground transition-all duration-300"
-              >
-                <FileText size={14} className="group-hover/sources:text-primary transition-colors" />
-                Nguồn dữ liệu trích dẫn ({message.sources.length})
-                {showSources ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-              {showSources && (
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                  {message.sources.map((source, i) => {
-                    const isWebSource = source.type === "web";
-                    const page = source.page_number ?? source.page;
-                    const score = source.similarity ?? source.score;
+          {/* Sources scrollable container */}
+          {!isUser && showSources && message.sources && message.sources.length > 0 && (
+            <div className="mt-3 w-full rounded-2xl border border-border/50 bg-muted/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              {/* Header */}
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/40 bg-muted/20">
+                <FileText size={11} className="text-muted-foreground/60" />
+                <span className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">
+                  Nguồn trích dẫn
+                </span>
+                <span className="ml-auto text-[10px] font-bold text-muted-foreground/50">
+                  {message.sources.length} nguồn
+                </span>
+              </div>
+              {/* Scrollable list — fixed height, no overflow bleed */}
+              <div className="max-h-60 overflow-y-auto overscroll-contain divide-y divide-border/30">
+                {message.sources.map((source, i) => {
+                  const isWebSource = source.type === "web";
+                  const page = source.page_number ?? source.page;
+                  const score = source.similarity ?? source.score;
+                  const isActive =
+                    !isWebSource &&
+                    activeChunk?.page === page &&
+                    activeChunk?.content === source.content;
 
-                    return (
-                      <div
-                        key={i}
-                        className="flex flex-col p-6 bg-muted/20 border border-border/50 rounded-[2rem] hover:bg-muted/40 hover:border-border transition-all cursor-default group/src"
-                      >
-                        <div className="flex items-center justify-between mb-4 gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 shrink-0 rounded-xl bg-muted flex items-center justify-center border border-border group-hover/src:border-primary/50 transition-all">
-                              {isWebSource ? (
-                                <ExternalLink size={13} className="text-primary" />
-                              ) : (
-                                <span className="text-[11px] font-black text-primary uppercase">P{page ?? "-"}</span>
-                              )}
-                            </div>
-                            <div className="flex min-w-0 flex-col">
-                              <span className="text-[13px] font-black text-foreground truncate">
-                                {isWebSource ? source.title || "Nguồn web" : `Đoạn #${source.chunk_index}`}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground/60 font-bold truncate max-w-[180px] uppercase tracking-tighter">
-                                {isWebSource ? source.provider || source.url : source.doc_title}
-                              </span>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className={cn(
-                            "text-[10px] font-black px-2 shrink-0",
-                            isWebSource
-                              ? "bg-blue-500/5 text-blue-500 border-blue-500/20"
-                              : "bg-emerald-500/5 text-emerald-500 border-emerald-500/20"
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => {
+                        if (!isWebSource && page) {
+                          setActiveChunk(page, source.content ?? "", source.chunk_index);
+                        }
+                        setSelectedSource(source);
+                        setShowSources(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 transition-colors group/src",
+                        isWebSource
+                          ? "cursor-default hover:bg-muted/30"
+                          : isActive
+                          ? "bg-primary/8 cursor-pointer"
+                          : "cursor-pointer hover:bg-muted/30"
+                      )}
+                    >
+                      {/* Icon */}
+                      <div className={cn(
+                        "w-7 h-7 shrink-0 rounded-lg flex items-center justify-center border transition-colors",
+                        isActive
+                          ? "bg-primary/10 border-primary/30"
+                          : "bg-muted border-border/60 group-hover/src:border-primary/40"
+                      )}>
+                        {isWebSource ? (
+                          <ExternalLink size={12} className="text-blue-500" />
+                        ) : (
+                          <span className={cn(
+                            "text-[10px] font-black uppercase",
+                            isActive ? "text-primary" : "text-muted-foreground group-hover/src:text-primary"
                           )}>
-                            {isWebSource ? "WEB" : `${Math.round((score || 0) * 100)}% Match`}
-                          </Badge>
+                            P{page ?? "?"}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Title + subtitle */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-[12px] font-semibold text-foreground truncate">
+                            {isWebSource
+                              ? source.title || "Nguồn web"
+                              : `Đoạn #${source.chunk_index ?? i + 1}`}
+                          </span>
                         </div>
-                        <p className="text-[12.5px] text-muted-foreground leading-relaxed italic font-medium group-hover/src:text-foreground transition-colors">
-                          "{source.content}"
+                        <p className="text-[10.5px] text-muted-foreground/60 truncate mt-0.5">
+                          {isWebSource
+                            ? source.provider || source.url || "Web"
+                            : source.doc_title || "Tài liệu"}
                         </p>
-                        {isWebSource && source.url && (
+                      </div>
+
+                      {/* Right side: badge + action */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant="outline" className={cn(
+                          "text-[9px] font-black px-1.5 py-0 h-5",
+                          isWebSource
+                            ? "bg-blue-500/5 text-blue-500 border-blue-500/20"
+                            : "bg-emerald-500/5 text-emerald-500 border-emerald-500/20"
+                        )}>
+                          {isWebSource ? "WEB" : `${Math.round((score || 0) * 100)}%`}
+                        </Badge>
+                        {isWebSource && source.url ? (
                           <a
                             href={source.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-4 inline-flex w-fit items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary/80"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-muted-foreground/40 hover:text-primary transition-colors"
                           >
-                            Mở nguồn <ExternalLink size={11} />
+                            <ExternalLink size={11} />
                           </a>
+                        ) : (
+                          <span className={cn(
+                            "text-[10px] transition-colors",
+                            isActive ? "text-primary" : "text-muted-foreground/30 group-hover/src:text-primary/50"
+                          )}>
+                            ↗
+                          </span>
                         )}
                       </div>
-                    );
-                  })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Selected source preview — hiện sau khi user click vào 1 nguồn */}
+          {!isUser && selectedSource && !showSources && (
+            <div className="mt-3 w-full rounded-2xl border border-border/50 bg-muted/10 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              {/* Header */}
+              <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-border/40 bg-muted/20">
+                <div className={cn(
+                  "w-6 h-6 shrink-0 rounded-lg flex items-center justify-center border",
+                  selectedSource.type === "web"
+                    ? "bg-blue-500/10 border-blue-500/20"
+                    : "bg-primary/10 border-primary/20"
+                )}>
+                  {selectedSource.type === "web" ? (
+                    <ExternalLink size={11} className="text-blue-500" />
+                  ) : (
+                    <span className="text-[9px] font-black text-primary">
+                      P{selectedSource.page_number ?? selectedSource.page ?? "?"}
+                    </span>
+                  )}
                 </div>
-              )}
+                <div className="flex-1 min-w-0">
+                  <span className="text-[11.5px] font-semibold text-foreground truncate block">
+                    {selectedSource.type === "web"
+                      ? selectedSource.title || "Nguồn web"
+                      : `Đoạn #${selectedSource.chunk_index}`}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground/50 truncate block">
+                    {selectedSource.type === "web"
+                      ? selectedSource.provider || "Web"
+                      : selectedSource.doc_title || "Tài liệu"}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSelectedSource(null)}
+                  className="text-muted-foreground/40 hover:text-foreground transition-colors shrink-0"
+                  title="Đóng"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+              {/* Content text */}
+              <div className="px-4 py-3.5">
+                <p className="text-[12.5px] text-muted-foreground leading-relaxed">
+                  {selectedSource.content}
+                </p>
+                {selectedSource.type === "web" && selectedSource.url && (
+                  <a
+                    href={selectedSource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:text-primary/70 transition-colors"
+                  >
+                    Mở nguồn <ExternalLink size={11} />
+                  </a>
+                )}
+                {selectedSource.type !== "web" && (
+                  <span className="mt-3 block text-[10px] font-bold text-primary/50 uppercase tracking-wider">
+                    ▶ Đang xem trong PDF
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </div>
