@@ -6,7 +6,7 @@ import type { ChatMessage as StoreChatMessage } from "@/store/useChatStore";
 
 interface ChatScrollDotsProps {
   messages: StoreChatMessage[];
-  scrollContainerRef: React.RefObject<HTMLDivElement>;
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function ChatScrollDots({ messages, scrollContainerRef }: ChatScrollDotsProps) {
