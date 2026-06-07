@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, use, useCallback, useRef } from "react";
+import React, { useState, useEffect, use, useCallback, useMemo, useRef } from "react";
 import { ArrowLeft, Sparkles, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
@@ -54,6 +54,7 @@ export default function MindmapPage({ params }: { params: Promise<{ id: string }
   // Fetch doc metadata for Cloudinary URL
   const { data: docData } = useSWR(id ? `/documents/${id}` : null, fetchApi) as { data: any };
   const doc = docData?.data;
+  const sourcePreviews = useMemo(() => nodes.map((node) => node.data as MindmapNodeData), [nodes]);
 
   // Fetch mindmap cache
   const { data: mindmapCache, error: cacheError, mutate: mutateMindmap } = useSWR(
@@ -259,17 +260,17 @@ export default function MindmapPage({ params }: { params: Promise<{ id: string }
             
             {/* PDF Viewer */}
             <div className="flex-1 overflow-auto custom-scrollbar flex justify-center bg-[#f0f0f0] dark:bg-zinc-900/50 relative py-4">
-               {doc.cloudinary_url && doc.cloudinary_url.endsWith(".pdf") ? (
-                  <MindmapPdfViewer 
-                    url={doc.cloudinary_url}
-                    currentPage={currentPage}
-                    onLoadSuccess={onDocumentLoadSuccess}
-                  />
-               ) : (
-                  <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-muted-foreground">
-                    <p>Tài liệu này không có file PDF hoặc không hỗ trợ hiển thị nội tuyến.</p>
-                  </div>
-               )}
+               <MindmapPdfViewer
+                 url={
+                   typeof doc.cloudinary_url === "string" && /\.pdf($|[?#])/i.test(doc.cloudinary_url)
+                     ? doc.cloudinary_url
+                     : ""
+                 }
+                 currentPage={currentPage}
+                 onLoadSuccess={onDocumentLoadSuccess}
+                 sourcePreview={selectedNodeData}
+                 relatedPreviews={sourcePreviews}
+               />
             </div>
 
             {/* PDF Controls */}

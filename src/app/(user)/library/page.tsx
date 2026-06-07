@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Search,
   Grid,
@@ -16,6 +16,7 @@ import {
   FolderPlus,
   ChevronRight,
   Link as LinkIcon,
+  Cog,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -37,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { ImportLinkDialog } from "@/components/user/ImportLinkDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { formatTimeAgo, formatTimeLeft } from "@/lib/time";
+import { NotificationBell } from "@/components/user/NotificationBell";
 
 interface ApiResponse {
   success: boolean;
@@ -53,6 +55,16 @@ export default function LibraryPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedCollection, setSelectedCollection] = useState<any>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [cogOpen, setCogOpen] = useState(false);
+  const cogTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCogEnter = () => {
+    if (cogTimeoutRef.current) clearTimeout(cogTimeoutRef.current);
+    setCogOpen(true);
+  };
+  const handleCogLeave = () => {
+    cogTimeoutRef.current = setTimeout(() => setCogOpen(false), 120);
+  };
 
   const { data, isLoading } = useSWR<ApiResponse>("/documents", fetcher as any);
   const { data: collectionsData, mutate: mutateCollections } = useSWR<ApiResponse>("/collections", fetcher as any);
@@ -104,7 +116,8 @@ export default function LibraryPage() {
           />
         </div>
 
-        <div className="ml-3 flex items-center gap-2 md:ml-4 md:gap-4">
+        <div className="ml-3 flex items-center gap-2 md:ml-4 md:gap-3">
+          {/* Rooms */}
           <Link
             href="/rooms"
             className="rounded-xl border border-border bg-card/80 p-2 text-muted-foreground transition-all hover:border-primary/20 hover:bg-accent hover:text-foreground"
@@ -113,6 +126,7 @@ export default function LibraryPage() {
             <Users size={20} />
           </Link>
 
+          {/* Layout toggle */}
           <div className="hidden items-center rounded-lg border border-border bg-card/80 p-1 md:flex">
             <button
               onClick={() => handleUpdateViewMode("grid")}
@@ -140,21 +154,59 @@ export default function LibraryPage() {
             </button>
           </div>
 
-          <div className="hidden items-center gap-3 md:flex">
-            <Button onClick={() => setIsCreateModalOpen(true)} variant="outline" className="h-10 gap-2 border-border bg-card/80 text-foreground hover:bg-accent">
-              <FolderPlus size={16} />
-              <span>Bộ tài liệu mới</span>
-            </Button>
+          {/* Notification bell */}
+          <NotificationBell />
 
-            <Button onClick={() => setIsImportModalOpen(true)} variant="outline" className="h-10 gap-2 border-border bg-card/80 text-foreground hover:bg-accent">
-              <LinkIcon size={16} />
-              <span>Sử dụng Link Share</span>
-            </Button>
+          {/* Cog — hover dropdown chứa 3 action */}
+          <div
+            className="relative"
+            onMouseEnter={handleCogEnter}
+            onMouseLeave={handleCogLeave}
+          >
+            <button
+              className={cn(
+                "rounded-xl border border-border bg-card/80 p-2 text-muted-foreground transition-all hover:border-primary/20 hover:bg-accent hover:text-foreground",
+                cogOpen && "border-primary/20 bg-accent text-foreground"
+              )}
+              title="Thao tác thư viện"
+            >
+              <Cog size={20} className={cn("transition-transform duration-300", cogOpen && "rotate-90")} />
+            </button>
 
-            <Button onClick={() => router.push("/upload")} className="h-10 px-4 font-bold">
-              <Plus size={16} />
-              <span>Upload tài liệu</span>
-            </Button>
+            <AnimatePresence>
+              {cogOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute right-0 top-full z-50 mt-2 flex min-w-[200px] flex-col gap-0.5 rounded-xl border border-border bg-card/95 p-1.5 shadow-xl backdrop-blur-md"
+                >
+                  <button
+                    onClick={() => { setCogOpen(false); setIsCreateModalOpen(true); }}
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+                  >
+                    <FolderPlus size={15} className="shrink-0 text-primary" />
+                    Bộ tài liệu mới
+                  </button>
+                  <button
+                    onClick={() => { setCogOpen(false); setIsImportModalOpen(true); }}
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+                  >
+                    <LinkIcon size={15} className="shrink-0 text-primary" />
+                    Sử dụng Link Share
+                  </button>
+                  <div className="my-1 h-px bg-border/60" />
+                  <button
+                    onClick={() => { setCogOpen(false); router.push("/upload"); }}
+                    className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                  >
+                    <Plus size={15} className="shrink-0" />
+                    Upload tài liệu
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </header>

@@ -1,9 +1,22 @@
 import { useState, useEffect } from 'react';
 
 export interface ProcessingStatus {
-  status: 'pending' | 'downloading' | 'extracting' | 'moderating' | 'preprocessing' | 'embedding' | 'ready' | 'error';
+  status:
+    | 'queued'
+    | 'retrying'
+    | 'pending'
+    | 'downloading'
+    | 'extracting'
+    | 'analyzing'
+    | 'moderating'
+    | 'classifying'
+    | 'preprocessing'
+    | 'embedding'
+    | 'ready'
+    | 'error';
   progress: number;
   message?: string;
+  error_code?: string;
 }
 
 export function useProcessingSSE(docID: string | null) {

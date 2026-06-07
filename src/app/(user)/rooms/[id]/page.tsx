@@ -50,6 +50,7 @@ import { LibraryPickerDialog } from "@/components/user/LibraryPickerDialog";
 import { AIThinkingIndicator } from "@/components/user/AIThinkingIndicator";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { VoiceInputButton } from "@/components/user/VoiceInputButton";
+import { DOCUMENT_UPLOAD_ACCEPT, uploadDocument } from "@/lib/upload";
 
 interface RoomMessage {
   id: string;
@@ -114,6 +115,8 @@ export default function RoomPage() {
   const { data: docsData, mutate: mutateDocs } = useSWR<ApiResponse<RoomDoc[]>>(`/rooms/${id}/docs`, fetcher as any, { revalidateOnFocus: false });
 
   const [messages, setMessages] = useState<RoomMessage[]>([]);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const [isLoadingMoreHistory, setIsLoadingMoreHistory] = useState(false);
   const [inputText, setInputText] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [isAiTyping, setIsAiTyping] = useState(false);
@@ -201,16 +204,13 @@ export default function RoomPage() {
     if (!file) return;
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("room_id", id as string);
-
     try {
-      await fetchApi("/processing/upload", {
-        method: 'POST',
-        body: formData
+      const response = await uploadDocument({
+        file,
+        roomId: id as string,
       });
-      toast.success("Đã gửi yêu cầu xử lý tài liệu...");
+      toast.success(response.data?.message || "Đã gửi yêu cầu xử lý tài liệu...");
+      mutateDocs();
     } catch (err: any) {
       toast.error(err.message || "Lỗi upload");
       mutateDocs();
@@ -372,11 +372,49 @@ export default function RoomPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, aiStreamingText, isAiTyping]);
 
+  const loadMoreRoomHistory = useCallback(async () => {
+    if (!id || !hasMoreHistory || isLoadingMoreHistory || messages.length === 0) return;
+    setIsLoadingMoreHistory(true);
+
+    // Lấy timestamp của tin cũ nhất đang hiển thị làm cursor
+    const oldest = messages[0];
+    const beforeMs = new Date(oldest.timestamp).getTime();
+
+    // Giữ scroll position khi prepend
+    const viewport = scrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null;
+    const heightBefore = viewport?.scrollHeight ?? 0;
+
+    try {
+      const data: any = await fetchApi(`/rooms/${id}/history?before=${beforeMs}&limit=30`);
+      if (data.success && data.messages?.length > 0) {
+        const older: RoomMessage[] = data.messages;
+        setMessages((prev) => {
+          const ids = new Set(prev.map((m) => m.id));
+          return [...older.filter((m) => !ids.has(m.id)), ...prev];
+        });
+        setHasMoreHistory(data.has_more ?? false);
+        requestAnimationFrame(() => {
+          if (viewport) viewport.scrollTop = viewport.scrollHeight - heightBefore;
+        });
+      } else {
+        setHasMoreHistory(false);
+      }
+    } catch (err) {
+      console.error("[Room] Load more history failed:", err);
+    } finally {
+      setIsLoadingMoreHistory(false);
+    }
+  }, [id, hasMoreHistory, isLoadingMoreHistory, messages]);
+
   const handleWsEvent = (event: any) => {
     switch (event.type) {
-      case "history":
-        setMessages(event.payload || []);
+      case "history": {
+        const hist: RoomMessage[] = event.payload || [];
+        setMessages(hist);
+        // Server gửi tối đa 50 tin — nếu đủ 50 thì khả năng còn tin cũ hơn
+        setHasMoreHistory(hist.length >= 50);
         break;
+      }
       case "chat_message":
         setMessages(prev => {
           if (prev.some(m => m.id === event.payload.id)) return prev;
@@ -758,6 +796,22 @@ export default function RoomPage() {
 
           <ScrollArea ref={scrollRef} className="flex-1 min-h-0">
             <div className="max-w-4xl mx-auto w-full space-y-8 p-6">
+
+              {/* Load more history button */}
+              {hasMoreHistory && (
+                <div className="flex justify-center">
+                  <button
+                    onClick={loadMoreRoomHistory}
+                    disabled={isLoadingMoreHistory}
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold text-muted-foreground bg-muted/50 border border-border hover:bg-muted transition-colors disabled:opacity-50"
+                  >
+                    {isLoadingMoreHistory
+                      ? <><Loader2 size={12} className="animate-spin" /> Đang tải...</>
+                      : "Tải tin nhắn cũ hơn"}
+                  </button>
+                </div>
+              )}
+
               <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
                 <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/20">
                   <Sparkles className="w-8 h-8 text-primary" />
@@ -994,7 +1048,7 @@ export default function RoomPage() {
               type="file"
               ref={fileInputRef}
               className="hidden"
-              accept=".pdf,.docx,.txt"
+              accept={DOCUMENT_UPLOAD_ACCEPT}
               onChange={handleFileUpload}
             />
             <div className="max-w-3xl mx-auto relative group">

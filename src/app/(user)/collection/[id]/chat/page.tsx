@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useRef, useMemo } from "react";
+import { use, useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { 
   FileText, 
   Star, 
@@ -23,7 +23,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ChatMessage } from "@/components/user/ChatMessage";
 import { ChatInput } from "@/components/user/ChatInput";
-import { useChatStore } from "@/store/useChatStore";
+import { useChatStore, type ChatMessage as StoreChatMessage } from "@/store/useChatStore";
 import { useChatSSE } from "@/hooks/useChatSSE";
 import { CreateCollectionModal } from "@/components/user/CreateCollectionModal";
 import useSWR, { useSWRConfig } from "swr";
@@ -38,6 +38,9 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
   const { id } = use(params);
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [historySkip, setHistorySkip] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { mutate } = useSWRConfig();
   
@@ -66,22 +69,20 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
     let isMounted = true;
     clearChat();
     setSessionId(null);
+    setHasMore(false);
+    setHistorySkip(0);
 
     async function restoreSession() {
       if (!id) return;
       try {
         const sid = localStorage.getItem(`mindex_col_session_${id}`);
-        
-        if (!sid) {
-          // Ask backend for active session (Logic này giả định backend có endpoint tương tự cho collection)
-          // Nếu chưa có, session sẽ được tạo mới khi gửi tin đầu tiên
-        }
-        
         if (isMounted && sid) {
           setSessionId(sid);
-          const msgData: any = await fetchApi(`/chat/sessions/${sid}/messages`);
+          const msgData: any = await fetchApi(`/chat/sessions/${sid}/messages?limit=30&skip=0`);
           if (isMounted && msgData.success && msgData.data.messages) {
             setMessages(msgData.data.messages);
+            setHasMore(msgData.data.has_more ?? false);
+            setHistorySkip(msgData.data.messages.length);
           }
         }
       } catch (err) {
@@ -92,6 +93,49 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
     restoreSession();
     return () => { isMounted = false; };
   }, [id, setMessages, setSessionId, clearChat]);
+
+  const getViewport = useCallback(
+    () => scrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null,
+    []
+  );
+
+  const loadMoreHistory = useCallback(async () => {
+    if (!sessionId || !hasMore || isLoadingMore) return;
+    setIsLoadingMore(true);
+    const viewport = getViewport();
+    const heightBefore = viewport?.scrollHeight ?? 0;
+    try {
+      const data: any = await fetchApi(`/chat/sessions/${sessionId}/messages?limit=30&skip=${historySkip}`);
+      if (data.success && data.data.messages?.length > 0) {
+        const older = data.data.messages as StoreChatMessage[];
+        const existingIds = new Set(messages.map((m) => m.id));
+        const unique = older.filter((m) => !existingIds.has(m.id));
+        setMessages([...unique, ...messages]);
+        setHasMore(data.data.has_more ?? false);
+        setHistorySkip((s) => s + older.length);
+        requestAnimationFrame(() => {
+          const v = getViewport();
+          if (v) v.scrollTop = v.scrollHeight - heightBefore;
+        });
+      } else {
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error("[Collection] Load more history failed:", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [sessionId, hasMore, isLoadingMore, historySkip, messages, getViewport, setMessages]);
+
+  useEffect(() => {
+    const viewport = getViewport();
+    if (!viewport) return;
+    const handle = () => {
+      if (viewport.scrollTop < 150 && hasMore && !isLoadingMore) loadMoreHistory();
+    };
+    viewport.addEventListener("scroll", handle, { passive: true });
+    return () => viewport.removeEventListener("scroll", handle);
+  }, [hasMore, isLoadingMore, loadMoreHistory, getViewport]);
 
   // 2. Xử lý gửi tin
   const handleSendMessage = (q: string, model: string = "Mindex-1", thinking: boolean = false) => {
@@ -254,6 +298,17 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
                               ))}
                           </div>
                       </div>
+                  )}
+
+                  {isLoadingMore && (
+                    <div className="flex justify-center py-3">
+                      <Loader2 size={16} className="animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                  {!hasMore && messages.length >= 30 && (
+                    <p className="text-center text-[10px] text-muted-foreground/40 font-medium uppercase tracking-widest py-2">
+                      Đã hiển thị toàn bộ lịch sử
+                    </p>
                   )}
 
                   <div className="space-y-12">

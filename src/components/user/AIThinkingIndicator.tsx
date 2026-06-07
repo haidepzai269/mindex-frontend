@@ -7,6 +7,7 @@ interface AIThinkingIndicatorProps {
   text?: string;
   status?: "thinking" | "searching";
   className?: string;
+  textClassName?: string;
 }
 
 /**
@@ -17,6 +18,7 @@ export function AIThinkingIndicator({
   text,
   status = "thinking",
   className,
+  textClassName,
 }: AIThinkingIndicatorProps) {
   const isSearching = status === "searching";
   const displayText = text || (isSearching ? "Đang tìm kiếm..." : "Đang suy nghĩ...");
@@ -30,7 +32,7 @@ export function AIThinkingIndicator({
         </span>
       )}
       <span
-        className="text-sm font-medium inline-block"
+        className={cn("text-sm font-medium inline-block", textClassName)}
         style={{
           background:
             "linear-gradient(90deg, hsl(var(--muted-foreground) / 0.65) 0%, hsl(var(--muted-foreground) / 0.65) 30%, rgba(255,255,255,0.98) 50%, hsl(var(--muted-foreground) / 0.65) 70%, hsl(var(--muted-foreground) / 0.65) 100%)",

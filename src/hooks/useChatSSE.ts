@@ -3,6 +3,31 @@ import { useChatStore } from '@/store/useChatStore';
 import { API_BASE_URL, handleRefreshToken } from '@/lib/api';
 import Cookies from 'js-cookie';
 
+type ChatMode = 'document' | 'collection' | 'global_ai';
+
+function getQuestionPreview(question: string) {
+  const cleanQuestion = question.replace(/\s+/g, ' ').trim();
+  return cleanQuestion.length > 96 ? `${cleanQuestion.slice(0, 96)}...` : cleanQuestion;
+}
+
+function buildInitialStreamInsights(question: string, chatMode: ChatMode) {
+  const preview = getQuestionPreview(question);
+  const sourceInsight =
+    chatMode === 'global_ai'
+      ? 'Kiểm tra Thư viện chung Mindex và các nguồn bổ sung có liên quan.'
+      : chatMode === 'collection'
+        ? 'Đọc ngữ cảnh từ bộ tài liệu đã chọn và lịch sử hội thoại gần nhất.'
+        : 'Đọc ngữ cảnh từ tài liệu đang mở và lịch sử hội thoại gần nhất.';
+
+  return [
+    `Người dùng hỏi: "${preview}". Đang xác định ý chính cần trả lời.`,
+    sourceInsight,
+    'Đánh giá xem câu hỏi cần trả lời trực tiếp, đối chiếu nguồn, hay bổ sung tìm kiếm.',
+    'Sắp xếp các dữ kiện liên quan để câu trả lời có cấu trúc và không lệch khỏi nguồn.',
+    'Chuẩn bị phần trả lời cuối cùng, kèm nguồn trích dẫn nếu có.',
+  ];
+}
+
 export function useChatSSE() {
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -10,6 +35,8 @@ export function useChatSSE() {
   const { 
     setIsStreaming, 
     setCurrentStreamText, 
+    setStreamInsights,
+    appendStreamInsight,
     setStreamStatus,
     appendStreamText, 
     addMessage,
@@ -19,15 +46,32 @@ export function useChatSSE() {
   } = useChatStore();
 
 
-  const sendMessage = useCallback(async (targetId: string, question: string, forkId?: string, isCollection: boolean = false, model?: string, thinking: boolean = false) => {
+  const sendMessage = useCallback(async (targetId: string, question: string, forkId?: string, isCollection: boolean = false, model?: string, thinking: boolean = false, mode?: ChatMode) => {
     if (!targetId || !question) return;
+
+    const chatMode: ChatMode = mode ?? (isCollection ? 'collection' : 'document');
+    const isGlobalAI = chatMode === 'global_ai';
 
     setError(null);
     setIsStreaming(true);
     setCurrentStreamText('');
+    const initialInsights = buildInitialStreamInsights(question, chatMode);
+    setStreamInsights(initialInsights.slice(0, 2));
     setStreamStatus('thinking');
+    const scheduledInsightTimers: ReturnType<typeof setTimeout>[] = [];
+    let receivedBackendInsight = false;
+    const scheduleInsight = (insight: string, delay: number) => {
+        const timer = setTimeout(() => appendStreamInsight(insight), delay);
+        scheduledInsightTimers.push(timer);
+    };
+    const clearScheduledInsights = () => {
+        scheduledInsightTimers.forEach((timer) => clearTimeout(timer));
+    };
+    initialInsights.slice(2).forEach((insight, index) => {
+        scheduleInsight(insight, 700 + index * 900);
+    });
 
-    console.log(`[SSE] Sending message. TargetID: ${targetId}, SessionID: ${sessionId || 'NEW_SESSION'}, Model: ${model || 'default'}`);
+    console.log(`[SSE] Sending message. Mode: ${chatMode}, TargetID: ${targetId}, SessionID: ${sessionId || 'NEW_SESSION'}, Model: ${model || 'default'}`);
 
     // Truyền tham số retry để tránh vòng lặp vô hạn
     const executeFetch = async (retryCount = 0): Promise<Response | null> => {
@@ -45,18 +89,27 @@ export function useChatSSE() {
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
-            const payload = {
-                ...(isCollection ? { collection_id: targetId } : { document_id: targetId }),
-                session_id: sessionId,
-                question: question,
-                ...(forkId ? { fork_id: forkId } : {}),
-                ...(model ? { model: model } : {}),
-                ...(thinking ? { thinking: true } : {}),
-            };
+            const payload = isGlobalAI
+                ? {
+                    session_id: sessionId || targetId,
+                    question: question,
+                    ...(model ? { model: model } : {}),
+                    ...(thinking ? { thinking: true } : {}),
+                }
+                : {
+                    ...(isCollection ? { collection_id: targetId } : { document_id: targetId }),
+                    session_id: sessionId,
+                    question: question,
+                    ...(forkId ? { fork_id: forkId } : {}),
+                    ...(model ? { model: model } : {}),
+                    ...(thinking ? { thinking: true } : {}),
+                };
 
-            console.log(`[SSE] Sending request to ${API_BASE_URL}/chat/message:`, payload);
+            const endpoint = isGlobalAI ? `${API_BASE_URL}/chat/ai/message` : `${API_BASE_URL}/chat/message`;
 
-            const response = await fetch(`${API_BASE_URL}/chat/message`, {
+            console.log(`[SSE] Sending request to ${endpoint}:`, payload);
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 signal: abortController.signal,
                 headers,
@@ -102,6 +155,7 @@ export function useChatSSE() {
 
     const response = await executeFetch();
     if (!response) {
+        clearScheduledInsights();
         setIsStreaming(false);
         return;
     }
@@ -145,6 +199,9 @@ export function useChatSSE() {
                 try {
                     const parsed = JSON.parse(dataStr);
                     if (parsed.token) {
+                        if (!fullAnswerText) {
+                            appendStreamInsight('Đã bắt đầu nhận nội dung trả lời từ AI, đang truyền kết quả về giao diện.');
+                        }
                         setStreamStatus('thinking');
                         appendStreamText(parsed.token);
                         fullAnswerText += parsed.token;
@@ -157,24 +214,70 @@ export function useChatSSE() {
                     const parsed = JSON.parse(dataStr);
                     if (parsed.status === 'searching' || parsed.status === 'thinking') {
                         setStreamStatus(parsed.status);
+                        if (!receivedBackendInsight) {
+                            appendStreamInsight(
+                                parsed.status === 'searching'
+                                    ? (parsed.message || 'Đang tìm kiếm nguồn bổ sung để kiểm chứng câu trả lời.')
+                                    : (parsed.message || 'Đang tổng hợp ngữ cảnh và chuẩn bị câu trả lời.')
+                            );
+                        }
                     }
                 } catch (e) {
                     console.warn("JSON error in status:", dataStr);
+                }
+            } else if (eventType === 'insight') {
+                try {
+                    const parsed = JSON.parse(dataStr);
+                    const insight = parsed.text || parsed.message || "";
+                    if (insight) {
+                        if (!receivedBackendInsight) {
+                            receivedBackendInsight = true;
+                            clearScheduledInsights();
+                            setStreamInsights([]);
+                        }
+                        appendStreamInsight(insight);
+                    }
+                } catch (e) {
+                    console.warn("JSON error in insight:", dataStr);
                 }
             } else if (eventType === 'done') {
                 try {
                     const parsed = JSON.parse(dataStr);
                     console.log(`[SSE] Received done event. Session from server: ${parsed.session_id}`);
+                    const finalAnswerText =
+                        parsed.answer ||
+                        parsed.content ||
+                        parsed.full_answer ||
+                        fullAnswerText ||
+                        "";
                     
                     if (parsed.session_id && sessionId !== parsed.session_id) {
                         console.log(`[SSE] Updating session ID: ${sessionId} -> ${parsed.session_id}`);
                         setSessionId(parsed.session_id);
-                        localStorage.setItem(isCollection ? `mindex_col_session_${targetId}` : `mindex_session_${targetId}`, parsed.session_id);
+                        if (isGlobalAI) {
+                            localStorage.setItem('mindex_ai_active_session', parsed.session_id);
+                            localStorage.setItem(`mindex_ai_session_${parsed.session_id}`, parsed.session_id);
+                        } else {
+                            localStorage.setItem(isCollection ? `mindex_col_session_${targetId}` : `mindex_session_${targetId}`, parsed.session_id);
+                        }
                     }
+
+                    if (!finalAnswerText.trim()) {
+                        clearScheduledInsights();
+                        console.error("[SSE] Done event received without streamed or final answer content.");
+                        setError("AI trả về nội dung rỗng. Vui lòng thử lại.");
+                        setIsStreaming(false);
+                        setCurrentStreamText('');
+                        setStreamStatus('thinking');
+                        return;
+                    }
+
+                    clearScheduledInsights();
+                    appendStreamInsight('Hoàn tất phân tích, đang hiển thị câu trả lời.');
                     addMessage({
                         id: (Date.now() + 1).toString(),
                         role: 'assistant',
-                        content: fullAnswerText,
+                        content: finalAnswerText,
                         sources: parsed.sources || [],
                         timestamp: new Date().toISOString(),
                         log_id: parsed.log_id || undefined, // Gắn log_id để thumbs rating UI
@@ -184,10 +287,12 @@ export function useChatSSE() {
                     setStreamStatus('thinking');
                     return; // Kết thúc hoàn toàn
                 } catch (e) {
+                    clearScheduledInsights();
                     console.error("[SSE] Error parsing done event:", e);
                     setIsStreaming(false);
                 }
             } else if (eventType === 'error') {
+                clearScheduledInsights();
                 console.error("[SSE] AI Engine Error event received");
                 setError("AI Engine Error");
                 setIsStreaming(false);
@@ -197,10 +302,21 @@ export function useChatSSE() {
       }
 
       // Finalize nếu loop kết thúc mà chưa nhận event: done
+      if (fullAnswerText.trim()) {
+        clearScheduledInsights();
+        addMessage({
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: fullAnswerText,
+          timestamp: new Date().toISOString(),
+        });
+        setCurrentStreamText('');
+      }
       setIsStreaming(false);
       setStreamStatus('thinking');
 
     } catch (err: any) {
+      clearScheduledInsights();
       if (err.name !== 'AbortError') {
         console.error("Chat SSE Failure:", err);
         setError("Kết nối AI bị gián đoạn.");
@@ -208,7 +324,7 @@ export function useChatSSE() {
       setIsStreaming(false);
       setStreamStatus('thinking');
     }
-  }, [addMessage, updateLastAssistantLogId, setIsStreaming, setCurrentStreamText, setStreamStatus, appendStreamText, sessionId, setSessionId]);
+  }, [addMessage, updateLastAssistantLogId, setIsStreaming, setCurrentStreamText, setStreamInsights, appendStreamInsight, setStreamStatus, appendStreamText, sessionId, setSessionId]);
 
 
   const stopStreaming = useCallback(() => {
@@ -216,9 +332,10 @@ export function useChatSSE() {
       console.log("[SSE] Manually stopping stream");
       abortControllerRef.current.abort();
       setIsStreaming(false);
+      setStreamInsights([]);
       setStreamStatus('thinking');
     }
-  }, [setIsStreaming, setStreamStatus]);
+  }, [setIsStreaming, setStreamInsights, setStreamStatus]);
 
   return { sendMessage, stopStreaming, error };
 }

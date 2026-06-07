@@ -3,6 +3,8 @@
 import React, { useState, useCallback, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { cn } from "@/lib/utils";
 import { ChatMessage as ChatMessageType } from "@/store/useChatStore";
 import { User, Zap, ChevronDown, ChevronUp, FileText, ThumbsUp, ThumbsDown, Copy, Check, ExternalLink, X } from "lucide-react";
@@ -258,7 +260,7 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const [voted, setVoted] = useState<"up" | "down" | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const setActiveChunk = usePdfStore((s) => s.setActiveChunk);
+  const navigateToChunk = usePdfStore((s) => s.navigateToChunk);
   const activeChunk = usePdfStore((s) => s.activeChunk);
   const thinkingDetail =
     streamStatus === "searching"
@@ -336,7 +338,8 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
       "prose-a:no-underline",
     )}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
         components={markdownComponents}
       >
         {content}
@@ -459,7 +462,8 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
                 "prose-a:no-underline",
               )}>
                 <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
                   components={markdownComponents}
                 >
                   {message.content}
@@ -563,7 +567,7 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
                       key={i}
                       onClick={() => {
                         if (!isWebSource && page) {
-                          setActiveChunk(page, source.content ?? "", source.chunk_index);
+                          navigateToChunk(page, source.content ?? "", source.chunk_index);
                         }
                         setSelectedSource(source);
                         setShowSources(false);
@@ -704,7 +708,7 @@ export function ChatMessage({ message, isStreaming }: ChatMessageProps) {
                 )}
                 {selectedSource.type !== "web" && (
                   <span className="mt-3 block text-[10px] font-bold text-primary/50 uppercase tracking-wider">
-                    ▶ Đang xem trong PDF
+                    ▶ Đang xem trong tài liệu
                   </span>
                 )}
               </div>

@@ -18,6 +18,9 @@ import { API_BASE_URL } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 interface SharedMessage {
   id: string;
@@ -283,7 +286,10 @@ export default function SharedViewPage({
                   >
                     {msg.role === "assistant" ? (
                       <div className="prose prose-invert prose-sm max-w-none text-[14px] leading-relaxed">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm, remarkMath]}
+                          rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
+                        >{msg.content}</ReactMarkdown>
                       </div>
                     ) : (
                       <p className="text-[14px] font-medium leading-relaxed">

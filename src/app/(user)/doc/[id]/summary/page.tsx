@@ -28,6 +28,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import useSWR from "swr";
 import { fetchApi, API_BASE_URL, handleRefreshToken } from "@/lib/api";
 import { toast } from "sonner";
@@ -345,12 +347,12 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
   const renderContent = (content: string) => {
     // Đảm bảo nội dung luôn hiển thị theo một dải dọc
     return (
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[[rehypeKatex, { throwOnError: false }]]} components={markdownComponents}>
         {content.replace(/:::cols|:::split|:::/g, "")}
       </ReactMarkdown>
     );
 
-    return <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown>;
+    return <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[[rehypeKatex, { throwOnError: false }]]} components={markdownComponents}>{content}</ReactMarkdown>;
   };
 
   const markdownComponents = {

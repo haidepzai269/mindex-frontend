@@ -1,15 +1,23 @@
 "use client";
 
-import { useState, useCallback, useEffect, Suspense } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, FileText, CheckCircle2, Loader2, X, Globe, AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, FileText, Globe, Loader2, UploadCloud, X } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { useRouter, useSearchParams } from "next/navigation";
-import { fetchApi } from "@/lib/api";
-import { toast } from "sonner";
-import { useProcessingSSE } from "@/hooks/useProcessingSSE";
 import { NotificationBell } from "@/components/user/NotificationBell";
+import { fetchApi } from "@/lib/api";
+import {
+  DOCUMENT_UPLOAD_ACCEPT,
+  DOCUMENT_UPLOAD_MAX_BYTES,
+  uploadDocument,
+  validateDocumentFile,
+} from "@/lib/upload";
+import { useProcessingSSE } from "@/hooks/useProcessingSSE";
+
+type UploadStatus = "idle" | "uploading" | "processing" | "success" | "error";
 
 function UploadPageContent() {
   const router = useRouter();
@@ -17,11 +25,12 @@ function UploadPageContent() {
   const initialDocId = searchParams.get("docId");
 
   const [file, setFile] = useState<File | null>(null);
-  const [status, setStatus] = useState<"idle" | "uploading" | "processing" | "success" | "error">("idle");
+  const [status, setStatus] = useState<UploadStatus>("idle");
   const [activeDocId, setActiveDocId] = useState<string | null>(initialDocId);
+  const [activeDocTitle, setActiveDocTitle] = useState("Tài liệu");
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isSharing, setIsSharing] = useState(false);
 
-  // Hook SSE để theo dõi tiến độ từ backend
   const { data: sseData, error: sseError } = useProcessingSSE(activeDocId);
 
   useEffect(() => {
@@ -32,233 +41,233 @@ function UploadPageContent() {
   }, [initialDocId]);
 
   useEffect(() => {
-    if (sseData) {
-      if (sseData.status === 'ready') {
-        setStatus("success");
-        setTimeout(() => router.push("/library"), 2000);
-      } else if (sseData.status === 'error') {
-        setStatus("error");
-      }
+    if (!sseData) return;
+    if (sseData.status === "ready") {
+      setStatus("success");
+    } else if (sseData.status === "error") {
+      setStatus("error");
     }
-  }, [sseData, router]);
+  }, [sseData]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      setFile(acceptedFiles[0]);
+    const nextFile = acceptedFiles[0];
+    if (!nextFile) return;
+    const validationError = validateDocumentFile(nextFile);
+    if (validationError) {
+      toast.error(validationError);
+      return;
     }
+    setFile(nextFile);
+    setActiveDocTitle(nextFile.name);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected: () => toast.error("Chỉ hỗ trợ PDF/DOCX tối đa 50MB."),
     accept: {
-      'application/pdf': ['.pdf'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      "application/pdf": [".pdf"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
     },
     maxFiles: 1,
-    maxSize: 50 * 1024 * 1024 // 50MB
+    maxSize: DOCUMENT_UPLOAD_MAX_BYTES,
   });
 
   const handleUpload = async () => {
     if (!file) return;
     setStatus("uploading");
-    setUploadProgress(10);
-    
+    setUploadProgress(0);
+
     try {
-      // 1. Lấy Signature từ backend
-      const presignResponse: any = await fetchApi("/processing/presign", { method: "POST" });
-      if (!presignResponse.success) throw new Error("Không thể lấy chữ ký upload");
-      
-      const { signature, timestamp, api_key, upload_url } = presignResponse.data;
-      setUploadProgress(30);
-
-      // 2. Upload trực tiếp lên Cloudinary
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("api_key", api_key);
-      formData.append("timestamp", timestamp);
-      formData.append("signature", signature);
-      formData.append("folder", "mindex_uploads");
-      formData.append("resource_type", "raw");
-
-      const uploadResp = await fetch(upload_url, {
-        method: "POST",
-        body: formData,
+      const response = await uploadDocument({
+        file,
+        onProgress: setUploadProgress,
       });
 
-      if (!uploadResp.ok) throw new Error("Lỗi khi upload lên Cloudinary");
-      const uploadData = await uploadResp.json();
-      setUploadProgress(60);
-
-      // 3. Gửi file trực tiếp lên Backend Go (Bỏ qua việc download từ Cloudinary)
-      const backendFormData = new FormData();
-      backendFormData.append("file", file);
-      backendFormData.append("cloudinary_url", uploadData.secure_url);
-      backendFormData.append("filename", file.name);
-
-      const initiateResponse: any = await fetchApi("/processing/upload", {
-        method: "POST",
-        body: backendFormData, // multipart/form-data
-        // Lưu ý: fetchApi cần hỗ trợ nhận FormData (không JSON.stringify)
-      });
-
-      if (!initiateResponse.success) throw new Error(initiateResponse.message || "Không thể khởi tạo xử lý");
-
+      const result = response.data;
+      setActiveDocId(result.document_id);
       setUploadProgress(100);
-      setActiveDocId(initiateResponse.data.document_id);
-      setStatus("processing");
-      toast.success("Tải lên thành công! Đang tiến hành phân tích...");
 
-    } catch (error: any) {
-      console.error("Upload error:", error);
-      toast.error(error.message || "Có lỗi xảy ra trong quá trình upload.");
+      if (result.is_duplicate && result.status === "ready") {
+        setStatus("success");
+        toast.success(result.message || "Tài liệu đã có trong thư viện.");
+        return;
+      }
+
+      setStatus("processing");
+      toast.success(result.message || "Tải lên thành công, đang phân tích tài liệu.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Có lỗi xảy ra trong quá trình upload.";
+      toast.error(message);
       setStatus("idle");
     }
   };
 
+  const handleShare = async () => {
+    if (!activeDocId || status !== "success") return;
+    setIsSharing(true);
+    try {
+      await fetchApi(`/community/documents/${activeDocId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ is_public: true }),
+      });
+      toast.success("Đã chia sẻ vào Thư viện chung.");
+      router.push("/library");
+    } catch (error: any) {
+      toast.error(error?.data?.message || error?.message || "Không thể chia sẻ tài liệu.");
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const overallProgress =
+    status === "uploading"
+      ? Math.min(30, Math.floor(uploadProgress * 0.3))
+      : 30 + Math.floor((sseData?.progress || 0) * 0.7);
+
   return (
-    <div className="flex-1 flex flex-col pt-6 md:pt-16 px-4 md:px-8 pb-28 md:pb-8 h-full relative overflow-y-auto">
-      {/* Top action bar */}
-      <div className="hidden md:block absolute top-6 right-8 z-50">
+    <div className="relative flex h-full flex-1 flex-col overflow-y-auto px-4 pb-28 pt-6 md:px-8 md:pb-8 md:pt-16">
+      <div className="absolute right-8 top-6 z-50 hidden md:block">
         <NotificationBell />
       </div>
 
-      {/* Background decorations */}
-      <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[150px] -z-10 pointer-events-none"></div>
+      <div className="pointer-events-none absolute left-1/2 top-[20%] -z-10 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-primary/5 blur-[150px]" />
 
-      <div className="max-w-2xl mx-auto w-full">
-        <div className="text-center mb-6 md:mb-10">
-          <div className="w-12 h-12 md:w-16 md:h-16 bg-muted border border-border rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary">
-            <UploadCloud className="w-6 h-6 md:w-8 md:h-8" />
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="mb-6 text-center md:mb-10">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-muted text-primary md:h-16 md:w-16">
+            <UploadCloud className="h-6 w-6 md:h-8 md:w-8" />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-2">Tải lên Tài liệu mới</h1>
-          <p className="text-muted-foreground">Hệ thống đang chuẩn bị dữ liệu giúp bạn có thể bắt đầu tra cứu và trò chuyện ngay lập tức</p>
+          <h1 className="mb-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">Tải lên tài liệu mới</h1>
+          <p className="text-muted-foreground">Mindex sẽ kiểm tra file, lưu bản gốc an toàn và xử lý bằng hàng đợi bền vững.</p>
         </div>
 
         {status === "idle" ? (
-          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 fade-in">
+          <div className="animate-in space-y-6 fade-in slide-in-from-bottom-4 duration-500">
             {!file ? (
-              <div 
-                {...getRootProps()} 
-                className={`border-2 border-dashed ${isDragActive ? 'border-primary bg-primary/5' : 'border-border bg-muted/30'} rounded-2xl p-6 md:p-12 text-center transition-all cursor-pointer hover:border-primary/50 hover:bg-accent/30`}
+              <div
+                {...getRootProps()}
+                className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all md:p-12 ${
+                  isDragActive ? "border-primary bg-primary/5" : "border-border bg-muted/30 hover:border-primary/50 hover:bg-accent/30"
+                }`}
               >
-                <input {...getInputProps()} />
-                <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4 shadow-sm border border-border text-muted-foreground">
-                   <UploadCloud size={24} />
+                <input {...getInputProps()} accept={DOCUMENT_UPLOAD_ACCEPT} />
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground shadow-sm">
+                  <UploadCloud size={24} />
                 </div>
-                <h3 className="text-lg font-medium text-foreground mb-1">Kéo thả file PDF hoặc DOCX vào đây</h3>
-                <p className="text-sm text-muted-foreground mb-6">hoặc click để chọn file từ máy tính</p>
+                <h3 className="mb-1 text-lg font-medium text-foreground">Kéo thả file PDF hoặc DOCX vào đây</h3>
+                <p className="mb-6 text-sm text-muted-foreground">hoặc click để chọn file từ máy tính</p>
 
-                <Button variant="outline">
-                  Chọn File
-                </Button>
+                <Button variant="outline">Chọn File</Button>
 
-                <div className="mt-8 text-xs text-muted-foreground/60 uppercase tracking-widest font-semibold flex items-center justify-center gap-4">
+                <div className="mt-8 flex items-center justify-center gap-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
                   <span>PDF, DOCX</span>
-                  <span className="w-1 h-1 rounded-full bg-border"></span>
-                  <span>TỐI ĐA 50MB</span>
+                  <span className="h-1 w-1 rounded-full bg-border" />
+                  <span>Tối đa 50MB</span>
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-primary/30 bg-card p-6 relative">
+              <div className="relative rounded-2xl border border-primary/30 bg-card p-6">
                 <button
-                  onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                  className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-accent transition-colors"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setFile(null);
+                  }}
+                  className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  aria-label="Bỏ chọn file"
                 >
                   <X size={20} />
                 </button>
 
-                <div className="flex flex-col items-center mb-6">
-                  <FileText size={48} className="text-primary mb-4" />
-                  <h3 className="font-semibold text-lg text-foreground mb-1 truncate max-w-full px-4">{file.name}</h3>
+                <div className="mb-6 flex flex-col items-center">
+                  <FileText size={48} className="mb-4 text-primary" />
+                  <h3 className="mb-1 max-w-full truncate px-4 text-lg font-semibold text-foreground">{file.name}</h3>
                   <p className="text-sm text-muted-foreground">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                 </div>
 
-                <div className="bg-muted/40 rounded-xl p-4 border border-border/70 mb-6 flex items-start gap-3">
-                  <div className="mt-0.5 text-blue-500"><Globe size={18} /></div>
-                  <div className="flex-1">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <div className="flex h-5 items-center">
-                        <input type="checkbox" className="w-4 h-4 rounded border-border bg-background text-primary focus:ring-primary focus:ring-offset-background" />
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium text-foreground block mb-0.5">Chia sẻ tài liệu vào Thư viện chung</span>
-                        <span className="text-muted-foreground text-xs block">Tài liệu sẽ được lưu vĩnh viễn không giới hạn 24h và giúp sinh viên khác truy cập được từ tìm kiếm.</span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                <Button onClick={handleUpload} className="w-full h-12 text-base">
-                  <UploadCloud size={20} className="mr-2" /> Tải lên & Bắt đầu phân tích
+                <Button onClick={handleUpload} className="h-12 w-full text-base">
+                  <UploadCloud size={20} className="mr-2" />
+                  Tải lên & bắt đầu phân tích
                 </Button>
               </div>
             )}
           </div>
         ) : (
-          <div className="glass-card p-8 animate-in zoom-in duration-300 fade-in text-center">
-             <div className="mb-6 relative">
-                <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center border transition-colors ${
-                  status === 'success' ? 'bg-emerald-500/10 border-emerald-500/30' : 
-                  status === 'error' ? 'bg-red-500/10 border-red-500/30' : 
-                  'bg-primary/10 border-primary/30'
-                }`}>
-                  {status === 'success' ? (
-                    <CheckCircle2 size={40} className="text-emerald-500" />
-                  ) : status === 'error' ? (
-                    <AlertCircle size={40} className="text-red-500" />
-                  ) : (
-                    <Loader2 size={40} className="text-primary animate-spin" />
-                  )}
-                </div>
+          <div className="glass-card animate-in p-8 text-center fade-in zoom-in duration-300">
+            <div className="relative mb-6">
+              <div
+                className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full border transition-colors ${
+                  status === "success"
+                    ? "border-emerald-500/30 bg-emerald-500/10"
+                    : status === "error"
+                      ? "border-red-500/30 bg-red-500/10"
+                      : "border-primary/30 bg-primary/10"
+                }`}
+              >
+                {status === "success" ? (
+                  <CheckCircle2 size={40} className="text-emerald-500" />
+                ) : status === "error" ? (
+                  <AlertCircle size={40} className="text-red-500" />
+                ) : (
+                  <Loader2 size={40} className="animate-spin text-primary" />
+                )}
               </div>
-              
-               <h3 className="text-xl font-semibold mb-2">
-                 {status === 'uploading' ? 'Đang tải lên...' : 
-                  status === 'processing' ? 'Đang phân tích tài liệu...' : 
-                  status === 'success' ? 'Hoàn tất!' : 'Xử lý thất bại'}
-               </h3>
-               <p className="text-muted-foreground text-sm mb-8">{file?.name || 'Tài liệu đang xử lý'}</p>
+            </div>
 
-               {(status === 'uploading' || status === 'processing') && (
-                 <div className="space-y-2 mb-8">
-                   <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                     <span>Tiến độ tổng quát</span>
-                     <span>{status === 'uploading' ? Math.floor(uploadProgress * 0.3) : (30 + Math.floor((sseData?.progress || 0) * 0.7))}%</span>
-                   </div>
-                   <Progress value={status === 'uploading' ? Math.floor(uploadProgress * 0.3) : (30 + Math.floor((sseData?.progress || 0) * 0.7))} className="h-2 bg-white/10 [&>div]:bg-primary-gradient" />
-                 </div>
-               )}
+            <h3 className="mb-2 text-xl font-semibold">
+              {status === "uploading"
+                ? "Đang tải lên..."
+                : status === "processing"
+                  ? "Đang phân tích tài liệu..."
+                  : status === "success"
+                    ? "Hoàn tất!"
+                    : "Xử lý thất bại"}
+            </h3>
+            <p className="mb-8 text-sm text-muted-foreground">{activeDocTitle}</p>
 
-               {status === 'error' && (
-                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-8 flex items-center gap-3 text-red-500 text-left text-sm">
-                   <AlertCircle size={20} className="shrink-0" />
-                   <span>{sseError || "Tài liệu không đủ độ dài hoặc lỗi kỹ thuật. Vui lòng kiểm tra lại nội dung file."}</span>
-                 </div>
-               )}
+            {(status === "uploading" || status === "processing") && (
+              <div className="mb-8 space-y-2">
+                <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <span>Tiến độ tổng quát</span>
+                  <span>{overallProgress}%</span>
+                </div>
+                <Progress value={overallProgress} className="h-2 bg-white/10 [&>div]:bg-primary-gradient" />
+              </div>
+            )}
 
-               <div className="space-y-4 text-sm text-left bg-muted/30 rounded-xl p-5 border border-border/50">
-                  <PipelineStep 
-                    label="Giai đoạn 1: Tiếp nhận và đọc tài liệu" 
-                    done={status === 'processing' || status === 'success'} 
-                    loading={status === 'uploading'} 
-                  />
-                  <PipelineStep 
-                    label="Giai đoạn 2: Phân tích và kiểm duyệt nội dung" 
-                    done={(sseData?.progress || 0) >= 50 || status === 'success'} 
-                    loading={status === 'processing' && (sseData?.progress || 0) < 50} 
-                  />
-                  <PipelineStep 
-                    label="Giai đoạn 3: Tối ưu dữ liệu và hoàn tất" 
-                    done={status === 'success'} 
-                    loading={(sseData?.progress || 0) >= 50 && status !== 'success' && status !== 'error'} 
-                  />
-               </div>
+            {status === "error" && (
+              <div className="mb-8 flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-left text-sm text-red-500">
+                <AlertCircle size={20} className="shrink-0" />
+                <span>{sseData?.message || sseError || "Tài liệu không đủ điều kiện xử lý. Vui lòng kiểm tra lại nội dung file."}</span>
+              </div>
+            )}
 
-              {(status === 'success' || status === 'error') && (
-                <Button onClick={() => router.push('/library')} variant="outline" className="w-full mt-8">
-                  Quay lại Thư viện
-                </Button>
-              )}
+            <div className="space-y-4 rounded-xl border border-border/50 bg-muted/30 p-5 text-left text-sm">
+              <PipelineStep label="Giai đoạn 1: Tiếp nhận và lưu file gốc" done={status === "processing" || status === "success"} loading={status === "uploading"} />
+              <PipelineStep
+                label="Giai đoạn 2: Phân tích và kiểm duyệt nội dung"
+                done={(sseData?.progress || 0) >= 50 || status === "success"}
+                loading={status === "processing" && (sseData?.progress || 0) < 50}
+              />
+              <PipelineStep
+                label="Giai đoạn 3: Tạo embedding và hoàn tất"
+                done={status === "success"}
+                loading={(sseData?.progress || 0) >= 50 && status !== "success" && status !== "error"}
+              />
+            </div>
+
+            {status === "success" && activeDocId && (
+              <Button onClick={handleShare} disabled={isSharing} className="mt-8 h-11 w-full">
+                {isSharing ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Globe size={16} className="mr-2" />}
+                Chia sẻ vào Thư viện chung
+              </Button>
+            )}
+
+            {(status === "success" || status === "error") && (
+              <Button onClick={() => router.push("/library")} variant="outline" className="mt-3 w-full">
+                Quay lại Thư viện
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -268,23 +277,17 @@ function UploadPageContent() {
 
 export default function UploadPage() {
   return (
-    <Suspense fallback={<div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="flex flex-1 items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>}>
       <UploadPageContent />
     </Suspense>
-  )
+  );
 }
 
-function PipelineStep({ label, done, loading }: { label: string, done: boolean, loading: boolean }) {
+function PipelineStep({ label, done, loading }: { label: string; done: boolean; loading: boolean }) {
   return (
-    <div className={`flex items-center gap-3 transition-colors ${done ? 'text-emerald-600 dark:text-emerald-400' : loading ? 'text-foreground' : 'text-muted-foreground/40'}`}>
-      <div className="w-5 h-5 flex flex-shrink-0 items-center justify-center">
-        {done ? (
-          <CheckCircle2 size={16} />
-        ) : loading ? (
-          <Loader2 size={16} className="animate-spin text-primary" />
-        ) : (
-          <div className="w-1.5 h-1.5 rounded-full bg-border"></div>
-        )}
+    <div className={`flex items-center gap-3 transition-colors ${done ? "text-emerald-600 dark:text-emerald-400" : loading ? "text-foreground" : "text-muted-foreground/40"}`}>
+      <div className="flex h-5 w-5 shrink-0 items-center justify-center">
+        {done ? <CheckCircle2 size={16} /> : loading ? <Loader2 size={16} className="animate-spin text-primary" /> : <div className="h-1.5 w-1.5 rounded-full bg-border" />}
       </div>
       <span>{label}</span>
     </div>

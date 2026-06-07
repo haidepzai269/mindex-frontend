@@ -17,6 +17,7 @@ import {
   Users,
   TrendingUp,
   Calendar,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -218,6 +219,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
             <div className={cn("mt-auto shrink-0", isCollapsed ? "flex flex-col items-center gap-1.5 py-2" : "pb-2")}>
               {isCollapsed ? (
                 <>
+                  <NavItem href="/chat/ai/new" icon={<Sparkles size={20} />} label="AI tổng hợp" active={pathname.startsWith("/chat/ai")} collapsed={isCollapsed} />
                   <NavItem href="/analytics" icon={<TrendingUp size={20} />} label="Tiến trình" active={pathname === "/analytics"} collapsed={isCollapsed} />
                   <NavItem href="/planner" icon={<Calendar size={20} />} label="Kế hoạch học" active={pathname === "/planner"} collapsed={isCollapsed} />
                   <NavItem href="/settings" icon={<Settings size={20} />} label="Cài đặt" active={pathname.startsWith("/settings")} collapsed={isCollapsed} />
@@ -235,6 +237,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                         className="overflow-hidden"
                       >
                         <div className="flex flex-col space-y-1.5 pb-1">
+                          <NavItem href="/chat/ai/new" icon={<Sparkles size={20} />} label="AI tổng hợp" active={pathname.startsWith("/chat/ai")} collapsed={isCollapsed} />
                           <NavItem href="/analytics" icon={<TrendingUp size={20} />} label="Tiến trình" active={pathname === "/analytics"} collapsed={isCollapsed} />
                           <NavItem href="/planner" icon={<Calendar size={20} />} label="Kế hoạch học" active={pathname === "/planner"} collapsed={isCollapsed} />
                           <NavItem href="/settings" icon={<Settings size={20} />} label="Cài đặt" active={pathname.startsWith("/settings")} collapsed={isCollapsed} />

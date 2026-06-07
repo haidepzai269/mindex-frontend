@@ -45,87 +45,69 @@ export function UpgradeNotification() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
       <AnimatePresence>
         {isVisible && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+            transition={{ type: "spring", damping: 25, stiffness: 350 }}
             className="w-full max-w-sm relative"
           >
             {/* Nút đóng */}
             <button
               onClick={handleClose}
-              className="absolute -top-2 -right-2 z-[110] bg-background border border-white/10 rounded-full p-1.5 shadow-xl hover:bg-white/10 transition-colors text-white/70"
+              className="absolute -top-2 -right-2 z-[110] bg-background border border-border rounded-full p-1.5 shadow-xl hover:bg-accent hover:text-foreground transition-colors text-muted-foreground"
             >
-              <X size={16} />
+              <X size={14} />
             </button>
 
-            <Card className="relative overflow-hidden border-white/10 bg-[#0A0B10] shadow-[0_0_50px_rgba(184,41,255,0.15)]">
-              {/* Overlay gradient cho card */}
-              <div className="absolute inset-0 z-30 pointer-events-none bg-gradient-to-t from-[#0A0B10] via-transparent to-transparent" />
+            <Card className="relative overflow-hidden border border-border bg-card shadow-2xl rounded-3xl p-6 flex flex-col items-center text-center">
               
-              <div className="relative aspect-video w-full overflow-hidden">
-                <img
-                  src="/images/premium-upgrade.png"
-                  alt="Mindex Premium"
-                  className="w-full h-full object-cover brightness-75 scale-105"
-                />
-                {/* Các hạt hiệu ứng lấp lánh (trang trí) */}
-                <div className="absolute inset-0 z-20 overflow-hidden pointer-events-none">
-                   <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-yellow-400 rounded-full animate-ping" />
-                   <div className="absolute top-2/3 right-1/3 w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse delay-700" />
-                   <div className="absolute bottom-1/4 left-1/2 w-1 h-1 bg-blue-400 rounded-full animate-bounce delay-300" />
-                </div>
+              {/* Icon Crown ở chính giữa */}
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center mb-5 text-amber-500">
+                <Crown size={28} fill="currentColor" className="animate-pulse" />
               </div>
 
-              <CardHeader className="relative z-40 -mt-6">
-                <CardAction>
-                  <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 font-bold px-2 py-0.5 flex gap-1 items-center">
-                    <Crown size={12} fill="currentColor" />
-                    Special Offer
-                  </Badge>
-                </CardAction>
-                <CardTitle className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-                  Mindex Pro / Ultra
-                </CardTitle>
-                <CardDescription className="text-white/60 leading-relaxed mt-2">
-                   Nâng tầm trải nghiệm nghiên cứu của bạn. Truy cập không giới hạn, phân tích sâu và tốc độ Neural AI vượt trội.
-                </CardDescription>
-              </CardHeader>
+              {/* Badge ưu đãi */}
+              <Badge variant="outline" className="bg-amber-500/5 text-amber-500 border-amber-500/20 font-black px-2.5 py-0.5 text-[9px] tracking-wider uppercase mb-3 rounded-full">
+                Special Offer
+              </Badge>
 
-              <div className="px-4 pb-2 relative z-40 space-y-2">
-                 <FeatureItem icon={<Zap className="text-yellow-400" size={14} />} text="Ghim tài liệu không giới hạn" />
-                 <FeatureItem icon={<Star className="text-rose-400" size={14} />} text="Bảo mật cấp độ Ultra & Export PDF" />
+              <CardTitle className="text-xl font-black text-foreground tracking-tight uppercase">
+                Mindex Pro &amp; Ultra
+              </CardTitle>
+              
+              <CardDescription className="text-xs text-muted-foreground leading-relaxed mt-2.5 mb-6 px-1">
+                Nâng tầm trải nghiệm nghiên cứu của bạn. Truy cập không giới hạn, phân tích sâu và tốc độ Neural AI vượt trội.
+              </CardDescription>
+
+              {/* Features list */}
+              <div className="w-full space-y-2 mb-6">
+                <FeatureItem icon={<Zap className="text-amber-500" size={13} />} text="Ghim tài liệu không giới hạn" />
+                <FeatureItem icon={<Star className="text-amber-500" size={13} />} text="Bảo mật cấp độ Ultra &amp; Xuất bản PDF" />
               </div>
 
-              <CardFooter className="relative z-40 pt-4 pb-6">
-                <div className="flex flex-col w-full gap-3">
-                    <Link 
-                        href="/settings"
-                        className={cn(
-                            buttonVariants({ size: "lg" }),
-                            "w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-all font-bold text-white h-11 shadow-[0_10px_20px_-5px_rgba(184,41,255,0.4)] flex items-center justify-center rounded-xl"
-                        )}
-                        onClick={handleClose}
-                    >
-                        Nâng cấp gói ngay
-                    </Link>
-                    <button 
-                        onClick={handleClose}
-                        className="text-[11px] text-white/30 hover:text-white/50 transition-colors uppercase tracking-widest font-semibold"
-                    >
-                        Tiếp tục với bản miễn phí
-                    </button>
-                </div>
+              {/* Action buttons */}
+              <CardFooter className="p-0 w-full flex flex-col gap-3">
+                <Link 
+                  href="/settings"
+                  className={cn(
+                    buttonVariants({ size: "lg" }),
+                    "w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-wider h-11 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-sm"
+                  )}
+                  onClick={handleClose}
+                >
+                  Nâng cấp gói ngay
+                </Link>
+                <button 
+                  onClick={handleClose}
+                  className="text-[10px] text-muted-foreground/60 hover:text-foreground transition-colors uppercase tracking-widest font-bold mt-1"
+                >
+                  Tiếp tục với bản miễn phí
+                </button>
               </CardFooter>
-              
-              {/* Ánh sáng quét qua card */}
-              <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_4s_infinite]" />
-              </div>
             </Card>
           </motion.div>
         )}
@@ -135,10 +117,10 @@ export function UpgradeNotification() {
 }
 
 function FeatureItem({ icon, text }: { icon: React.ReactNode, text: string }) {
-    return (
-        <div className="flex items-center gap-2 text-[12px] text-white/70 font-medium bg-white/[0.03] border border-white/5 px-3 py-1.5 rounded-lg">
-            {icon}
-            {text}
-        </div>
-    )
+  return (
+    <div className="flex items-center gap-2.5 text-[12px] text-muted-foreground/90 font-bold bg-muted/30 border border-border/40 px-3.5 py-2.5 rounded-2xl text-left">
+      {icon}
+      <span>{text}</span>
+    </div>
+  );
 }

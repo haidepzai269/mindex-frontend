@@ -100,7 +100,7 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
 
   return (
     <div className="flex flex-col items-center w-full">
-      <div className="relative w-full flex items-center justify-center my-8">
+      <div className="relative my-5 flex w-full items-center justify-center sm:my-6">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-border"></span>
         </div>
@@ -109,14 +109,14 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
         </div>
       </div>
       
-      <div className="w-full flex justify-center relative h-12">
+      <div className="relative flex h-10 w-full justify-center sm:h-11">
         <motion.button
           layout
           onClick={handleButtonClick}
           disabled={isLoading}
           initial={false}
           animate={{
-             width: isExpanding ? "100%" : "48px",
+             width: isExpanding ? "100%" : "44px",
              borderRadius: isExpanding ? "12px" : "24px",
           }}
           transition={{
@@ -125,14 +125,15 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
             damping: 30
           }}
           className={`
-            relative h-12 flex items-center justify-center 
+            relative flex h-10 items-center justify-center 
             bg-white text-black font-semibold overflow-hidden shadow-2xl
             hover:shadow-white/10 transition-shadow active:scale-[0.98]
+            sm:h-11
             ${isLoading ? "opacity-90 pointer-events-none" : "cursor-pointer"}
           `}
         >
-          <div className="flex items-center justify-center gap-3 px-3">
-            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+          <div className="flex items-center justify-center gap-2.5 px-3">
+            <svg className="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -158,7 +159,7 @@ export function GoogleLoginButton({ intent }: GoogleLoginButtonProps) {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -10 }}
                         transition={{ delay: 0.1 }}
-                        className="whitespace-nowrap text-sm"
+                        className="whitespace-nowrap text-xs sm:text-sm"
                     >
                         {isLoading ? "Đang xử lý..." : "Tiếp tục bằng Google"}
                     </motion.span>

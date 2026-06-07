@@ -16,6 +16,7 @@ import {
 import NextTopLoader from "nextjs-toploader";
 
 import "./globals.css";
+import "katex/dist/katex.min.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const jetbrainsMono = JetBrains_Mono({

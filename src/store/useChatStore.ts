@@ -14,6 +14,7 @@ interface ChatStore {
   messages: ChatMessage[];
   isStreaming: boolean;
   currentStreamText: string;
+  streamInsights: string[];
   streamStatus: 'thinking' | 'searching';
   sessionId: string | null;
   pendingLogId: string | null; // log_id từ event done, chưa gắn vào message
@@ -25,6 +26,8 @@ interface ChatStore {
   setPendingLogId: (id: string | null) => void;
   setIsStreaming: (isStreaming: boolean) => void;
   setCurrentStreamText: (text: string) => void;
+  setStreamInsights: (insights: string[]) => void;
+  appendStreamInsight: (insight: string) => void;
   setStreamStatus: (status: 'thinking' | 'searching') => void;
   appendStreamText: (token: string) => void;
   clearChat: () => void;
@@ -35,6 +38,7 @@ export const useChatStore = create<ChatStore>((set) => ({
   messages: [],
   isStreaming: false,
   currentStreamText: '',
+  streamInsights: [],
   streamStatus: 'thinking',
   sessionId: null as string | null,
   pendingLogId: null as string | null,
@@ -63,11 +67,24 @@ export const useChatStore = create<ChatStore>((set) => ({
 
   setCurrentStreamText: (text) => set({ currentStreamText: text }),
 
+  setStreamInsights: (streamInsights) => set({ streamInsights }),
+
+  appendStreamInsight: (insight) => set((state) => {
+    const cleanInsight = insight.trim();
+    if (!cleanInsight || state.streamInsights.includes(cleanInsight)) {
+      return { streamInsights: state.streamInsights };
+    }
+
+    return {
+      streamInsights: [...state.streamInsights, cleanInsight].slice(-8),
+    };
+  }),
+
   setStreamStatus: (streamStatus) => set({ streamStatus }),
 
   appendStreamText: (token) => set((state) => ({ 
     currentStreamText: state.currentStreamText + token 
   })),
 
-  clearChat: () => set({ messages: [], currentStreamText: '', streamStatus: 'thinking', isStreaming: false, sessionId: null, pendingLogId: null }),
+  clearChat: () => set({ messages: [], currentStreamText: '', streamInsights: [], streamStatus: 'thinking', isStreaming: false, sessionId: null, pendingLogId: null }),
  }));
