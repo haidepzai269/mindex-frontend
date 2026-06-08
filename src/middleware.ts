@@ -20,7 +20,14 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route));
 
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'super_secret_jwt_key_change_me');
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    if (isProtectedRoute || isAdminRoute) {
+      return NextResponse.redirect(new URL('/login?next=' + pathname, request.url));
+    }
+    return NextResponse.next();
+  }
+  const secret = new TextEncoder().encode(jwtSecret);
 
   // 1. Admin route: verify JWT role = 'admin'
   if (isAdminRoute) {

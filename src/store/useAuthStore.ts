@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import Cookies from 'js-cookie';
 
 export interface Quota {
   pinnedCount: number;
@@ -43,37 +42,29 @@ export const useAuthStore = create<AuthStore>()(
       setUser: (user) => set({ user, quota: user.quota, isAuthenticated: true }),
       updateQuota: (quota) => set({ quota }),
       logout: async () => {
-        // 1. Reset local state ngay lập tức
         set({ user: null, quota: null, isAuthenticated: false });
-        localStorage.removeItem('mindex-auth-storage');
-        
+        sessionStorage.removeItem('mindex-auth-storage');
+
         if (typeof window !== 'undefined') {
-          // 2. Chuyển hướng ngay lập tức (Fast Logout) - không đợi API
-          // Việc xóa cookie sẽ chạy ngầm, middleware sẽ lo phần còn lại ở lần load trang sau
-          const domain = window.location.hostname.endsWith('mindex.io.vn') ? '.mindex.io.vn' : undefined;
-          
+          // httpOnly cookies không thể xóa bằng JS — server routes lo việc này
           const performLogout = async () => {
             try {
-              Cookies.remove('access_token', { path: '/', domain });
-              Cookies.remove('refresh_token', { path: '/', domain });
-
               await Promise.allSettled([
                 fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }),
-                fetch('/api/auth/logout', { method: 'POST' })
+                fetch('/api/auth/logout', { method: 'POST' }),
               ]);
             } catch (e) {
               console.error("Background logout failed:", e);
             }
           };
-
           performLogout();
           window.location.href = '/login';
         }
       },
     }),
     {
-      name: 'mindex-auth-storage', // Tên key trong localStorage
-      storage: createJSONStorage(() => localStorage), // Lưu vào localStorage
+      name: 'mindex-auth-storage',
+      storage: createJSONStorage(() => sessionStorage),
     }
   )
 );

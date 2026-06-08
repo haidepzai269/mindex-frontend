@@ -11,7 +11,8 @@ export async function POST() {
     path: "/",
     domain: domain,
     secure: isProd,
-    sameSite: 'lax' as const
+    sameSite: 'lax' as const,
+    httpOnly: true,
   };
 
   // Xóa bằng cả delete() và set(maxAge: 0) với đầy đủ thuộc tính để đảm bảo trình duyệt chấp nhận

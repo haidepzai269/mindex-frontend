@@ -94,13 +94,13 @@ export default function GlobalAIChatPage({
       if (justCreatedRef.current) {
         justCreatedRef.current = false;
         setSessionId(id);
-        localStorage.setItem("mindex_ai_active_session", id);
+        sessionStorage.setItem("mindex_ai_active_session", id);
         return;
       }
 
       try {
         setSessionId(id);
-        localStorage.setItem("mindex_ai_active_session", id);
+        sessionStorage.setItem("mindex_ai_active_session", id);
         const msgData: any = await fetchApi(`/chat/ai/sessions/${id}/messages?limit=30&skip=0`);
         if (isMounted && msgData.success && msgData.data?.messages) {
           setMessages(msgData.data.messages);

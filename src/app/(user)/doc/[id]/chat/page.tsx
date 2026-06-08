@@ -129,7 +129,7 @@ export default function ChatPage() {
   const handleAttachmentSessionReady = useCallback(
     (nextSessionId: string) => {
       setSessionId(nextSessionId);
-      localStorage.setItem(`mindex_session_${id}`, nextSessionId);
+      sessionStorage.setItem(`mindex_session_${id}`, nextSessionId);
     },
     [id, setSessionId],
   );
@@ -180,7 +180,7 @@ export default function ChatPage() {
         console.log(`[Chat] Restoring session for doc: ${id}`);
 
         // Bước 1: Ưu tiên lấy từ LocalStorage
-        let sid = localStorage.getItem(`mindex_session_${id}`);
+        let sid = sessionStorage.getItem(`mindex_session_${id}`);
         if (sid) console.log(`[Chat] Found session in LocalStorage: ${sid}`);
 
         // Bước 2: Nếu LocalStorage trống, hỏi Backend session active cuối cùng
@@ -193,7 +193,7 @@ export default function ChatPage() {
           if (activeData.success && activeData.data?.session_id) {
             sid = activeData.data.session_id;
             console.log(`[Chat] Backend returned active session: ${sid}`);
-            localStorage.setItem(`mindex_session_${id}`, sid!);
+            sessionStorage.setItem(`mindex_session_${id}`, sid!);
           } else {
             console.log(`[Chat] No active session found on backend.`);
           }

@@ -76,7 +76,7 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
     async function restoreSession() {
       if (!id) return;
       try {
-        const sid = localStorage.getItem(`mindex_col_session_${id}`);
+        const sid = sessionStorage.getItem(`mindex_col_session_${id}`);
         if (isMounted && sid) {
           setSessionId(sid);
           const msgData: any = await fetchApi(`/chat/sessions/${sid}/messages?limit=30&skip=0`);
@@ -181,7 +181,7 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
 
   const handleAttachmentSessionReady = useCallback((nextSessionId: string) => {
     setSessionId(nextSessionId);
-    localStorage.setItem(`mindex_col_session_${id}`, nextSessionId);
+    sessionStorage.setItem(`mindex_col_session_${id}`, nextSessionId);
   }, [id, setSessionId]);
 
   // 2. Xử lý gửi tin

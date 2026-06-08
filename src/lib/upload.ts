@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import { API_BASE_URL, handleRefreshToken } from "@/lib/api";
 
 export const DOCUMENT_UPLOAD_MAX_BYTES = 50 * 1024 * 1024;
@@ -56,7 +55,6 @@ async function uploadDocumentOnce({
   onProgress,
   allowRefresh,
 }: UploadDocumentOptions & { allowRefresh: boolean }): Promise<UploadDocumentResult> {
-  const token = Cookies.get("access_token");
   const formData = new FormData();
   formData.append("file", file);
   for (const img of images ?? []) {
@@ -69,10 +67,7 @@ async function uploadDocumentOnce({
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE_URL}/processing/upload`);
-    xhr.withCredentials = true;
-    if (token) {
-      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-    }
+    xhr.withCredentials = true; // httpOnly cookie tự gửi
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable && onProgress) {

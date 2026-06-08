@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
@@ -34,15 +33,20 @@ export async function handleRefreshToken(): Promise<string> {
 
       if (refreshRes.ok) {
         const data = await refreshRes.json();
-        const newToken = data.data.access_token;
+        const newAccessToken: string = data.data.access_token ?? "";
+        const newRefreshToken: string = data.data.refresh_token ?? "";
 
-        // Lưu token mới vào cookie để các request tiếp theo dùng được
-        if (newToken) {
-          Cookies.set('access_token', newToken, { expires: 1 / 24, sameSite: 'lax' }); // 1 giờ
+        // Cập nhật httpOnly cookies qua server route (không thể dùng js-cookie cho httpOnly)
+        if (newAccessToken) {
+          fetch('/api/auth/set-tokens', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ access_token: newAccessToken, refresh_token: newRefreshToken || undefined }),
+          }).catch(() => {});
         }
 
-        console.log("[API] Token refresh successful. New token received.");
-        return newToken || "";
+        console.log("[API] Token refresh successful.");
+        return newAccessToken;
       } else {
         const errorData = await refreshRes.json().catch(() => ({}));
         console.error("[API] Refresh token failed:", errorData);
@@ -77,13 +81,6 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     headers.delete('Content-Type');
   }
 
-  // 2. Lấy token hiện tại (chỉ lấy được nếu không phải httpOnly)
-  const token = Cookies.get('access_token');
-
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-
   try {
     const response = await fetch(url, {
       ...options,
@@ -96,15 +93,10 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
       console.log(`[API] 401 Unauthorized for ${endpoint}. Attempting reactive refresh...`);
       
       try {
-        const newToken = await handleRefreshToken();
+        await handleRefreshToken();
         console.log("[API] Token refreshed, retrying original request...");
-        
-        // Nếu có token mới trả về thì set header, nếu không thì dựa vào cookie mới
-        if (newToken) {
-            headers.set('Authorization', `Bearer ${newToken}`);
-        }
-        
-        const retryResponse = await fetch(url, { 
+
+        const retryResponse = await fetch(url, {
             ...options, 
             headers,
             credentials: 'include' 

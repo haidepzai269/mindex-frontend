@@ -14,23 +14,23 @@ export async function POST(request: Request) {
 
     if (access_token) {
       cookieStore.set('access_token', access_token, {
-        httpOnly: false, 
+        httpOnly: true,
         secure: isProd,
         sameSite: 'lax',
         path: '/',
         domain: domain,
-        maxAge: 3600 // 1 hour
+        maxAge: 3600,
       });
     }
 
     if (refresh_token) {
       cookieStore.set('refresh_token', refresh_token, {
-        httpOnly: false,
+        httpOnly: true,
         secure: isProd,
         sameSite: 'lax',
         path: '/',
         domain: domain,
-        maxAge: refreshMaxAge
+        maxAge: refreshMaxAge,
       });
     }
 

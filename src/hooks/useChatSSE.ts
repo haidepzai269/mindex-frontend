@@ -264,10 +264,10 @@ export function useChatSSE() {
                         console.log(`[SSE] Updating session ID: ${sessionId} -> ${parsed.session_id}`);
                         setSessionId(parsed.session_id);
                         if (isGlobalAI) {
-                            localStorage.setItem('mindex_ai_active_session', parsed.session_id);
-                            localStorage.setItem(`mindex_ai_session_${parsed.session_id}`, parsed.session_id);
+                            sessionStorage.setItem('mindex_ai_active_session', parsed.session_id);
+                            sessionStorage.setItem(`mindex_ai_session_${parsed.session_id}`, parsed.session_id);
                         } else {
-                            localStorage.setItem(isCollection ? `mindex_col_session_${targetId}` : `mindex_session_${targetId}`, parsed.session_id);
+                            sessionStorage.setItem(isCollection ? `mindex_col_session_${targetId}` : `mindex_session_${targetId}`, parsed.session_id);
                         }
                     }
 
