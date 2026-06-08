@@ -1,4 +1,10 @@
 /** @type {import('next').NextConfig} */
+
+// Extract origin only (strip path) so CSP connect-src matches all subpaths
+const _apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const apiOrigin = (() => { try { return new URL(_apiUrl).origin; } catch { return _apiUrl; } })();
+const wsOrigin = apiOrigin.replace(/^https/, 'wss').replace(/^http/, 'ws');
+
 const securityHeaders = [
   { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -20,7 +26,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com",
-      "connect-src 'self' " + (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'),
+      `connect-src 'self' ${apiOrigin} ${wsOrigin}`,
       "frame-src https://accounts.google.com",
       "object-src 'none'",
       "base-uri 'self'",
