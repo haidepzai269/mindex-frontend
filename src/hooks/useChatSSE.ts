@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { useChatStore } from '@/store/useChatStore';
+import { useChatStore, type ChatAttachment } from '@/store/useChatStore';
 import { API_BASE_URL, handleRefreshToken } from '@/lib/api';
 import Cookies from 'js-cookie';
 
@@ -46,11 +46,12 @@ export function useChatSSE() {
   } = useChatStore();
 
 
-  const sendMessage = useCallback(async (targetId: string, question: string, forkId?: string, isCollection: boolean = false, model?: string, thinking: boolean = false, mode?: ChatMode) => {
+  const sendMessage = useCallback(async (targetId: string, question: string, forkId?: string, isCollection: boolean = false, model?: string, thinking: boolean = false, mode?: ChatMode, attachments: ChatAttachment[] = []) => {
     if (!targetId || !question) return;
 
     const chatMode: ChatMode = mode ?? (isCollection ? 'collection' : 'document');
     const isGlobalAI = chatMode === 'global_ai';
+    const readyAttachments = isGlobalAI ? [] : attachments.filter((attachment) => attachment.status !== 'error');
 
     setError(null);
     setIsStreaming(true);
@@ -103,6 +104,13 @@ export function useChatSSE() {
                     ...(forkId ? { fork_id: forkId } : {}),
                     ...(model ? { model: model } : {}),
                     ...(thinking ? { thinking: true } : {}),
+                    ...(readyAttachments.length > 0 ? {
+                        attachment_ids: readyAttachments.map((attachment) => attachment.id),
+                        attachment_overrides: readyAttachments.map((attachment) => ({
+                            attachment_id: attachment.id,
+                            ocr_text: attachment.ocr_text || attachment.ocr_preview || '',
+                        })),
+                    } : {}),
                 };
 
             const endpoint = isGlobalAI ? `${API_BASE_URL}/chat/ai/message` : `${API_BASE_URL}/chat/message`;
@@ -150,6 +158,7 @@ export function useChatSSE() {
       id: Date.now().toString(),
       role: 'user',
       content: question,
+      ...(readyAttachments.length > 0 ? { attachments: readyAttachments } : {}),
       timestamp: new Date().toISOString()
     });
 

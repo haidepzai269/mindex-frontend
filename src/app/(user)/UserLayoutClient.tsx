@@ -413,18 +413,9 @@ export default function UserLayout({ children }: { children: ReactNode }) {
         <main className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-background">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,hsl(var(--primary)/0.08),transparent_35%)] dark:bg-[radial-gradient(circle_at_top,hsl(var(--primary)/0.04),transparent_35%)]" />
           <MobileHeader onSheetOpenChange={setIsMobileSheetOpen} />
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, scale: 0.99 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.01 }}
-              transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="relative z-10 flex h-full w-full flex-1 flex-col pb-20 md:pb-0"
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+          <div className="relative z-10 flex h-full w-full flex-1 flex-col pb-20 md:pb-0">
+            {children}
+          </div>
         </main>
 
         <MobileNavigation isSheetOpen={isMobileSheetOpen} />

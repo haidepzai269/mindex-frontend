@@ -1,14 +1,38 @@
 import { create } from 'zustand';
 
+export interface ChatAttachment {
+  id: string;
+  url: string;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  width?: number;
+  height?: number;
+  status?: 'waiting' | 'uploading' | 'analyzing' | 'done' | 'error';
+  error_message?: string;
+  ocr_text?: string;
+  ocr_preview?: string;
+  ocr_blocks?: Array<{
+    text: string;
+    confidence?: number;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }>;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
-  content: string;
+  content?: string;
+  attachments?: ChatAttachment[];
   sources?: any[];
   timestamp: string;
-  log_id?: string; // AI response log ID — dùng cho thumbs rating
+  log_id?: string; // AI response log ID - dùng cho thumbs rating
+  is_deleted?: boolean;
+  deleted_at?: string;
 }
-
 
 interface ChatStore {
   messages: ChatMessage[];
@@ -18,7 +42,7 @@ interface ChatStore {
   streamStatus: 'thinking' | 'searching';
   sessionId: string | null;
   pendingLogId: string | null; // log_id từ event done, chưa gắn vào message
-  
+
   setMessages: (messages: ChatMessage[]) => void;
   setSessionId: (id: string | null) => void;
   addMessage: (message: ChatMessage) => void;
@@ -33,7 +57,6 @@ interface ChatStore {
   clearChat: () => void;
 }
 
-
 export const useChatStore = create<ChatStore>((set) => ({
   messages: [],
   isStreaming: false,
@@ -46,9 +69,9 @@ export const useChatStore = create<ChatStore>((set) => ({
   setMessages: (messages: ChatMessage[]) => set({ messages }),
   setSessionId: (sessionId) => set({ sessionId }),
   setPendingLogId: (id) => set({ pendingLogId: id }),
-  
-  addMessage: (message) => set((state) => ({ 
-    messages: [...state.messages, message] 
+
+  addMessage: (message) => set((state) => ({
+    messages: [...state.messages, message]
   })),
 
   // Cập nhật log_id cho assistant message cuối cùng
@@ -82,9 +105,9 @@ export const useChatStore = create<ChatStore>((set) => ({
 
   setStreamStatus: (streamStatus) => set({ streamStatus }),
 
-  appendStreamText: (token) => set((state) => ({ 
-    currentStreamText: state.currentStreamText + token 
+  appendStreamText: (token) => set((state) => ({
+    currentStreamText: state.currentStreamText + token
   })),
 
   clearChat: () => set({ messages: [], currentStreamText: '', streamInsights: [], streamStatus: 'thinking', isStreaming: false, sessionId: null, pendingLogId: null }),
- }));
+}));

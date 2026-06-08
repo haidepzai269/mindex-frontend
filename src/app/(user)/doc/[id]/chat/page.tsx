@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useState, useRef, useMemo } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import {
   FileText,
   Star,
@@ -26,14 +26,18 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from "@/components/user/ChatMessage";
 import { ChatInput } from "@/components/user/ChatInput";
-import { useChatStore, type ChatMessage as StoreChatMessage } from "@/store/useChatStore";
+import {
+  useChatStore,
+  type ChatAttachment,
+  type ChatMessage as StoreChatMessage,
+} from "@/store/useChatStore";
 import { useChatSSE } from "@/hooks/useChatSSE";
 import useSWR from "swr";
 import { fetcher, fetchApi } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { useSWRConfig } from "swr";
@@ -48,14 +52,28 @@ import { ChatScrollDots } from "@/components/user/ChatScrollDots";
 import DocContentViewer from "@/components/user/DocContentViewer";
 import { usePdfStore } from "@/store/usePdfStore";
 
-export default function ChatPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+const NEURAL_CORES = [
+  { label: "Neural Slide & Video", path: "/presentation" },
+  { label: "Neural Flashcard", path: "/flashcards" },
+  { label: "Neural Quiz", path: "/quiz" },
+  { label: "Neural Mindmap", path: "/mindmap" },
+  { label: "Neural Audio", path: "/audio" },
+];
+
+export default function ChatPage() {
+  const routeParams = useParams<{ id: string }>();
+  const id = routeParams?.id ?? "";
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [currentCoreIndex, setCurrentCoreIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentCoreIndex((prev) => (prev + 1) % NEURAL_CORES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   const {
     messages,
     isStreaming,
@@ -71,6 +89,7 @@ export default function ChatPage({
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [historySkip, setHistorySkip] = useState(0);
+  const [messageActionId, setMessageActionId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isPinning, setIsPinning] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -107,7 +126,20 @@ export default function ChatPage({
     return new Date(doc.expired_at).getTime() < Date.now();
   }, [doc?.expired_at]);
 
-  const handleSendMessage = (q: string, model: string = "Mindex-1", thinking: boolean = false) => {
+  const handleAttachmentSessionReady = useCallback(
+    (nextSessionId: string) => {
+      setSessionId(nextSessionId);
+      localStorage.setItem(`mindex_session_${id}`, nextSessionId);
+    },
+    [id, setSessionId],
+  );
+
+  const handleSendMessage = (
+    q: string,
+    model: string = "Mindex-1",
+    thinking: boolean = false,
+    attachments: ChatAttachment[] = [],
+  ) => {
     if (doc?.status !== "ready") {
       toast.warning("Tài liệu chưa sẵn sàng", {
         description: "Vui lòng đợi quá trình xử lý tài liệu hoàn tất.",
@@ -125,7 +157,7 @@ export default function ChatPage({
 
     // Truyền forkId chỉ lần đầu (khi chưa có session) để inject Shared Context
     const currentFork = !sessionId ? forkId : undefined;
-    sendMessage(id, q, currentFork, false, model, thinking);
+    sendMessage(id, q, currentFork, false, model, thinking, undefined, attachments);
   };
 
   // 1. Phục hồi lịch sử chat khi vào tài liệu
@@ -154,7 +186,7 @@ export default function ChatPage({
         // Bước 2: Nếu LocalStorage trống, hỏi Backend session active cuối cùng
         if (!sid) {
           console.log(
-            `[Chat] LocalStorage empty, asking backend for active session...`
+            `[Chat] LocalStorage empty, asking backend for active session...`,
           );
           const activeData: any = await fetchApi(`/chat/sessions/active/${id}`);
 
@@ -171,18 +203,20 @@ export default function ChatPage({
           setSessionId(sid);
           console.log(`[Chat] Fetching messages for session: ${sid}...`);
 
-          const msgData: any = await fetchApi(`/chat/sessions/${sid}/messages?limit=30&skip=0`);
+          const msgData: any = await fetchApi(
+            `/chat/sessions/${sid}/messages?limit=30&skip=0`,
+          );
 
           if (isMounted && msgData.success && msgData.data.messages) {
             setMessages(msgData.data.messages);
             setHasMore(msgData.data.has_more ?? false);
             setHistorySkip(msgData.data.messages.length);
             console.log(
-              `✅ [Chat] Đã khôi phục ${msgData.data.messages.length} tin nhắn (has_more=${msgData.data.has_more}).`
+              `✅ [Chat] Đã khôi phục ${msgData.data.messages.length} tin nhắn (has_more=${msgData.data.has_more}).`,
             );
           } else if (isMounted) {
             console.log(
-              `⚠️ [Chat] Phiên chat tồn tại nhưng không có tin nhắn hoặc lỗi format.`
+              `⚠️ [Chat] Phiên chat tồn tại nhưng không có tin nhắn hoặc lỗi format.`,
             );
           }
         } else if (isMounted) {
@@ -200,8 +234,11 @@ export default function ChatPage({
   }, [id, setMessages, setSessionId, clearChat]);
 
   const getViewport = useCallback(
-    () => scrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null,
-    []
+    () =>
+      scrollRef.current?.querySelector(
+        '[data-slot="scroll-area-viewport"]',
+      ) as HTMLElement | null,
+    [],
   );
 
   const loadMoreHistory = useCallback(async () => {
@@ -210,7 +247,9 @@ export default function ChatPage({
     const viewport = getViewport();
     const heightBefore = viewport?.scrollHeight ?? 0;
     try {
-      const data: any = await fetchApi(`/chat/sessions/${sessionId}/messages?limit=30&skip=${historySkip}`);
+      const data: any = await fetchApi(
+        `/chat/sessions/${sessionId}/messages?limit=30&skip=${historySkip}`,
+      );
       if (data.success && data.data.messages?.length > 0) {
         const older = data.data.messages as StoreChatMessage[];
         const existingIds = new Set(messages.map((m) => m.id));
@@ -230,7 +269,66 @@ export default function ChatPage({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [sessionId, hasMore, isLoadingMore, historySkip, messages, getViewport, setMessages]);
+  }, [
+    sessionId,
+    hasMore,
+    isLoadingMore,
+    historySkip,
+    messages,
+    getViewport,
+    setMessages,
+  ]);
+
+  const replaceMessageInStore = useCallback(
+    (nextMessage: StoreChatMessage) => {
+      const currentMessages = useChatStore.getState().messages;
+      setMessages(
+        currentMessages.map((msg) =>
+          msg.id === nextMessage.id ? nextMessage : msg,
+        ),
+      );
+    },
+    [setMessages],
+  );
+
+  const mutateSessionMessage = useCallback(
+    async (messageId: string, action: "delete" | "restore") => {
+      if (!sessionId || messageActionId) return;
+
+      setMessageActionId(messageId);
+      try {
+        const endpoint =
+          action === "delete"
+            ? `/chat/sessions/${sessionId}/messages/${messageId}`
+            : `/chat/sessions/${sessionId}/messages/${messageId}/restore`;
+
+        const data: any = await fetchApi(endpoint, {
+          method: action === "delete" ? "DELETE" : "POST",
+        });
+
+        if (!data?.success || !data?.data?.message) {
+          throw new Error("MESSAGE_MUTATION_FAILED");
+        }
+
+        replaceMessageInStore(data.data.message as StoreChatMessage);
+        toast.success(
+          action === "delete"
+            ? "Đã ẩn tin nhắn khỏi lịch sử chat"
+            : "Đã khôi phục tin nhắn",
+        );
+      } catch (err) {
+        console.error("[Chat] Message mutation failed:", err);
+        toast.error(
+          action === "delete"
+            ? "Không thể xóa tin nhắn"
+            : "Không thể khôi phục tin nhắn",
+        );
+      } finally {
+        setMessageActionId(null);
+      }
+    },
+    [messageActionId, replaceMessageInStore, sessionId],
+  );
 
   // Scroll-up listener để trigger load more
   useEffect(() => {
@@ -258,7 +356,7 @@ export default function ChatPage({
       mutate("/documents"); // Cập nhật cả sidebar
       mutate("/auth/me"); // Refresh global quota
       toast.success(
-        doc.pinned ? "Đã bỏ ghim tài liệu" : "Đã ghim tài liệu thành công"
+        doc.pinned ? "Đã bỏ ghim tài liệu" : "Đã ghim tài liệu thành công",
       );
     } catch (error: any) {
       if (error.data?.error === "PIN_QUOTA_EXCEEDED") {
@@ -308,7 +406,7 @@ export default function ChatPage({
 
   const filteredDocs = useMemo(() => {
     return allDocs.filter((d: any) =>
-      d.title.toLowerCase().includes(searchTerm.toLowerCase())
+      d.title.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [allDocs, searchTerm]);
 
@@ -316,7 +414,7 @@ export default function ChatPage({
   useEffect(() => {
     if (scrollRef.current) {
       const viewport = scrollRef.current.querySelector(
-        '[data-slot="scroll-area-viewport"]'
+        '[data-slot="scroll-area-viewport"]',
       );
       if (viewport) {
         viewport.scrollTop = viewport.scrollHeight;
@@ -353,7 +451,7 @@ export default function ChatPage({
                 "flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-300",
                 sidebarMode === "inbox"
                   ? "bg-background text-foreground shadow-sm border border-border/50"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <Inbox size={14} />
@@ -365,7 +463,7 @@ export default function ChatPage({
                 "flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-300",
                 sidebarMode === "document"
                   ? "bg-background text-foreground shadow-sm border border-border/50"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <BookOpen size={14} />
@@ -437,7 +535,7 @@ export default function ChatPage({
                       [...filteredDocs]
                         .sort(
                           (a: any, b: any) =>
-                            (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)
+                            (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0),
                         )
                         .map((item: any) => (
                           <motion.div
@@ -448,7 +546,7 @@ export default function ChatPage({
                               "p-4 rounded-[20px] cursor-pointer transition-all border relative group",
                               item.id === id
                                 ? "bg-primary/10 border-primary/20 shadow-sm"
-                                : "bg-muted/20 border-border/50 hover:bg-muted/40 hover:border-border"
+                                : "bg-muted/20 border-border/50 hover:bg-muted/40 hover:border-border",
                             )}
                           >
                             <div className="flex justify-between items-start mb-1.5">
@@ -458,7 +556,7 @@ export default function ChatPage({
                                     "w-2 h-2 rounded-full flex-shrink-0",
                                     item.status === "ready"
                                       ? "bg-emerald-500"
-                                      : "bg-muted-foreground/40 animate-pulse"
+                                      : "bg-muted-foreground/40 animate-pulse",
                                   )}
                                 />
                                 <h4
@@ -466,7 +564,7 @@ export default function ChatPage({
                                     "text-[13px] font-bold truncate flex-1",
                                     item.id === id
                                       ? "text-primary"
-                                      : "text-muted-foreground group-hover:text-foreground"
+                                      : "text-muted-foreground group-hover:text-foreground",
                                   )}
                                 >
                                   {item.title}
@@ -483,14 +581,16 @@ export default function ChatPage({
                                     {item.expired_at
                                       ? (() => {
                                           const diff =
-                                            new Date(item.expired_at).getTime() -
-                                            Date.now();
+                                            new Date(
+                                              item.expired_at,
+                                            ).getTime() - Date.now();
                                           if (diff <= 0) return "Hết hạn";
                                           const hours = Math.floor(
-                                            diff / (1000 * 60 * 60)
+                                            diff / (1000 * 60 * 60),
                                           );
                                           const mins = Math.floor(
-                                            (diff % (1000 * 60 * 60)) / (1000 * 60)
+                                            (diff % (1000 * 60 * 60)) /
+                                              (1000 * 60),
                                           );
                                           return `Còn ${hours}h ${mins}m`;
                                         })()
@@ -514,7 +614,10 @@ export default function ChatPage({
                                 layoutId="active-indicator"
                                 className="absolute right-3 top-1/2 -translate-y-1/2"
                               >
-                                <ChevronRight size={14} className="text-primary" />
+                                <ChevronRight
+                                  size={14}
+                                  className="text-primary"
+                                />
                               </motion.div>
                             )}
                           </motion.div>
@@ -534,7 +637,11 @@ export default function ChatPage({
 
               {/* Neural Core Widget - Interactive */}
               <div
-                onClick={() => router.push(`/doc/${id}/presentation`)}
+                onClick={() =>
+                  router.push(
+                    `/doc/${id}${NEURAL_CORES[currentCoreIndex].path}`,
+                  )
+                }
                 className="mt-6 p-5 bg-muted/40 rounded-2xl border border-border/70 hover:bg-muted/60 hover:border-primary/30 cursor-pointer transition-all duration-300 group/neural relative overflow-hidden"
               >
                 <div className="mb-3 flex items-center justify-between px-1 py-0.5">
@@ -551,9 +658,22 @@ export default function ChatPage({
                   Syncing active documents with academic clusters via Mindex
                   Intelligence.
                 </p>
-                <div className="flex items-center gap-1 text-[10px] font-black text-primary uppercase tracking-wider group-hover/neural:translate-x-1 transition-transform">
-                  Neural Slide &amp; Video
-                  <ArrowRight size={10} />
+                <div className="flex items-center gap-1 text-[10px] font-black text-primary uppercase tracking-wider group-hover/neural:translate-x-1 transition-transform h-4 overflow-hidden">
+                  <div className="relative h-full flex items-center">
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={currentCoreIndex}
+                        initial={{ y: -16, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 16, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="inline-block"
+                      >
+                        {NEURAL_CORES[currentCoreIndex].label}
+                      </motion.span>
+                    </AnimatePresence>
+                  </div>
+                  <ArrowRight size={10} className="flex-shrink-0" />
                 </div>
               </div>
             </motion.div>
@@ -607,7 +727,7 @@ export default function ChatPage({
                       "px-1.5 py-0 text-[7px] font-black bg-muted/40 border-border uppercase",
                       isExpired
                         ? "text-red-500 border-red-500/20"
-                        : "text-muted-foreground"
+                        : "text-muted-foreground",
                     )}
                   >
                     {isExpired ? "EXPIRED" : doc.status}
@@ -727,7 +847,10 @@ export default function ChatPage({
               {/* Load more indicator */}
               {isLoadingMore && (
                 <div className="flex justify-center py-3">
-                  <Loader2 size={16} className="animate-spin text-muted-foreground" />
+                  <Loader2
+                    size={16}
+                    className="animate-spin text-muted-foreground"
+                  />
                 </div>
               )}
               {!hasMore && messages.length >= 30 && (
@@ -740,11 +863,40 @@ export default function ChatPage({
                 {messages.map((msg) =>
                   msg.role === "user" ? (
                     <div key={msg.id} data-user-message="true">
-                      <ChatMessage message={msg} />
+                      <ChatMessage
+                        message={msg}
+                        onDelete={
+                          sessionId
+                            ? () => mutateSessionMessage(msg.id, "delete")
+                            : undefined
+                        }
+                        onRestore={
+                          sessionId && msg.is_deleted
+                            ? () => mutateSessionMessage(msg.id, "restore")
+                            : undefined
+                        }
+                        actionPending={messageActionId === msg.id}
+                        deleteIconOnly={true}
+                      />
                     </div>
                   ) : (
-                    <ChatMessage key={msg.id} message={msg} />
-                  )
+                    <ChatMessage
+                      key={msg.id}
+                      message={msg}
+                      onDelete={
+                        sessionId
+                          ? () => mutateSessionMessage(msg.id, "delete")
+                          : undefined
+                      }
+                      onRestore={
+                        sessionId && msg.is_deleted
+                          ? () => mutateSessionMessage(msg.id, "restore")
+                          : undefined
+                      }
+                      actionPending={messageActionId === msg.id}
+                      deleteIconOnly={true}
+                    />
+                  ),
                 )}
 
                 {isStreaming && (
@@ -771,6 +923,10 @@ export default function ChatPage({
                 onSendMessage={handleSendMessage}
                 disabled={isStreaming || isExpired}
                 isLoading={isStreaming}
+                allowImageAttachments
+                targetId={id}
+                sessionId={sessionId}
+                onSessionReady={handleAttachmentSessionReady}
                 placeholder={isExpired ? "Tài liệu này đã hết hạn" : undefined}
               />
             </div>

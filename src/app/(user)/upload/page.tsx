@@ -1,12 +1,11 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { AlertCircle, CheckCircle2, FileText, Globe, Loader2, UploadCloud, X } from "lucide-react";
+import { AlertCircle, FileText, Globe, ImageIcon, Loader2, UploadCloud, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { NotificationBell } from "@/components/user/NotificationBell";
 import { fetchApi } from "@/lib/api";
 import {
@@ -16,49 +15,180 @@ import {
   validateDocumentFile,
 } from "@/lib/upload";
 import { useProcessingSSE } from "@/hooks/useProcessingSSE";
+import { UploadAnalyzer, DocState, ImgState } from "@/components/user/UploadAnalyzer";
 
-type UploadStatus = "idle" | "uploading" | "processing" | "success" | "error";
+// ── Constants ─────────────────────────────────────────────────
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
+const EMPTY_IMAGES = Array.from({ length: 5 }, () => null) as Array<ImageSlot | null>;
 
+type ImageSlot = { file: File; preview: string };
+type UploadPhase = "idle" | "uploading" | "processing" | "success" | "error";
+
+// ── Image slots (idle state) ──────────────────────────────────
+function ImageSlots({
+  images,
+  onAdd,
+  onRemove,
+}: {
+  images: Array<ImageSlot | null>;
+  onAdd: (files: File[]) => void;
+  onRemove: (idx: number) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const filledCount = images.filter(Boolean).length;
+
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      onAdd(Array.from(e.target.files));
+      e.target.value = "";
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    onAdd(Array.from(e.dataTransfer.files));
+  };
+
+  return (
+    <div className="grid grid-cols-5 gap-2" onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".jpg,.jpeg,.png,.webp"
+        multiple
+        className="hidden"
+        onChange={handleInput}
+      />
+      {images.map((img, i) => (
+        <div key={i} className="relative aspect-square">
+          {img ? (
+            <div className="relative h-full w-full overflow-hidden rounded-xl">
+              <img src={img.preview} alt="" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => onRemove(i)}
+                className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 transition-colors hover:bg-black/80"
+              >
+                <X size={11} className="text-white" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => filledCount < 5 && inputRef.current?.click()}
+              disabled={filledCount >= 5}
+              className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ImageIcon size={18} />
+              <span className="text-[10px] font-medium">Thêm</span>
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────
 function UploadPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialDocId = searchParams.get("docId");
 
-  const [file, setFile] = useState<File | null>(null);
-  const [status, setStatus] = useState<UploadStatus>("idle");
-  const [activeDocId, setActiveDocId] = useState<string | null>(initialDocId);
-  const [activeDocTitle, setActiveDocTitle] = useState("Tài liệu");
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [images, setImages] = useState<Array<ImageSlot | null>>(EMPTY_IMAGES);
+  const [phase, setPhase] = useState<UploadPhase>(initialDocId ? "processing" : "idle");
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [activeDocId, setActiveDocId] = useState<string | null>(initialDocId);
+  const [imgDoneSet, setImgDoneSet] = useState<Set<number>>(new Set());
   const [isSharing, setIsSharing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | undefined>();
 
   const { data: sseData, error: sseError } = useProcessingSSE(activeDocId);
 
-  useEffect(() => {
-    if (initialDocId) {
-      setActiveDocId(initialDocId);
-      setStatus("processing");
-    }
-  }, [initialDocId]);
-
+  // SSE status transitions
   useEffect(() => {
     if (!sseData) return;
     if (sseData.status === "ready") {
-      setStatus("success");
+      setPhase("success");
+      staggerImgsDone();
     } else if (sseData.status === "error") {
-      setStatus("error");
+      setPhase("error");
+      setErrorMsg(sseData.message || "Tài liệu không đủ điều kiện xử lý. Vui lòng kiểm tra lại nội dung file.");
     }
   }, [sseData]);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const nextFile = acceptedFiles[0];
-    if (!nextFile) return;
-    const validationError = validateDocumentFile(nextFile);
-    if (validationError) {
-      toast.error(validationError);
-      return;
+  // SSE connection error
+  useEffect(() => {
+    if (sseError && phase === "processing") {
+      setPhase("error");
+      setErrorMsg(sseError);
     }
-    setFile(nextFile);
-    setActiveDocTitle(nextFile.name);
+  }, [sseError]);
+
+  function staggerImgsDone() {
+    images.forEach((img, i) => {
+      if (!img) return;
+      setTimeout(() => {
+        setImgDoneSet((prev) => new Set([...prev, i]));
+      }, i * 200);
+    });
+  }
+
+  // Image management
+  const addImages = useCallback((files: File[]) => {
+    const valid: File[] = [];
+    for (const f of files) {
+      const ext = ("." + f.name.split(".").pop()!).toLowerCase();
+      if (!IMAGE_EXTS.includes(ext)) {
+        toast.error(`${f.name}: chỉ hỗ trợ JPG, PNG, WEBP`);
+        continue;
+      }
+      if (f.size > MAX_IMAGE_BYTES) {
+        toast.error(`${f.name}: vượt quá 5MB`);
+        continue;
+      }
+      valid.push(f);
+    }
+    if (!valid.length) return;
+
+    setImages((prev) => {
+      const next = [...prev];
+      let slot = 0;
+      for (const f of valid) {
+        while (slot < 5 && next[slot] !== null) slot++;
+        if (slot >= 5) { toast.error("Tối đa 5 ảnh mỗi lần upload."); break; }
+        next[slot] = { file: f, preview: URL.createObjectURL(f) };
+        slot++;
+      }
+      return next;
+    });
+  }, []);
+
+  const removeImage = useCallback((idx: number) => {
+    setImages((prev) => {
+      const next = [...prev];
+      if (next[idx]?.preview) URL.revokeObjectURL(next[idx]!.preview);
+      next[idx] = null;
+      return next;
+    });
+  }, []);
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      images.forEach((img) => { if (img?.preview) URL.revokeObjectURL(img.preview); });
+    };
+  }, []);
+
+  // Document dropzone
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const f = acceptedFiles[0];
+    if (!f) return;
+    const err = validateDocumentFile(f);
+    if (err) { toast.error(err); return; }
+    setDocFile(f);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -72,14 +202,20 @@ function UploadPageContent() {
     maxSize: DOCUMENT_UPLOAD_MAX_BYTES,
   });
 
+  // Upload
   const handleUpload = async () => {
-    if (!file) return;
-    setStatus("uploading");
+    if (!docFile) return;
+    setPhase("uploading");
     setUploadProgress(0);
+    setImgDoneSet(new Set());
+    setErrorMsg(undefined);
+
+    const imageFiles = images.filter(Boolean).map((i) => i!.file);
 
     try {
       const response = await uploadDocument({
-        file,
+        file: docFile,
+        images: imageFiles,
         onProgress: setUploadProgress,
       });
 
@@ -88,22 +224,24 @@ function UploadPageContent() {
       setUploadProgress(100);
 
       if (result.is_duplicate && result.status === "ready") {
-        setStatus("success");
+        setPhase("success");
+        staggerImgsDone();
         toast.success(result.message || "Tài liệu đã có trong thư viện.");
         return;
       }
 
-      setStatus("processing");
+      setPhase("processing");
       toast.success(result.message || "Tải lên thành công, đang phân tích tài liệu.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Có lỗi xảy ra trong quá trình upload.";
       toast.error(message);
-      setStatus("idle");
+      setPhase("idle");
     }
   };
 
+  // Share
   const handleShare = async () => {
-    if (!activeDocId || status !== "success") return;
+    if (!activeDocId || phase !== "success") return;
     setIsSharing(true);
     try {
       await fetchApi(`/community/documents/${activeDocId}`, {
@@ -119,154 +257,176 @@ function UploadPageContent() {
     }
   };
 
-  const overallProgress =
-    status === "uploading"
-      ? Math.min(30, Math.floor(uploadProgress * 0.3))
-      : 30 + Math.floor((sseData?.progress || 0) * 0.7);
+  // ── Derived values for UploadAnalyzer ──
+  const docState: DocState =
+    phase === "uploading" ? "uploading"
+    : phase === "processing" ? "scanning"
+    : phase === "success" ? "done"
+    : phase === "error" ? "error"
+    : "uploading";
 
+  const imgStates: ImgState[] = images.map((img, i) => {
+    if (!img) return "queue";
+    if (phase === "error") return "error";
+    if (phase === "success") return imgDoneSet.has(i) ? "done" : "scanning";
+    if (phase === "processing") return "scanning";
+    if (phase === "uploading") return "uploading";
+    return "queue";
+  });
+
+  const imgSrcs = images.map((img) => img?.preview);
+
+  const summaryPercent =
+    phase === "uploading"   ? Math.min(30, Math.floor(uploadProgress * 0.3))
+    : phase === "processing" ? 30 + Math.floor((sseData?.progress ?? 0) * 0.7)
+    : phase === "success"    ? 100
+    : 0;
+
+  const summaryText =
+    phase === "uploading"   ? "Đang tải lên..."
+    : phase === "processing" ? (sseData?.message || "Đang phân tích tài liệu...")
+    : phase === "success"    ? "Hoàn tất!"
+    : "Xử lý thất bại";
+
+  const docName = docFile?.name ?? "Tài liệu";
+  const docSize = docFile ? `${(docFile.size / (1024 * 1024)).toFixed(2)} MB` : "";
+
+  // ── Render ──
   return (
     <div className="relative flex h-full flex-1 flex-col overflow-y-auto px-4 pb-28 pt-6 md:px-8 md:pb-8 md:pt-16">
       <div className="absolute right-8 top-6 z-50 hidden md:block">
         <NotificationBell />
       </div>
-
       <div className="pointer-events-none absolute left-1/2 top-[20%] -z-10 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-primary/5 blur-[150px]" />
 
-      <div className="mx-auto w-full max-w-2xl">
-        <div className="mb-6 text-center md:mb-10">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-muted text-primary md:h-16 md:w-16">
-            <UploadCloud className="h-6 w-6 md:h-8 md:w-8" />
-          </div>
-          <h1 className="mb-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">Tải lên tài liệu mới</h1>
-          <p className="text-muted-foreground">Mindex sẽ kiểm tra file, lưu bản gốc an toàn và xử lý bằng hàng đợi bền vững.</p>
-        </div>
+      <div className="mx-auto w-full max-w-3xl">
 
-        {status === "idle" ? (
-          <div className="animate-in space-y-6 fade-in slide-in-from-bottom-4 duration-500">
-            {!file ? (
-              <div
-                {...getRootProps()}
-                className={`cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all md:p-12 ${
-                  isDragActive ? "border-primary bg-primary/5" : "border-border bg-muted/30 hover:border-primary/50 hover:bg-accent/30"
-                }`}
-              >
-                <input {...getInputProps()} accept={DOCUMENT_UPLOAD_ACCEPT} />
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground shadow-sm">
-                  <UploadCloud size={24} />
-                </div>
-                <h3 className="mb-1 text-lg font-medium text-foreground">Kéo thả file PDF hoặc DOCX vào đây</h3>
-                <p className="mb-6 text-sm text-muted-foreground">hoặc click để chọn file từ máy tính</p>
-
-                <Button variant="outline">Chọn File</Button>
-
-                <div className="mt-8 flex items-center justify-center gap-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
-                  <span>PDF, DOCX</span>
-                  <span className="h-1 w-1 rounded-full bg-border" />
-                  <span>Tối đa 50MB</span>
-                </div>
+        {/* ── IDLE ── */}
+        {phase === "idle" && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="mb-8 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-muted text-primary md:h-16 md:w-16">
+                <UploadCloud className="h-6 w-6 md:h-8 md:w-8" />
               </div>
-            ) : (
-              <div className="relative rounded-2xl border border-primary/30 bg-card p-6">
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setFile(null);
-                  }}
-                  className="absolute right-4 top-4 rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  aria-label="Bỏ chọn file"
-                >
-                  <X size={20} />
-                </button>
+              <h1 className="mb-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">Tải lên tài liệu mới</h1>
+              <p className="text-sm text-muted-foreground">Kéo thả hoặc chọn file. Ảnh đính kèm sẽ được OCR để bổ sung nội dung.</p>
+            </div>
 
-                <div className="mb-6 flex flex-col items-center">
-                  <FileText size={48} className="mb-4 text-primary" />
-                  <h3 className="mb-1 max-w-full truncate px-4 text-lg font-semibold text-foreground">{file.name}</h3>
-                  <p className="text-sm text-muted-foreground">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+            <div className="space-y-6">
+              {/* Document section */}
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Tài liệu</p>
+                {!docFile ? (
+                  <div
+                    {...getRootProps()}
+                    className={`cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-all ${
+                      isDragActive ? "border-primary bg-primary/5" : "border-border bg-muted/30 hover:border-primary/50 hover:bg-accent/30"
+                    }`}
+                  >
+                    <input {...getInputProps()} accept={DOCUMENT_UPLOAD_ACCEPT} />
+                    <UploadCloud size={28} className="mx-auto mb-3 text-muted-foreground" />
+                    <p className="mb-1 font-medium text-foreground">Kéo thả PDF hoặc DOCX vào đây</p>
+                    <p className="mb-4 text-sm text-muted-foreground">hoặc click để chọn file</p>
+                    <Button variant="outline" size="sm">Chọn tài liệu</Button>
+                    <p className="mt-4 text-xs text-muted-foreground/50">PDF · DOCX · Tối đa 50MB</p>
+                  </div>
+                ) : (
+                  <div className="relative flex items-center gap-3 rounded-2xl border border-primary/30 bg-card p-4">
+                    <button
+                      type="button"
+                      onClick={() => setDocFile(null)}
+                      className="absolute right-3 top-3 rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    >
+                      <X size={16} />
+                    </button>
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${docFile.name.endsWith(".pdf") ? "bg-red-500/10 text-red-500" : "bg-blue-500/10 text-blue-500"}`}>
+                      <FileText size={20} />
+                    </div>
+                    <div className="min-w-0 flex-1 pr-6">
+                      <p className="truncate text-sm font-medium text-foreground">{docFile.name}</p>
+                      <p className="text-xs text-muted-foreground">{(docFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Images section */}
+              <div>
+                <div className="mb-2 flex items-baseline justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Ảnh đính kèm <span className="normal-case font-normal text-muted-foreground/40">(tùy chọn)</span></p>
+                  <p className="text-[10px] text-muted-foreground/40">{images.filter(Boolean).length}/5</p>
                 </div>
+                <p className="mb-3 text-xs text-muted-foreground">OCR tự động trích xuất văn bản từ ảnh để bổ sung nội dung · JPG / PNG / WEBP · Tối đa 5MB/ảnh</p>
+                <ImageSlots images={images} onAdd={addImages} onRemove={removeImage} />
+              </div>
 
+              {docFile && (
                 <Button onClick={handleUpload} className="h-12 w-full text-base">
                   <UploadCloud size={20} className="mr-2" />
-                  Tải lên & bắt đầu phân tích
+                  Tải lên & phân tích
+                  {images.filter(Boolean).length > 0 && (
+                    <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
+                      +{images.filter(Boolean).length} ảnh
+                    </span>
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── ACTIVE (uploading / processing / success / error) ── */}
+        {phase !== "idle" && (
+          <div className="animate-in fade-in zoom-in-95 duration-300">
+            <UploadAnalyzer
+              docName={docName}
+              docSize={docSize}
+              docState={docState}
+              uploadProgress={uploadProgress}
+              sseProgress={sseData?.progress ?? 0}
+              sseMessage={sseData?.message}
+              errorMessage={errorMsg}
+              imgStates={imgStates}
+              imgSrcs={imgSrcs}
+              summaryText={summaryText}
+              summaryPercent={summaryPercent}
+              summaryDone={phase === "success"}
+            />
+
+            {/* Success actions */}
+            {phase === "success" && activeDocId && (
+              <div className="mt-4 space-y-3">
+                <Button onClick={handleShare} disabled={isSharing} className="h-11 w-full">
+                  {isSharing ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Globe size={16} className="mr-2" />}
+                  Chia sẻ vào Thư viện chung
+                </Button>
+                <Button onClick={() => router.push("/library")} variant="outline" className="w-full">
+                  Quay lại Thư viện
                 </Button>
               </div>
             )}
-          </div>
-        ) : (
-          <div className="glass-card animate-in p-8 text-center fade-in zoom-in duration-300">
-            <div className="relative mb-6">
-              <div
-                className={`mx-auto flex h-20 w-20 items-center justify-center rounded-full border transition-colors ${
-                  status === "success"
-                    ? "border-emerald-500/30 bg-emerald-500/10"
-                    : status === "error"
-                      ? "border-red-500/30 bg-red-500/10"
-                      : "border-primary/30 bg-primary/10"
-                }`}
-              >
-                {status === "success" ? (
-                  <CheckCircle2 size={40} className="text-emerald-500" />
-                ) : status === "error" ? (
-                  <AlertCircle size={40} className="text-red-500" />
-                ) : (
-                  <Loader2 size={40} className="animate-spin text-primary" />
-                )}
-              </div>
-            </div>
 
-            <h3 className="mb-2 text-xl font-semibold">
-              {status === "uploading"
-                ? "Đang tải lên..."
-                : status === "processing"
-                  ? "Đang phân tích tài liệu..."
-                  : status === "success"
-                    ? "Hoàn tất!"
-                    : "Xử lý thất bại"}
-            </h3>
-            <p className="mb-8 text-sm text-muted-foreground">{activeDocTitle}</p>
-
-            {(status === "uploading" || status === "processing") && (
-              <div className="mb-8 space-y-2">
-                <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <span>Tiến độ tổng quát</span>
-                  <span>{overallProgress}%</span>
+            {/* Error state */}
+            {phase === "error" && (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-500">
+                  <AlertCircle size={18} className="shrink-0" />
+                  <span>{errorMsg || "Tài liệu không đủ điều kiện xử lý. Vui lòng kiểm tra lại nội dung file."}</span>
                 </div>
-                <Progress value={overallProgress} className="h-2 bg-white/10 [&>div]:bg-primary-gradient" />
+                <Button onClick={() => { setPhase("idle"); setErrorMsg(undefined); }} variant="outline" className="w-full">
+                  Thử lại
+                </Button>
+                <Button onClick={() => router.push("/library")} variant="ghost" className="w-full">
+                  Quay lại Thư viện
+                </Button>
               </div>
             )}
 
-            {status === "error" && (
-              <div className="mb-8 flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-left text-sm text-red-500">
-                <AlertCircle size={20} className="shrink-0" />
-                <span>{sseData?.message || sseError || "Tài liệu không đủ điều kiện xử lý. Vui lòng kiểm tra lại nội dung file."}</span>
-              </div>
-            )}
-
-            <div className="space-y-4 rounded-xl border border-border/50 bg-muted/30 p-5 text-left text-sm">
-              <PipelineStep label="Giai đoạn 1: Tiếp nhận và lưu file gốc" done={status === "processing" || status === "success"} loading={status === "uploading"} />
-              <PipelineStep
-                label="Giai đoạn 2: Phân tích và kiểm duyệt nội dung"
-                done={(sseData?.progress || 0) >= 50 || status === "success"}
-                loading={status === "processing" && (sseData?.progress || 0) < 50}
-              />
-              <PipelineStep
-                label="Giai đoạn 3: Tạo embedding và hoàn tất"
-                done={status === "success"}
-                loading={(sseData?.progress || 0) >= 50 && status !== "success" && status !== "error"}
-              />
-            </div>
-
-            {status === "success" && activeDocId && (
-              <Button onClick={handleShare} disabled={isSharing} className="mt-8 h-11 w-full">
-                {isSharing ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Globe size={16} className="mr-2" />}
-                Chia sẻ vào Thư viện chung
-              </Button>
-            )}
-
-            {(status === "success" || status === "error") && (
-              <Button onClick={() => router.push("/library")} variant="outline" className="mt-3 w-full">
-                Quay lại Thư viện
-              </Button>
+            {/* Processing: no actions yet */}
+            {phase === "processing" && (
+              <p className="mt-4 text-center text-xs text-muted-foreground">
+                Bạn có thể rời trang, tài liệu sẽ tiếp tục được xử lý.
+              </p>
             )}
           </div>
         )}
@@ -280,16 +440,5 @@ export default function UploadPage() {
     <Suspense fallback={<div className="flex flex-1 items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>}>
       <UploadPageContent />
     </Suspense>
-  );
-}
-
-function PipelineStep({ label, done, loading }: { label: string; done: boolean; loading: boolean }) {
-  return (
-    <div className={`flex items-center gap-3 transition-colors ${done ? "text-emerald-600 dark:text-emerald-400" : loading ? "text-foreground" : "text-muted-foreground/40"}`}>
-      <div className="flex h-5 w-5 shrink-0 items-center justify-center">
-        {done ? <CheckCircle2 size={16} /> : loading ? <Loader2 size={16} className="animate-spin text-primary" /> : <div className="h-1.5 w-1.5 rounded-full bg-border" />}
-      </div>
-      <span>{label}</span>
-    </div>
   );
 }

@@ -17,6 +17,7 @@ export type UploadDocumentResult = {
 
 type UploadDocumentOptions = {
   file: File;
+  images?: File[];
   roomId?: string;
   onProgress?: (progress: number) => void;
 };
@@ -50,6 +51,7 @@ export async function uploadDocument({
 
 async function uploadDocumentOnce({
   file,
+  images,
   roomId,
   onProgress,
   allowRefresh,
@@ -57,6 +59,9 @@ async function uploadDocumentOnce({
   const token = Cookies.get("access_token");
   const formData = new FormData();
   formData.append("file", file);
+  for (const img of images ?? []) {
+    formData.append("images", img);
+  }
   if (roomId) {
     formData.append("room_id", roomId);
   }

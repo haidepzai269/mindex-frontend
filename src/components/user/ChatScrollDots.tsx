@@ -20,15 +20,12 @@ export function ChatScrollDots({ messages, scrollContainerRef }: ChatScrollDotsP
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    const viewport = container.querySelector(
-      '[data-slot="scroll-area-viewport"]'
-    ) as HTMLElement | null;
+
+    const viewport = container.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null;
     if (!viewport) return;
 
     const updateActive = () => {
-      const els = Array.from(
-        container.querySelectorAll("[data-user-message]")
-      ) as HTMLElement[];
+      const els = Array.from(container.querySelectorAll("[data-user-message]")) as HTMLElement[];
       if (els.length === 0) return;
 
       const viewportRect = viewport.getBoundingClientRect();
@@ -48,7 +45,9 @@ export function ChatScrollDots({ messages, scrollContainerRef }: ChatScrollDotsP
         }
       });
 
-      if (best !== -1) setActiveIndex(best);
+      if (best !== -1) {
+        setActiveIndex(best);
+      }
     };
 
     updateActive();
@@ -59,14 +58,11 @@ export function ChatScrollDots({ messages, scrollContainerRef }: ChatScrollDotsP
   const scrollToMessage = (idx: number) => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    const viewport = container.querySelector(
-      '[data-slot="scroll-area-viewport"]'
-    ) as HTMLElement | null;
+
+    const viewport = container.querySelector('[data-slot="scroll-area-viewport"]') as HTMLElement | null;
     if (!viewport) return;
 
-    const els = Array.from(
-      container.querySelectorAll("[data-user-message]")
-    ) as HTMLElement[];
+    const els = Array.from(container.querySelectorAll("[data-user-message]")) as HTMLElement[];
     const el = els[idx];
     if (!el) return;
 
@@ -93,28 +89,25 @@ export function ChatScrollDots({ messages, scrollContainerRef }: ChatScrollDotsP
     <div className="absolute right-2 md:right-5 top-0 bottom-0 flex items-center z-30 pointer-events-none">
       <div className="flex flex-col items-center gap-[7px] pointer-events-auto">
         {userMessages.map((msg, idx) => {
-          const preview = msg.content.trim().replace(/\s+/g, " ").slice(0, 60);
+          const content = msg.content ?? "Tin nhắn đã bị xóa";
+          const preview = content.trim().replace(/\s+/g, " ").slice(0, 60);
           const isHovered = hoveredIndex === idx;
 
           return (
             <div key={msg.id} className="relative flex items-center">
-              {/* Tooltip */}
               <div
                 className={cn(
                   "absolute right-full mr-3 whitespace-nowrap max-w-[200px] truncate",
                   "rounded-lg px-3 py-1.5 text-[11px] font-medium leading-snug",
                   "bg-popover text-popover-foreground border border-border shadow-md",
                   "pointer-events-none transition-all duration-150",
-                  isHovered
-                    ? "opacity-100 translate-x-0"
-                    : "opacity-0 translate-x-1"
+                  isHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-1"
                 )}
               >
                 {preview}
-                {msg.content.length > 60 && "…"}
+                {content.length > 60 && "..."}
               </div>
 
-              {/* Dot */}
               <button
                 onClick={() => scrollToMessage(idx)}
                 onMouseEnter={() => handleMouseEnter(idx)}

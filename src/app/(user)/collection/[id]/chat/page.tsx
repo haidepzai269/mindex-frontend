@@ -23,7 +23,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ChatMessage } from "@/components/user/ChatMessage";
 import { ChatInput } from "@/components/user/ChatInput";
-import { useChatStore, type ChatMessage as StoreChatMessage } from "@/store/useChatStore";
+import { useChatStore, type ChatAttachment, type ChatMessage as StoreChatMessage } from "@/store/useChatStore";
 import { useChatSSE } from "@/hooks/useChatSSE";
 import { CreateCollectionModal } from "@/components/user/CreateCollectionModal";
 import useSWR, { useSWRConfig } from "swr";
@@ -41,6 +41,7 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [historySkip, setHistorySkip] = useState(0);
+  const [messageActionId, setMessageActionId] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { mutate } = useSWRConfig();
   
@@ -127,6 +128,47 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
     }
   }, [sessionId, hasMore, isLoadingMore, historySkip, messages, getViewport, setMessages]);
 
+  const replaceMessageInStore = useCallback((nextMessage: StoreChatMessage) => {
+    const currentMessages = useChatStore.getState().messages;
+    setMessages(currentMessages.map((msg) => (msg.id === nextMessage.id ? nextMessage : msg)));
+  }, [setMessages]);
+
+  const mutateSessionMessage = useCallback(async (messageId: string, action: "delete" | "restore") => {
+    if (!sessionId || messageActionId) return;
+
+    setMessageActionId(messageId);
+    try {
+      const endpoint =
+        action === "delete"
+          ? `/chat/sessions/${sessionId}/messages/${messageId}`
+          : `/chat/sessions/${sessionId}/messages/${messageId}/restore`;
+
+      const data: any = await fetchApi(endpoint, {
+        method: action === "delete" ? "DELETE" : "POST",
+      });
+
+      if (!data?.success || !data?.data?.message) {
+        throw new Error("MESSAGE_MUTATION_FAILED");
+      }
+
+      replaceMessageInStore(data.data.message as StoreChatMessage);
+      toast.success(
+        action === "delete"
+          ? "Đã ẩn tin nhắn khỏi lịch sử chat"
+          : "Đã khôi phục tin nhắn"
+      );
+    } catch (err) {
+      console.error("[Collection] Message mutation failed:", err);
+      toast.error(
+        action === "delete"
+          ? "Không thể xóa tin nhắn"
+          : "Không thể khôi phục tin nhắn"
+      );
+    } finally {
+      setMessageActionId(null);
+    }
+  }, [messageActionId, replaceMessageInStore, sessionId]);
+
   useEffect(() => {
     const viewport = getViewport();
     if (!viewport) return;
@@ -137,13 +179,18 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
     return () => viewport.removeEventListener("scroll", handle);
   }, [hasMore, isLoadingMore, loadMoreHistory, getViewport]);
 
+  const handleAttachmentSessionReady = useCallback((nextSessionId: string) => {
+    setSessionId(nextSessionId);
+    localStorage.setItem(`mindex_col_session_${id}`, nextSessionId);
+  }, [id, setSessionId]);
+
   // 2. Xử lý gửi tin
-  const handleSendMessage = (q: string, model: string = "Mindex-1", thinking: boolean = false) => {
+  const handleSendMessage = (q: string, model: string = "Mindex-1", thinking: boolean = false, attachments: ChatAttachment[] = []) => {
     if (!collection || collection.doc_count === 0) {
       toast.error("Bộ tài liệu trống. Vui lòng thêm tài liệu trước khi chat.");
       return;
     }
-    sendMessage(id, q, undefined, true, model, thinking);
+    sendMessage(id, q, undefined, true, model, thinking, undefined, attachments);
   };
 
   // 3. Auto Scroll
@@ -313,7 +360,13 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
 
                   <div className="space-y-12">
                       {messages.map((msg) => (
-                          <ChatMessage key={msg.id} message={msg} />
+                          <ChatMessage
+                              key={msg.id}
+                              message={msg}
+                              onDelete={sessionId ? () => mutateSessionMessage(msg.id, "delete") : undefined}
+                              onRestore={sessionId && msg.is_deleted ? () => mutateSessionMessage(msg.id, "restore") : undefined}
+                              actionPending={messageActionId === msg.id}
+                          />
                       ))}
 
                       {isStreaming && (
@@ -337,6 +390,11 @@ export default function CollectionChatPage({ params }: { params: Promise<{ id: s
                     onSendMessage={handleSendMessage}
                     disabled={isStreaming}
                     isLoading={isStreaming}
+                    allowImageAttachments
+                    targetId={id}
+                    sessionId={sessionId}
+                    isCollection
+                    onSessionReady={handleAttachmentSessionReady}
                 />
               </div>
           </div>
