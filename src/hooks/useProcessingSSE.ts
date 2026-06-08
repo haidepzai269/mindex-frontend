@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '@/lib/api';
 
 export interface ProcessingStatus {
   status:
@@ -26,8 +27,7 @@ export function useProcessingSSE(docID: string | null) {
   useEffect(() => {
     if (!docID) return;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
-    const eventSource = new EventSource(`${apiUrl}/processing/status/${docID}`, { withCredentials: true });
+    const eventSource = new EventSource(`${API_BASE_URL}/processing/status/${docID}`, { withCredentials: true });
 
     eventSource.onmessage = (event) => {
       try {

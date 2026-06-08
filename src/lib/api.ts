@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/store/useAuthStore";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+export const WS_FEEDBACK_URL = process.env.NEXT_PUBLIC_WS_URL || API_BASE_URL.replace(/^https?/, (p) => p === 'https' ? 'wss' : 'ws') + '/ws/feedback';
 
 export class APIError extends Error {
   status: number;

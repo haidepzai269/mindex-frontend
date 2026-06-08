@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Cookies from "js-cookie";
 import NewFeedbackDialog from "@/components/settings/NewFeedbackDialog";
+import { API_BASE_URL, WS_FEEDBACK_URL } from "@/lib/api";
 
 interface FeedbackSession {
   id: string;
@@ -32,9 +33,6 @@ interface FeedbackMessage {
   sender_name: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/api/v1/ws/feedback";
-
 export default function FeedbacksPage() {
   const [sessions, setSessions] = useState<FeedbackSession[]>([]);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
@@ -45,7 +43,7 @@ export default function FeedbacksPage() {
 
   Cookies.get("access_token");
 
-  const { sendJsonMessage, lastJsonMessage } = useWebSocket(WS_BASE_URL, {
+  const { sendJsonMessage, lastJsonMessage } = useWebSocket(WS_FEEDBACK_URL, {
     shouldReconnect: () => true,
     onOpen: () => console.log("WS Connected"),
   });

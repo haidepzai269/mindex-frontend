@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/lib/api";
 
 interface NewFeedbackDialogProps {
   open: boolean;
@@ -26,7 +27,7 @@ export default function NewFeedbackDialog({ open, onOpenChange, onSuccess }: New
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1"}/feedbacks/sessions`, {
+      const response = await fetch(`${API_BASE_URL}/feedbacks/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

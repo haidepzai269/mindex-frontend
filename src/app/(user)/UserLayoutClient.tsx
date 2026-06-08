@@ -22,7 +22,12 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import useSWR from "swr";
 import { cn } from "@/lib/utils";
 import { fetcher } from "@/lib/api";
@@ -60,10 +65,14 @@ export default function UserLayout({ children }: { children: ReactNode }) {
     localStorage.setItem("sidebar-collapsed", String(next));
   };
 
-  const { data: meData } = useSWR<{ success: boolean; data: any }>(user ? "/auth/me" : null, fetcher as any, {
-    refreshInterval: 300000, // 5 phút thay vì 30s — tránh poll liên tục
-    revalidateOnFocus: true,  // Vẫn refresh khi user quay lại tab
-  });
+  const { data: meData } = useSWR<{ success: boolean; data: any }>(
+    user ? "/auth/me" : null,
+    fetcher as any,
+    {
+      refreshInterval: 300000, // 5 phút thay vì 30s — tránh poll liên tục
+      revalidateOnFocus: true, // Vẫn refresh khi user quay lại tab
+    }
+  );
 
   useEffect(() => {
     if (meData?.success && meData.data) {
@@ -88,9 +97,11 @@ export default function UserLayout({ children }: { children: ReactNode }) {
     }
   }, [meData, setUser]);
 
-  const { data: docsData } = useSWR<{ success: boolean; data: any[] }>(user ? "/documents" : null, fetcher as any);
+  const { data: docsData } = useSWR<{ success: boolean; data: any[] }>(
+    user ? "/documents" : null,
+    fetcher as any
+  );
   const recentDocs = docsData?.data?.slice(0, 10) || [];
-
 
   const pinnedCount = quota?.pinnedCount ?? quota?.pinnedDocs ?? 0;
   const maxPins = quota?.maxPins ?? quota?.pinnedDocsLimit ?? 3;
@@ -105,24 +116,34 @@ export default function UserLayout({ children }: { children: ReactNode }) {
           transition={{ duration: 0.3, ease: "easeInOut" }}
           className={cn(
             "relative z-[60] hidden h-full flex-shrink-0 flex-col border-r bg-sidebar/95 text-sidebar-foreground backdrop-blur md:flex",
-            user?.tier === "PRO" ? "border-amber-400/20" : user?.tier === "ULTRA" ? "border-rose-400/20" : "border-border/70"
+            user?.tier === "PRO"
+              ? "border-amber-400/20"
+              : user?.tier === "ULTRA"
+              ? "border-rose-400/20"
+              : "border-border/70"
           )}
         >
-          <div className={cn(
-            "pointer-events-none absolute inset-0",
-            user?.tier === "PRO"
-              ? "bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.08),transparent_40%),radial-gradient(ellipse_at_bottom,rgba(251,191,36,0.04),transparent_60%)]"
-              : user?.tier === "ULTRA"
-              ? "bg-[radial-gradient(circle_at_top_right,rgba(244,63,94,0.1),transparent_40%),radial-gradient(ellipse_at_bottom,rgba(244,63,94,0.05),transparent_60%)]"
-              : "bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.12),transparent_40%)] dark:bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_40%)]"
-          )} />
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-0",
+              user?.tier === "PRO"
+                ? "bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.08),transparent_40%),radial-gradient(ellipse_at_bottom,rgba(251,191,36,0.04),transparent_60%)]"
+                : user?.tier === "ULTRA"
+                ? "bg-[radial-gradient(circle_at_top_right,rgba(244,63,94,0.1),transparent_40%),radial-gradient(ellipse_at_bottom,rgba(244,63,94,0.05),transparent_60%)]"
+                : "bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.12),transparent_40%)] dark:bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_40%)]"
+            )}
+          />
 
           <button
             onClick={toggleSidebar}
             className="absolute -right-3 top-10 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-lg transition-all hover:border-primary/30 hover:text-foreground"
             title={isCollapsed ? "Mở rộng" : "Thu gọn"}
           >
-            {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            {isCollapsed ? (
+              <ChevronRight size={14} />
+            ) : (
+              <ChevronLeft size={14} />
+            )}
           </button>
 
           <div
@@ -131,14 +152,16 @@ export default function UserLayout({ children }: { children: ReactNode }) {
               isCollapsed ? "justify-center px-0" : "gap-3 px-6"
             )}
           >
-            <div className={cn(
-              "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border transition-all",
-              user?.tier === "PRO"
-                ? "border-amber-400/30 bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
-                : user?.tier === "ULTRA"
-                ? "border-rose-400/30 bg-rose-500/15 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.4)]"
-                : "border-primary/15 bg-primary/10 text-primary"
-            )}>
+            <div
+              className={cn(
+                "flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border transition-all",
+                user?.tier === "PRO"
+                  ? "border-amber-400/30 bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)]"
+                  : user?.tier === "ULTRA"
+                  ? "border-rose-400/30 bg-rose-500/15 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.4)]"
+                  : "border-primary/15 bg-primary/10 text-primary"
+              )}
+            >
               <BookOpen className="h-5 w-5" />
             </div>
 
@@ -166,7 +189,9 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                 )}
                 {user?.tier === "ULTRA" && (
                   <span className="relative overflow-hidden rounded border border-rose-400/50 bg-gradient-to-r from-rose-500/20 via-pink-500/15 to-rose-500/20 px-2 py-0.5 text-[10px] font-black uppercase shadow-[0_0_14px_rgba(244,63,94,0.5)]">
-                    <span className="animate-gold-shimmer bg-gradient-to-r from-rose-400 via-pink-300 to-rose-400 bg-clip-text text-transparent">✦ Ultra</span>
+                    <span className="animate-gold-shimmer bg-gradient-to-r from-rose-400 via-pink-300 to-rose-400 bg-clip-text text-transparent">
+                      ✦ Ultra
+                    </span>
                     <span className="absolute inset-0 -translate-x-full animate-[shimmer_1.8s_ease_infinite] bg-gradient-to-r from-transparent via-pink-300/30 to-transparent" />
                   </span>
                 )}
@@ -174,12 +199,46 @@ export default function UserLayout({ children }: { children: ReactNode }) {
             )}
           </div>
 
-          <nav className={cn("relative flex flex-1 flex-col overflow-hidden", isCollapsed ? "items-center px-0" : "px-4")}>
-            <div className={cn("mb-2 flex w-full flex-col space-y-1.5", isCollapsed ? "items-center" : "items-stretch")}>
-              <NavItem href="/library" icon={<Library size={20} />} label="Thư viện của tôi" active={pathname === "/library"} collapsed={isCollapsed} />
-              <NavItem href="/upload" icon={<Upload size={20} />} label="Tài liệu mới" active={pathname.startsWith("/upload")} collapsed={isCollapsed} />
-              <NavItem href="/rooms" icon={<Users size={20} />} label="Phòng học nhóm" active={pathname.startsWith("/rooms")} collapsed={isCollapsed} />
-              <NavItem href="/community" icon={<Globe size={20} />} label="Thư viện chung" active={pathname === "/community"} collapsed={isCollapsed} />
+          <nav
+            className={cn(
+              "relative flex flex-1 flex-col overflow-hidden",
+              isCollapsed ? "items-center px-0" : "px-4"
+            )}
+          >
+            <div
+              className={cn(
+                "mb-2 flex w-full flex-col space-y-1.5",
+                isCollapsed ? "items-center" : "items-stretch"
+              )}
+            >
+              <NavItem
+                href="/library"
+                icon={<Library size={20} />}
+                label="Thư viện của tôi"
+                active={pathname === "/library"}
+                collapsed={isCollapsed}
+              />
+              <NavItem
+                href="/upload"
+                icon={<Upload size={20} />}
+                label="Tài liệu mới"
+                active={pathname.startsWith("/upload")}
+                collapsed={isCollapsed}
+              />
+              <NavItem
+                href="/rooms"
+                icon={<Users size={20} />}
+                label="Phòng học nhóm"
+                active={pathname.startsWith("/rooms")}
+                collapsed={isCollapsed}
+              />
+              <NavItem
+                href="/community"
+                icon={<Globe size={20} />}
+                label="Thư viện chung"
+                active={pathname === "/community"}
+                collapsed={isCollapsed}
+              />
             </div>
 
             <AnimatePresence initial={false}>
@@ -208,7 +267,9 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                         />
                       ))
                     ) : (
-                      <div className="px-4 py-2 text-[10px] italic text-muted-foreground">Chưa có tài liệu nào</div>
+                      <div className="px-4 py-2 text-[10px] italic text-muted-foreground">
+                        Chưa có tài liệu nào
+                      </div>
                     )}
                   </div>
                 </motion.div>
@@ -216,13 +277,42 @@ export default function UserLayout({ children }: { children: ReactNode }) {
             </AnimatePresence>
 
             {/* Toggle accordion cho Tools */}
-            <div className={cn("mt-auto shrink-0", isCollapsed ? "flex flex-col items-center gap-1.5 py-2" : "pb-2")}>
+            <div
+              className={cn(
+                "mt-auto shrink-0",
+                isCollapsed ? "flex flex-col items-center gap-1.5 py-2" : "pb-2"
+              )}
+            >
               {isCollapsed ? (
                 <>
-                  <NavItem href="/chat/ai/new" icon={<Sparkles size={20} />} label="AI tổng hợp" active={pathname.startsWith("/chat/ai")} collapsed={isCollapsed} />
-                  <NavItem href="/analytics" icon={<TrendingUp size={20} />} label="Tiến trình" active={pathname === "/analytics"} collapsed={isCollapsed} />
-                  <NavItem href="/planner" icon={<Calendar size={20} />} label="Kế hoạch học" active={pathname === "/planner"} collapsed={isCollapsed} />
-                  <NavItem href="/settings" icon={<Settings size={20} />} label="Cài đặt" active={pathname.startsWith("/settings")} collapsed={isCollapsed} />
+                  <NavItem
+                    href="/chat/ai/new"
+                    icon={<Sparkles size={20} />}
+                    label="Mindex AI"
+                    active={pathname.startsWith("/chat/ai")}
+                    collapsed={isCollapsed}
+                  />
+                  <NavItem
+                    href="/analytics"
+                    icon={<TrendingUp size={20} />}
+                    label="Tiến trình"
+                    active={pathname === "/analytics"}
+                    collapsed={isCollapsed}
+                  />
+                  <NavItem
+                    href="/planner"
+                    icon={<Calendar size={20} />}
+                    label="Kế hoạch học"
+                    active={pathname === "/planner"}
+                    collapsed={isCollapsed}
+                  />
+                  <NavItem
+                    href="/settings"
+                    icon={<Settings size={20} />}
+                    label="Cài đặt"
+                    active={pathname.startsWith("/settings")}
+                    collapsed={isCollapsed}
+                  />
                 </>
               ) : (
                 <>
@@ -237,10 +327,34 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                         className="overflow-hidden"
                       >
                         <div className="flex flex-col space-y-1.5 pb-1">
-                          <NavItem href="/chat/ai/new" icon={<Sparkles size={20} />} label="AI tổng hợp" active={pathname.startsWith("/chat/ai")} collapsed={isCollapsed} />
-                          <NavItem href="/analytics" icon={<TrendingUp size={20} />} label="Tiến trình" active={pathname === "/analytics"} collapsed={isCollapsed} />
-                          <NavItem href="/planner" icon={<Calendar size={20} />} label="Kế hoạch học" active={pathname === "/planner"} collapsed={isCollapsed} />
-                          <NavItem href="/settings" icon={<Settings size={20} />} label="Cài đặt" active={pathname.startsWith("/settings")} collapsed={isCollapsed} />
+                          <NavItem
+                            href="/chat/ai/new"
+                            icon={<Sparkles size={20} />}
+                            label="Mindex AI"
+                            active={pathname.startsWith("/chat/ai")}
+                            collapsed={isCollapsed}
+                          />
+                          <NavItem
+                            href="/analytics"
+                            icon={<TrendingUp size={20} />}
+                            label="Tiến trình"
+                            active={pathname === "/analytics"}
+                            collapsed={isCollapsed}
+                          />
+                          <NavItem
+                            href="/planner"
+                            icon={<Calendar size={20} />}
+                            label="Kế hoạch học"
+                            active={pathname === "/planner"}
+                            collapsed={isCollapsed}
+                          />
+                          <NavItem
+                            href="/settings"
+                            icon={<Settings size={20} />}
+                            label="Cài đặt"
+                            active={pathname.startsWith("/settings")}
+                            collapsed={isCollapsed}
+                          />
                         </div>
                       </motion.div>
                     )}
@@ -270,7 +384,11 @@ export default function UserLayout({ children }: { children: ReactNode }) {
             )}
           >
             {!isCollapsed && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-5 space-y-2.5">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mb-5 space-y-2.5"
+              >
                 <div className="flex justify-between px-1 text-[11px] font-medium text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <FileText size={12} className="text-primary" />
@@ -287,8 +405,8 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                       pinPercent >= 100
                         ? "bg-amber-500"
                         : pinPercent >= 66
-                          ? "bg-primary"
-                          : "bg-primary/60"
+                        ? "bg-primary"
+                        : "bg-primary/60"
                     )}
                     style={{ width: `${pinPercent}%` }}
                   />
@@ -324,13 +442,19 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                 {isCollapsed && user?.tier === "PRO" && (
                   <div
                     className="pointer-events-none absolute inset-[-3px] animate-ring-spin rounded-full opacity-90"
-                    style={{ background: "conic-gradient(transparent 0deg, rgba(251,191,36,0.9) 90deg, transparent 200deg)" }}
+                    style={{
+                      background:
+                        "conic-gradient(transparent 0deg, rgba(251,191,36,0.9) 90deg, transparent 200deg)",
+                    }}
                   />
                 )}
                 {isCollapsed && user?.tier === "ULTRA" && (
                   <div
                     className="pointer-events-none absolute inset-[-3px] animate-ring-spin rounded-full"
-                    style={{ background: "conic-gradient(transparent 0deg, rgba(244,63,94,1) 70deg, rgba(236,72,153,0.6) 130deg, transparent 210deg)" }}
+                    style={{
+                      background:
+                        "conic-gradient(transparent 0deg, rgba(244,63,94,1) 70deg, rgba(236,72,153,0.6) 130deg, transparent 210deg)",
+                    }}
                   />
                 )}
                 <Tooltip>
@@ -346,7 +470,11 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                       )}
                     >
                       {user?.avatar_url ? (
-                        <img src={user.avatar_url} alt="Avatar" className="h-full w-full object-cover" />
+                        <img
+                          src={user.avatar_url}
+                          alt="Avatar"
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
                         <AvatarFallback className="bg-primary/15 font-bold text-primary">
                           {user?.name?.substring(0, 2).toUpperCase() || "SV"}
@@ -358,15 +486,23 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                     <TooltipContent side="right">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-bold">{user?.name || "Người dùng Mindex"}</span>
+                          <span className="font-bold">
+                            {user?.name || "Người dùng Mindex"}
+                          </span>
                           {user?.tier === "PRO" && (
-                            <span className="rounded bg-amber-500/20 px-1 py-0.5 text-[9px] font-black uppercase text-amber-500">PRO</span>
+                            <span className="rounded bg-amber-500/20 px-1 py-0.5 text-[9px] font-black uppercase text-amber-500">
+                              PRO
+                            </span>
                           )}
                           {user?.tier === "ULTRA" && (
-                            <span className="rounded bg-rose-500/20 px-1 py-0.5 text-[9px] font-black uppercase text-rose-500">✦ ULTRA</span>
+                            <span className="rounded bg-rose-500/20 px-1 py-0.5 text-[9px] font-black uppercase text-rose-500">
+                              ✦ ULTRA
+                            </span>
                           )}
                         </div>
-                        <span className="text-[10px] opacity-60">Nhấn để đăng xuất</span>
+                        <span className="text-[10px] opacity-60">
+                          Nhấn để đăng xuất
+                        </span>
                       </div>
                     </TooltipContent>
                   )}
@@ -374,15 +510,19 @@ export default function UserLayout({ children }: { children: ReactNode }) {
               </div>
 
               {!isCollapsed && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 min-w-0 flex-1">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="relative z-10 min-w-0 flex-1"
+                >
                   <span
                     className={cn(
                       "block truncate text-sm font-semibold",
                       user?.tier === "PRO"
                         ? "text-amber-700 dark:text-amber-400"
                         : user?.tier === "ULTRA"
-                          ? "text-rose-700 dark:text-rose-400"
-                          : "text-foreground"
+                        ? "text-rose-700 dark:text-rose-400"
+                        : "text-foreground"
                     )}
                   >
                     {user?.name || "Sinh viên Mindex"}
@@ -404,7 +544,11 @@ export default function UserLayout({ children }: { children: ReactNode }) {
               )}
 
               {isCollapsed && (
-                <button onClick={() => logout()} className="absolute inset-0 z-20 opacity-0" title="Đăng xuất" />
+                <button
+                  onClick={() => logout()}
+                  className="absolute inset-0 z-20 opacity-0"
+                  title="Đăng xuất"
+                />
               )}
             </div>
           </div>
@@ -453,12 +597,23 @@ function NavItem({
               collapsed ? "h-12 w-12 justify-center" : "w-full gap-3 px-4 py-3"
             )}
           >
-            <span className={cn("shrink-0 transition-colors", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")}>
+            <span
+              className={cn(
+                "shrink-0 transition-colors",
+                active
+                  ? "text-primary"
+                  : "text-muted-foreground group-hover:text-foreground"
+              )}
+            >
               {icon}
             </span>
 
             {!collapsed && (
-              <motion.span initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: "auto" }} className="overflow-hidden whitespace-nowrap tracking-tight">
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                className="overflow-hidden whitespace-nowrap tracking-tight"
+              >
                 {label}
               </motion.span>
             )}
@@ -493,15 +648,27 @@ function RecentDoc({
   time?: string;
 }) {
   return (
-    <Link href={`/doc/${id}/chat`} className="group flex w-full flex-col gap-1 rounded-lg px-4 py-2 transition-all hover:bg-accent/40">
+    <Link
+      href={`/doc/${id}/chat`}
+      className="group flex w-full flex-col gap-1 rounded-lg px-4 py-2 transition-all hover:bg-accent/40"
+    >
       <div className="flex items-center gap-3">
-        <FileText size={14} className="shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+        <FileText
+          size={14}
+          className="shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
+        />
         <span className="flex-1 truncate text-sm font-normal tracking-tight text-muted-foreground transition-colors group-hover:text-foreground">
           {title}
         </span>
-        {expiring && <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />}
+        {expiring && (
+          <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500" />
+        )}
       </div>
-      {time && <div className="pl-6 text-[10px] italic text-muted-foreground/80">{formatTimeAgo(time)}</div>}
+      {time && (
+        <div className="pl-6 text-[10px] italic text-muted-foreground/80">
+          {formatTimeAgo(time)}
+        </div>
+      )}
     </Link>
   );
 }

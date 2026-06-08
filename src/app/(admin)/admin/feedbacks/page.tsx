@@ -30,6 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import Cookies from "js-cookie";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { API_BASE_URL, WS_FEEDBACK_URL } from "@/lib/api";
 
 interface FeedbackSession {
   id: string;
@@ -53,8 +54,6 @@ interface FeedbackMessage {
   sender_name: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/api/v1/ws/feedback";
 
 export default function AdminFeedbacksPage() {
   const [sessions, setSessions] = useState<FeedbackSession[]>([]);
@@ -68,7 +67,7 @@ export default function AdminFeedbacksPage() {
 
   // WebSocket Setup
   const { sendJsonMessage, lastJsonMessage } = useWebSocket(
-    WS_BASE_URL,
+    WS_FEEDBACK_URL,
     {
       shouldReconnect: () => true,
     }
