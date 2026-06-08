@@ -65,12 +65,14 @@ export default function UserLayout({ children }: { children: ReactNode }) {
     localStorage.setItem("sidebar-collapsed", String(next));
   };
 
+  // Always fetch /auth/me — sessionStorage may be empty on a new tab even when cookies are valid.
+  // The middleware guarantees only authenticated users reach this layout.
   const { data: meData } = useSWR<{ success: boolean; data: any }>(
-    user ? "/auth/me" : null,
+    "/auth/me",
     fetcher as any,
     {
-      refreshInterval: 300000, // 5 phút thay vì 30s — tránh poll liên tục
-      revalidateOnFocus: true, // Vẫn refresh khi user quay lại tab
+      refreshInterval: 300000,
+      revalidateOnFocus: true,
     }
   );
 

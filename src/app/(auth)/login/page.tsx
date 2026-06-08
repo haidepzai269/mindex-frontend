@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BookOpen, KeyRound, Mail, Lock } from "lucide-react";
@@ -9,7 +9,6 @@ import Link from "next/link";
 import { fetchApi } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
-import Cookies from "js-cookie";
 import { RoleSelectionDialog } from "@/components/auth/RoleSelectionDialog";
 import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
 
@@ -22,17 +21,9 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
-  
+
   const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [pendingUser, setPendingUser] = useState<any>(null);
-
-  // Auto-redirect if already logged in
-  useEffect(() => {
-    const hasRefreshToken = Cookies.get('refresh_token');
-    if (hasRefreshToken) {
-      router.push('/library');
-    }
-  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
