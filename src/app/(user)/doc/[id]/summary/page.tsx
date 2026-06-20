@@ -35,7 +35,6 @@ import { fetchApi, API_BASE_URL, handleRefreshToken } from "@/lib/api";
 import { toast } from "sonner";
 import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import Cookies from "js-cookie";
 import { MermaidRenderer } from "@/components/ui/mermaid-renderer";
 
 export default function SummaryPage({ params }: { params: Promise<{ id: string }> }) {
@@ -182,35 +181,23 @@ export default function SummaryPage({ params }: { params: Promise<{ id: string }
     } else {
       // Academic hoặc Deep Analysis sử dụng SSE
       try {
-        let token = Cookies.get("access_token");
-        let response = await fetch(`${API_BASE_URL}/summary/detailed`, {
+        const doRequest = () => fetch(`${API_BASE_URL}/summary/detailed`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
+          headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
           body: JSON.stringify({ document_id: id, mode: mode }),
-          credentials: "include"
+          credentials: "include",
         });
 
-        // Xử lý 401 Reactive Refresh cho SSE
+        let response = await doRequest();
+
         if (response.status === 401) {
-           console.log("[SSE] 401 detected, attempting token refresh...");
-           try {
-              token = await handleRefreshToken();
-              response = await fetch(`${API_BASE_URL}/summary/detailed`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({ document_id: id, mode: mode }),
-                credentials: "include"
-              });
-           } catch (refreshErr) {
-              toast.error("Phiên làm việc hết hạn, vui lòng đăng nhập lại.");
-              return;
-           }
+          try {
+            await handleRefreshToken();
+            response = await doRequest();
+          } catch {
+            toast.error("Phiên làm việc hết hạn, vui lòng đăng nhập lại.");
+            return;
+          }
         }
 
         if (!response.ok) {

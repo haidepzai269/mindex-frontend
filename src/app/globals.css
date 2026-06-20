@@ -324,6 +324,94 @@
   100% { background-position: 200% center; }
 }
 
+@keyframes silver-sweep {
+  0%   { background-position: -300px 0; }
+  100% { background-position:  300px 0; }
+}
+
+@keyframes thinking-fade-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: .2; }
+  50%       { opacity: .6; }
+}
+
+.silver-shimmer-text {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted-foreground) / 0.7) 30%,
+    rgba(200, 200, 210, 0.9) 50%,
+    hsl(var(--muted-foreground) / 0.7) 70%
+  );
+  background-size: 300px 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: silver-sweep 2.8s linear infinite;
+}
+
+/* ── KaTeX math rendering ─────────────────────────────────────────────────── */
+
+/* Base: đảm bảo công thức không bị overflow */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.75rem 0;
+  margin: 0.5rem 0 !important;
+}
+
+.katex {
+  font-size: 1.05em;
+}
+
+/* Dark mode: KaTeX mặc định dùng màu đen — override để hiển thị đúng */
+.dark .katex,
+.dark .katex-display {
+  color: hsl(var(--foreground));
+}
+
+.dark .katex .mord,
+.dark .katex .mbin,
+.dark .katex .mrel,
+.dark .katex .mopen,
+.dark .katex .mclose,
+.dark .katex .mpunct,
+.dark .katex .minner,
+.dark .katex .mop,
+.dark .katex .mfrac,
+.dark .katex .msqrt,
+.dark .katex .mover,
+.dark .katex .munder,
+.dark .katex .munderover,
+.dark .katex .base {
+  color: hsl(var(--foreground));
+}
+
+/* Đường kẻ phân số (vinculum) trong dark mode */
+.dark .katex .frac-line,
+.dark .katex .sqrt > .sqrt-sign {
+  border-color: hsl(var(--foreground));
+  background: hsl(var(--foreground));
+}
+
+.dark .katex .sqrt-line {
+  background: hsl(var(--foreground));
+}
+
+/* Block display math: nền nhẹ để nổi bật */
+.prose .katex-display {
+  background: hsl(var(--muted) / 0.5);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+}
+
+.dark .prose .katex-display {
+  background: hsl(var(--muted) / 0.4);
+}
+
 @keyframes dialog-drop-close {
   0% {
     opacity: 1;

@@ -50,7 +50,7 @@ export const useAuthStore = create<AuthStore>()(
           const performLogout = async () => {
             try {
               await Promise.allSettled([
-                fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' }),
+                fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include', headers: { 'X-Requested-With': 'XMLHttpRequest' } }),
                 fetch('/api/auth/logout', { method: 'POST' }),
               ]);
             } catch (e) {
@@ -64,7 +64,7 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'mindex-auth-storage',
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => localStorage),
     }
   )
 );

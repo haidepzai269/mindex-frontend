@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         sameSite: 'lax',
         path: '/',
         domain: domain,
-        maxAge: 3600,
+        maxAge: 900,
       });
     }
 

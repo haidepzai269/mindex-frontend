@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import Cookies from "js-cookie";
 import NewFeedbackDialog from "@/components/settings/NewFeedbackDialog";
 import { API_BASE_URL, WS_FEEDBACK_URL } from "@/lib/api";
 
@@ -40,8 +39,6 @@ export default function FeedbacksPage() {
   const [inputMessage, setInputMessage] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  Cookies.get("access_token");
 
   const { sendJsonMessage, lastJsonMessage } = useWebSocket(WS_FEEDBACK_URL, {
     shouldReconnect: () => true,

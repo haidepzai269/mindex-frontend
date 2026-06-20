@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useChatStore, type ChatAttachment } from '@/store/useChatStore';
 import { API_BASE_URL, handleRefreshToken } from '@/lib/api';
-import Cookies from 'js-cookie';
 
 type ChatMode = 'document' | 'collection' | 'global_ai';
 
@@ -76,7 +75,6 @@ export function useChatSSE() {
 
     // Truyền tham số retry để tránh vòng lặp vô hạn
     const executeFetch = async (retryCount = 0): Promise<Response | null> => {
-        const token = Cookies.get('access_token');
         const abortController = new AbortController();
         abortControllerRef.current = abortController;
 
@@ -84,11 +82,8 @@ export function useChatSSE() {
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
                 'Accept': 'text/event-stream',
+                'X-Requested-With': 'XMLHttpRequest',
             };
-
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
 
             const payload = isGlobalAI
                 ? {

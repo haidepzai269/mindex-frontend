@@ -29,7 +29,7 @@ export default function NewFeedbackDialog({ open, onOpenChange, onSuccess }: New
     try {
       const response = await fetch(`${API_BASE_URL}/feedbacks/sessions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-Requested-With": "XMLHttpRequest" },
         credentials: "include",
         body: JSON.stringify({ subject, message }),
       });

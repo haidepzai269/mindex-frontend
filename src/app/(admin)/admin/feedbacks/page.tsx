@@ -28,7 +28,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import Cookies from "js-cookie";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { API_BASE_URL, WS_FEEDBACK_URL } from "@/lib/api";
 
@@ -62,8 +61,6 @@ export default function AdminFeedbacksPage() {
   const [replyText, setReplyText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const token = Cookies.get("access_token");
 
   // WebSocket Setup
   const { sendJsonMessage, lastJsonMessage } = useWebSocket(

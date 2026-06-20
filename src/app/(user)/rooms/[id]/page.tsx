@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
-import { API_BASE_URL, fetchApi, fetcher, handleRefreshToken } from "@/lib/api";
+import { API_BASE_URL, fetchApi, fetcher } from "@/lib/api";
 import useSWR from "swr";
 import {
   Users,
@@ -45,7 +45,6 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format, formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import Cookies from "js-cookie";
 import { LibraryPickerDialog } from "@/components/user/LibraryPickerDialog";
 import { AIThinkingIndicator } from "@/components/user/AIThinkingIndicator";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
@@ -272,18 +271,7 @@ export default function RoomPage() {
         return;
       }
 
-      let token = Cookies.get("access_token");
-
-      if (!token) {
-        try {
-          token = await handleRefreshToken();
-        } catch {
-          setIsConnected(false);
-          return;
-        }
-      }
-
-      if (!token || intentionalClose.current) return;
+      if (intentionalClose.current) return;
 
       const activeRoomWS = getActiveRoomWS();
       if (activeRoomWS && activeRoomWS.ownerId !== wsOwnerIdRef.current) {
@@ -293,7 +281,7 @@ export default function RoomPage() {
         }
       }
 
-      const wsUrl = `${wsBaseUrl}/rooms/${roomId}/ws?token=${token}`;
+      const wsUrl = `${wsBaseUrl}/rooms/${roomId}/ws`;
       const socket = new WebSocket(wsUrl);
       ws.current = socket;
       if (activeRoomWS) {

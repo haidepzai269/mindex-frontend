@@ -28,7 +28,7 @@ export async function handleRefreshToken(): Promise<string> {
     try {
       const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         credentials: 'include', // Quan trọng: Để gửi refresh_token cookie
       });
 
@@ -39,11 +39,11 @@ export async function handleRefreshToken(): Promise<string> {
 
         // Cập nhật httpOnly cookies qua server route (không thể dùng js-cookie cho httpOnly)
         if (newAccessToken) {
-          fetch('/api/auth/set-tokens', {
+          await fetch('/api/auth/set-tokens', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ access_token: newAccessToken, refresh_token: newRefreshToken || undefined }),
-          }).catch(() => {});
+          }).catch(console.error);
         }
 
         console.log("[API] Token refresh successful.");
@@ -80,6 +80,12 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     }
   } else {
     headers.delete('Content-Type');
+  }
+
+  // 2. CSRF: thêm X-Requested-With cho unsafe methods nếu caller chưa set
+  const method = (options.method || 'GET').toUpperCase();
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && !headers.has('X-Requested-With')) {
+    headers.set('X-Requested-With', 'XMLHttpRequest');
   }
 
   try {

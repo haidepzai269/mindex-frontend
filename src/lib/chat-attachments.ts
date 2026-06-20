@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import { API_BASE_URL, handleRefreshToken } from "@/lib/api";
 import type { ChatAttachment } from "@/store/useChatStore";
 
@@ -51,7 +50,6 @@ async function uploadChatImageOnce({
   onProgress,
   allowRefresh,
 }: UploadChatImageOptions & { allowRefresh: boolean }): Promise<UploadChatImageResult> {
-  const token = Cookies.get("access_token");
   const formData = new FormData();
   formData.append("file", file);
   formData.append(isCollection ? "collection_id" : "document_id", targetId);
@@ -63,9 +61,7 @@ async function uploadChatImageOnce({
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE_URL}/chat/attachments/image`);
     xhr.withCredentials = true;
-    if (token) {
-      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-    }
+    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable && onProgress) {

@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { ChatMessage as StoreChatMessage } from "@/store/useChatStore";
 
+const MAX_DOTS = 9;
+// Dot nhỏ nhất ở 2 đầu window (xa active nhất), dot lớn nhất là active
+const DOT_SIZES = [4, 4, 5, 5, 6, 5, 5, 4, 4]; // px — symmetric, giữa là active
+
 interface ChatScrollDotsProps {
   messages: StoreChatMessage[];
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -45,9 +49,7 @@ export function ChatScrollDots({ messages, scrollContainerRef }: ChatScrollDotsP
         }
       });
 
-      if (best !== -1) {
-        setActiveIndex(best);
-      }
+      if (best !== -1) setActiveIndex(best);
     };
 
     updateActive();
@@ -55,7 +57,7 @@ export function ChatScrollDots({ messages, scrollContainerRef }: ChatScrollDotsP
     return () => viewport.removeEventListener("scroll", updateActive);
   }, [messages, scrollContainerRef]);
 
-  const scrollToMessage = (idx: number) => {
+  const scrollToMessage = (realIdx: number) => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
@@ -63,7 +65,7 @@ export function ChatScrollDots({ messages, scrollContainerRef }: ChatScrollDotsP
     if (!viewport) return;
 
     const els = Array.from(container.querySelectorAll("[data-user-message]")) as HTMLElement[];
-    const el = els[idx];
+    const el = els[realIdx];
     if (!el) return;
 
     const viewportRect = viewport.getBoundingClientRect();
@@ -85,16 +87,39 @@ export function ChatScrollDots({ messages, scrollContainerRef }: ChatScrollDotsP
 
   if (userCount === 0) return null;
 
+  // ── Sliding window ─────────────────────────────────────────────────────────
+  // Nếu ít hơn MAX_DOTS tin nhắn: hiện tất cả (không cần window)
+  // Nếu nhiều hơn: window cố định MAX_DOTS dot, trượt theo active
+  const visibleCount = Math.min(userCount, MAX_DOTS);
+  const half = Math.floor(MAX_DOTS / 2);
+
+  let windowStart = activeIndex - half;
+  windowStart = Math.max(0, Math.min(windowStart, userCount - visibleCount));
+  const windowEnd = windowStart + visibleCount; // exclusive
+
+  // Chỉ lấy các message trong window
+  const windowedMessages = userMessages.slice(windowStart, windowEnd);
+
   return (
-    <div className="absolute right-2 md:right-5 top-0 bottom-0 flex items-center z-30 pointer-events-none">
+    <div className="absolute right-2 md:right-4 top-6 bottom-[160px] flex items-center z-30 pointer-events-none">
       <div className="flex flex-col items-center gap-[7px] pointer-events-auto">
-        {userMessages.map((msg, idx) => {
+        {windowedMessages.map((msg, dotIdx) => {
+          const realIdx = windowStart + dotIdx;
+          const isActive = realIdx === activeIndex;
+          const isHovered = hoveredIndex === realIdx;
+
+          // Kích thước dot biến đổi theo khoảng cách đến active trong window
+          const distFromActive = Math.abs(dotIdx - (activeIndex - windowStart));
+          const sizeIdx = Math.min(distFromActive, Math.floor(MAX_DOTS / 2));
+          // Dùng bảng kích thước symmetric, active = trung tâm
+          const sizePx = isActive ? 9 : [6, 5, 4, 4][Math.min(sizeIdx - 1, 3)];
+
           const content = msg.content ?? "Tin nhắn đã bị xóa";
           const preview = content.trim().replace(/\s+/g, " ").slice(0, 60);
-          const isHovered = hoveredIndex === idx;
 
           return (
             <div key={msg.id} className="relative flex items-center">
+              {/* Preview tooltip */}
               <div
                 className={cn(
                   "absolute right-full mr-3 whitespace-nowrap max-w-[200px] truncate",
@@ -109,14 +134,15 @@ export function ChatScrollDots({ messages, scrollContainerRef }: ChatScrollDotsP
               </div>
 
               <button
-                onClick={() => scrollToMessage(idx)}
-                onMouseEnter={() => handleMouseEnter(idx)}
+                onClick={() => scrollToMessage(realIdx)}
+                onMouseEnter={() => handleMouseEnter(realIdx)}
                 onMouseLeave={handleMouseLeave}
+                style={{ width: sizePx, height: sizePx }}
                 className={cn(
                   "block rounded-full transition-all duration-300 outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-                  idx === activeIndex
-                    ? "w-[9px] h-[9px] bg-primary shadow-[0_0_6px_2px_color-mix(in_srgb,var(--primary)_40%,transparent)]"
-                    : "w-[6px] h-[6px] bg-muted-foreground/25 hover:bg-muted-foreground/55"
+                  isActive
+                    ? "bg-primary shadow-[0_0_6px_2px_color-mix(in_srgb,var(--primary)_40%,transparent)]"
+                    : "bg-muted-foreground/25 hover:bg-muted-foreground/55"
                 )}
               />
             </div>

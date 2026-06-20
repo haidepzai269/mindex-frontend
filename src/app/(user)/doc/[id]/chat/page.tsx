@@ -441,258 +441,214 @@ export default function ChatPage() {
   return (
     <div className="h-screen w-full overflow-hidden bg-background text-foreground flex flex-row p-0 md:p-6 gap-0 md:gap-6">
       {/* 1. SIDEBAR TRÁI — Dual Mode (Inbox ↔ Document) */}
-      <aside className="hidden md:flex w-[360px] h-full flex-col bg-card/80 backdrop-blur-3xl rounded-[32px] border border-border shadow-xl overflow-hidden flex-shrink-0 z-50 animate-in slide-in-from-left duration-700">
-        <div className="p-6 flex flex-col h-full min-h-0">
-          {/* Tab Switcher */}
-          <div className="flex items-center gap-1 mb-5 p-1 bg-muted/30 rounded-2xl border border-border/50">
+      <aside className="hidden md:flex w-[340px] h-full flex-col bg-card/80 backdrop-blur-3xl rounded-[32px] border border-border shadow-xl overflow-hidden flex-shrink-0 z-50 animate-in slide-in-from-left duration-700">
+
+        {/* ── Top tab bar ─────────────────────────────── */}
+        <div className="px-5 pt-5 pb-0 flex-shrink-0">
+          <div className="flex items-center gap-1 p-1 bg-muted/40 rounded-2xl border border-border/40">
             <button
               onClick={() => setSidebarMode("inbox")}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-300",
+                "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200",
                 sidebarMode === "inbox"
-                  ? "bg-background text-foreground shadow-sm border border-border/50"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-background text-foreground shadow-sm border border-border/40"
+                  : "text-muted-foreground/60 hover:text-muted-foreground",
               )}
             >
-              <Inbox size={14} />
+              <Inbox size={12} />
               Inbox
             </button>
             <button
               onClick={() => setSidebarMode("document")}
               className={cn(
-                "flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-300",
+                "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200",
                 sidebarMode === "document"
-                  ? "bg-background text-foreground shadow-sm border border-border/50"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-background text-foreground shadow-sm border border-border/40"
+                  : "text-muted-foreground/60 hover:text-muted-foreground",
               )}
             >
-              <BookOpen size={14} />
+              <BookOpen size={12} />
               Tài liệu
             </button>
           </div>
+        </div>
 
-          {/* === INBOX MODE === */}
-          {sidebarMode === "inbox" && (
-            <motion.div
-              key="inbox"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2 }}
-              className="flex flex-col flex-1 min-h-0"
-            >
-              <div className="flex items-center justify-between mb-6 px-1">
-                <h2 className="text-xl font-black tracking-tight text-foreground flex items-center gap-2">
-                  Inbox
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                </h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full hover:bg-accent text-muted-foreground hover:text-foreground"
-                  onClick={() => router.push("/upload")}
-                >
-                  <Plus size={18} />
-                </Button>
-              </div>
+        {/* ── INBOX MODE ──────────────────────────────── */}
+        {sidebarMode === "inbox" && (
+          <motion.div
+            key="inbox"
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -8 }}
+            transition={{ duration: 0.18 }}
+            className="flex flex-col flex-1 min-h-0 px-5 pt-5 pb-4"
+          >
+            {/* Title row */}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[18px] font-black tracking-tight text-foreground flex items-center gap-2">
+                Inbox
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+              </h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full hover:bg-accent text-muted-foreground hover:text-foreground"
+                onClick={() => router.push("/upload")}
+              >
+                <Plus size={16} />
+              </Button>
+            </div>
 
-              {/* Search bar */}
-              <div className="relative mb-6">
-                <Search
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60"
-                />
-                <Input
-                  placeholder="Tìm tài liệu..."
-                  className="h-10 bg-muted/40 border-border pl-9 text-[12px] font-medium rounded-xl focus-visible:ring-primary/20 transition-all"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              {/* Study Hub Widget */}
-              <StudyHubWidget
-                docId={id}
-                open={studyHubOpen}
-                onOpenChange={setStudyHubOpen}
+            {/* Search */}
+            <div className="relative mb-4">
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+              <Input
+                placeholder="Tìm tài liệu..."
+                className="h-9 bg-muted/30 border-border/50 pl-8 text-[12px] rounded-xl focus-visible:ring-primary/20"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
+            </div>
 
-              {/* Document List - ẩn khi Study Hub mở */}
-              {!studyHubOpen && (
-                <ScrollArea className="flex-1 -mx-2 px-2 min-h-0">
-                  <div className="space-y-2">
+            {/* Study Hub */}
+            <StudyHubWidget docId={id} open={studyHubOpen} onOpenChange={setStudyHubOpen} />
+
+            {/* Document list */}
+            {!studyHubOpen && (
+              <>
+                {/* Section label */}
+                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-muted-foreground/40 mb-2 px-1">
+                  Tài liệu của bạn
+                </p>
+                <ScrollArea className="flex-1 -mx-1 px-1 min-h-0">
+                  <div className="space-y-1.5 pb-2">
                     {filteredDocs.length === 0 ? (
                       <div className="py-10 text-center">
-                        <FileText
-                          size={24}
-                          className="mx-auto text-muted-foreground/20 mb-3"
-                        />
-                        <p className="text-[10px] font-bold text-muted-foreground/40 uppercase">
-                          Trống
-                        </p>
+                        <FileText size={22} className="mx-auto text-muted-foreground/20 mb-2" />
+                        <p className="text-[10px] font-bold text-muted-foreground/35 uppercase">Trống</p>
                       </div>
                     ) : (
                       [...filteredDocs]
-                        .sort(
-                          (a: any, b: any) =>
-                            (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0),
-                        )
+                        .sort((a: any, b: any) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0))
                         .map((item: any) => (
                           <motion.div
                             key={item.id}
-                            whileHover={{ x: 4 }}
+                            whileHover={{ x: 3 }}
                             onClick={() => router.push(`/doc/${item.id}/chat`)}
                             className={cn(
-                              "p-4 rounded-[20px] cursor-pointer transition-all border relative group",
+                              "flex items-center gap-2.5 px-3 py-2.5 rounded-2xl cursor-pointer transition-all border relative group",
                               item.id === id
-                                ? "bg-primary/10 border-primary/20 shadow-sm"
-                                : "bg-muted/20 border-border/50 hover:bg-muted/40 hover:border-border",
+                                ? "bg-primary/10 border-primary/20"
+                                : "bg-transparent border-transparent hover:bg-muted/40 hover:border-border/40",
                             )}
                           >
-                            <div className="flex justify-between items-start mb-1.5">
-                              <div className="flex items-center gap-2 max-w-[70%] flex-1">
-                                <div
-                                  className={cn(
-                                    "w-2 h-2 rounded-full flex-shrink-0",
-                                    item.status === "ready"
-                                      ? "bg-emerald-500"
-                                      : "bg-muted-foreground/40 animate-pulse",
-                                  )}
-                                />
-                                <h4
-                                  className={cn(
-                                    "text-[13px] font-bold truncate flex-1",
-                                    item.id === id
-                                      ? "text-primary"
-                                      : "text-muted-foreground group-hover:text-foreground",
-                                  )}
-                                >
-                                  {item.title}
-                                </h4>
-                              </div>
-                              <div className="flex flex-col items-end gap-1">
-                                {item.pinned ? (
-                                  <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-[7px] px-1 py-0 font-black h-fit">
-                                    PINNED
-                                  </Badge>
-                                ) : (
-                                  <span className="text-[9px] font-bold text-muted-foreground/50 uppercase flex items-center gap-1">
-                                    <Clock size={8} />
-                                    {item.expired_at
-                                      ? (() => {
-                                          const diff =
-                                            new Date(
-                                              item.expired_at,
-                                            ).getTime() - Date.now();
-                                          if (diff <= 0) return "Hết hạn";
-                                          const hours = Math.floor(
-                                            diff / (1000 * 60 * 60),
-                                          );
-                                          const mins = Math.floor(
-                                            (diff % (1000 * 60 * 60)) /
-                                              (1000 * 60),
-                                          );
-                                          return `Còn ${hours}h ${mins}m`;
-                                        })()
-                                      : "N/A"}
-                                  </span>
-                                )}
-                              </div>
+                            {/* Status dot */}
+                            <div className={cn(
+                              "w-1.5 h-1.5 rounded-full flex-shrink-0",
+                              item.status === "ready" ? "bg-emerald-500" : "bg-muted-foreground/30 animate-pulse",
+                            )} />
+
+                            {/* Title */}
+                            <h4 className={cn(
+                              "flex-1 text-[12.5px] font-semibold truncate leading-none",
+                              item.id === id ? "text-primary" : "text-foreground/75 group-hover:text-foreground",
+                            )}>
+                              {item.title}
+                            </h4>
+
+                            {/* Right meta */}
+                            <div className="flex-shrink-0 flex items-center gap-1.5">
+                              {item.pinned ? (
+                                <span className="text-amber-500">
+                                  <Star size={10} fill="currentColor" />
+                                </span>
+                              ) : item.expired_at ? (
+                                <span className="text-[9px] font-bold text-muted-foreground/40 tabular-nums">
+                                  {(() => {
+                                    const diff = new Date(item.expired_at).getTime() - Date.now();
+                                    if (diff <= 0) return "Hết hạn";
+                                    const h = Math.floor(diff / (1000 * 60 * 60));
+                                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                    return `${h}h${m}m`;
+                                  })()}
+                                </span>
+                              ) : null}
+                              {item.id === id && (
+                                <motion.div layoutId="active-indicator">
+                                  <ChevronRight size={12} className="text-primary" />
+                                </motion.div>
+                              )}
                             </div>
-                            <p className="text-[10px] text-muted-foreground/60 font-medium line-clamp-1 group-hover:text-muted-foreground transition-colors">
-                              {item.status === "ready"
-                                ? "Tài liệu đã sẵn sàng để chat."
-                                : "Đang xử lý dữ liệu..."}
-                            </p>
 
                             {item.pinned && (
-                              <div className="absolute -left-1 top-1/2 -translate-y-1/2 h-8 w-1 bg-amber-400 rounded-full" />
-                            )}
-
-                            {item.id === id && (
-                              <motion.div
-                                layoutId="active-indicator"
-                                className="absolute right-3 top-1/2 -translate-y-1/2"
-                              >
-                                <ChevronRight
-                                  size={14}
-                                  className="text-primary"
-                                />
-                              </motion.div>
+                              <div className="absolute -left-1 top-1/2 -translate-y-1/2 h-6 w-[3px] bg-amber-400 rounded-full" />
                             )}
                           </motion.div>
                         ))
                     )}
                   </div>
                 </ScrollArea>
-              )}
+              </>
+            )}
 
-              <Button
-                variant="outline"
-                onClick={() => setIsCollectionModalOpen(true)}
-                className="mt-4 w-full border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-accent rounded-2xl h-10 text-xs font-bold gap-2"
-              >
-                <Plus size={14} /> Thêm vào bộ tài liệu
-              </Button>
+            {/* Add to collection */}
+            <Button
+              variant="outline"
+              onClick={() => setIsCollectionModalOpen(true)}
+              className="mt-3 w-full border-border/50 bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/40 rounded-2xl h-9 text-[11px] font-bold gap-1.5"
+            >
+              <Plus size={13} /> Thêm vào bộ tài liệu
+            </Button>
 
-              {/* Neural Core Widget - Interactive */}
-              <div
-                onClick={() =>
-                  router.push(
-                    `/doc/${id}${NEURAL_CORES[currentCoreIndex].path}`,
-                  )
-                }
-                className="mt-6 p-5 bg-muted/40 rounded-2xl border border-border/70 hover:bg-muted/60 hover:border-primary/30 cursor-pointer transition-all duration-300 group/neural relative overflow-hidden"
-              >
-                <div className="mb-3 flex items-center justify-between px-1 py-0.5">
-                  <h3 className="py-0.5 text-[9px] font-black uppercase leading-none tracking-[0.2em] text-primary flex items-center gap-1.5">
-                    <Sparkles size={8} className="text-primary animate-pulse" />
-                    Neural Core
-                  </h3>
-                  <div className="flex gap-1">
-                    <div className="w-1 h-1 rounded-full bg-primary/40" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary/80 animate-pulse" />
-                  </div>
-                </div>
-                <p className="text-[9px] text-muted-foreground/60 font-bold leading-relaxed mb-3">
-                  Syncing active documents with academic clusters via Mindex
-                  Intelligence.
+            {/* Neural Core widget — compact footer */}
+            <div
+              onClick={() => router.push(`/doc/${id}${NEURAL_CORES[currentCoreIndex].path}`)}
+              className="mt-3 flex items-center gap-3 px-3.5 py-3 bg-muted/30 rounded-2xl border border-border/50 hover:bg-muted/50 hover:border-primary/25 cursor-pointer transition-all duration-200 group/neural"
+            >
+              <div className="flex-shrink-0 w-7 h-7 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <Sparkles size={12} className="text-primary animate-pulse" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[8.5px] font-black uppercase tracking-[0.18em] text-primary/70 mb-0.5">
+                  Neural Core
                 </p>
-                <div className="flex items-center gap-1 text-[10px] font-black text-primary uppercase tracking-wider group-hover/neural:translate-x-1 transition-transform h-4 overflow-hidden">
-                  <div className="relative h-full flex items-center">
-                    <AnimatePresence mode="wait">
-                      <motion.span
-                        key={currentCoreIndex}
-                        initial={{ y: -16, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: 16, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="inline-block"
-                      >
-                        {NEURAL_CORES[currentCoreIndex].label}
-                      </motion.span>
-                    </AnimatePresence>
-                  </div>
-                  <ArrowRight size={10} className="flex-shrink-0" />
+                <div className="flex items-center gap-1 h-3.5 overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={currentCoreIndex}
+                      initial={{ y: -12, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: 12, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                      className="text-[10px] font-black text-primary uppercase tracking-wider group-hover/neural:translate-x-0.5 transition-transform inline-block"
+                    >
+                      {NEURAL_CORES[currentCoreIndex].label}
+                    </motion.span>
+                  </AnimatePresence>
+                  <ArrowRight size={9} className="text-primary flex-shrink-0" />
                 </div>
               </div>
-            </motion.div>
-          )}
+              <div className="flex gap-1 flex-shrink-0">
+                <div className="w-1 h-1 rounded-full bg-primary/30" />
+                <div className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-pulse" />
+              </div>
+            </div>
+          </motion.div>
+        )}
 
-          {/* === DOCUMENT MODE === */}
-          {sidebarMode === "document" && (
-            <motion.div
-              key="document"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.2 }}
-              className="flex-1 min-h-0"
-            >
-              <DocContentViewer docId={id} />
-            </motion.div>
-          )}
-        </div>
+        {/* ── DOCUMENT MODE ───────────────────────────── */}
+        {sidebarMode === "document" && (
+          <motion.div
+            key="document"
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 8 }}
+            transition={{ duration: 0.18 }}
+            className="flex-1 min-h-0 px-5 pt-5 pb-4"
+          >
+            <DocContentViewer docId={id} />
+          </motion.div>
+        )}
       </aside>
 
       {/* 2. VÙNG TRUNG TÂM — Full Chat (không còn split PDF) */}

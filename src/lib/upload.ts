@@ -1,7 +1,7 @@
 import { API_BASE_URL, handleRefreshToken } from "@/lib/api";
 
 export const DOCUMENT_UPLOAD_MAX_BYTES = 50 * 1024 * 1024;
-export const DOCUMENT_UPLOAD_ACCEPT = ".pdf,.docx";
+export const DOCUMENT_UPLOAD_ACCEPT = ".pdf,.docx,.xlsx,.pptx";
 
 export type UploadDocumentResult = {
   success: boolean;
@@ -21,10 +21,12 @@ type UploadDocumentOptions = {
   onProgress?: (progress: number) => void;
 };
 
+const ALLOWED_EXTENSIONS = [".pdf", ".docx", ".xlsx", ".pptx"];
+
 export function validateDocumentFile(file: File): string | null {
   const name = file.name.toLowerCase();
-  if (!name.endsWith(".pdf") && !name.endsWith(".docx")) {
-    return "Chỉ hỗ trợ file PDF hoặc DOCX.";
+  if (!ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext))) {
+    return "Chỉ hỗ trợ file PDF, DOCX, XLSX hoặc PPTX.";
   }
   if (file.size > DOCUMENT_UPLOAD_MAX_BYTES) {
     return "File vượt quá giới hạn 50MB.";
@@ -68,6 +70,7 @@ async function uploadDocumentOnce({
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `${API_BASE_URL}/processing/upload`);
     xhr.withCredentials = true; // httpOnly cookie tự gửi
+    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable && onProgress) {

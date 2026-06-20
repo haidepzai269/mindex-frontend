@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import { API_BASE_URL, fetchApi } from '@/lib/api';
-import Cookies from 'js-cookie';
 import { toast } from 'sonner';
 import { useConfirmStore } from '@/store/useConfirmStore';
 import { useSWRConfig } from 'swr';
@@ -38,16 +37,13 @@ export function useNotifications() {
     let reconnectTimeout: any;
 
     function connect() {
-      const token = Cookies.get('access_token');
-      if (!token) return;
-
       // Clean up old connection
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
 
-      const url = `${API_BASE_URL}/notifications/stream?token=${token}`;
-      const es = new EventSource(url);
+      const url = `${API_BASE_URL}/notifications/stream`;
+      const es = new EventSource(url, { withCredentials: true });
       eventSourceRef.current = es;
 
       es.addEventListener('notification', (event) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -8,10 +9,7 @@ import rehypeKatex from "rehype-katex";
 import { cn } from "@/lib/utils";
 import { ChatMessage as ChatMessageType } from "@/store/useChatStore";
 import {
-  User,
   Zap,
-  ChevronDown,
-  ChevronUp,
   FileText,
   ThumbsUp,
   ThumbsDown,
@@ -22,12 +20,14 @@ import {
   RotateCcw,
   Trash2,
   Loader2,
+  ZoomIn,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { fetchApi } from "@/lib/api";
-import { AIThinkingIndicator } from "@/components/user/AIThinkingIndicator";
-import { useChatStore } from "@/store/useChatStore";
+import { AIThinkingPanel } from "@/components/user/AIThinkingPanel";
 import { usePdfStore } from "@/store/usePdfStore";
 import { toast } from "sonner";
 
@@ -316,21 +316,11 @@ export function ChatMessage({
   const hasSources = !!(message.sources && message.sources.length > 0);
   const [showSources, setShowSources] = useState(false);
   const [selectedSource, setSelectedSource] = useState<any | null>(null);
-  const [showThinkingDetails, setShowThinkingDetails] = useState(true);
   const [copied, setCopied] = useState(false);
   const [voted, setVoted] = useState<"up" | "down" | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const streamStatus = useChatStore((state) => state.streamStatus);
-  const streamInsights = useChatStore((state) => state.streamInsights);
   const navigateToChunk = usePdfStore((s) => s.navigateToChunk);
   const activeChunk = usePdfStore((s) => s.activeChunk);
-
-  const thinkingDetail =
-    streamStatus === "searching"
-      ? "Dang tim nguon lien quan va kiem tra ngu canh truoc khi tra loi."
-      : "Dang phan tich cau hoi, chon ngu canh phu hop va chuan bi cau tra loi.";
-  const visibleThinkingInsights =
-    streamInsights.length > 0 ? streamInsights : [thinkingDetail];
 
   useEffect(() => {
     if (isUser || isStreaming || isDeleted || !message.log_id) return;
@@ -414,12 +404,23 @@ export function ChatMessage({
 
   const showInlineHoverDelete =
     deleteIconOnly && isUser && !isDeleted && !!onDelete;
+  // Nút hoàn tác luôn hiện inline bên trong bubble khi hover — không dùng toolbar
+  const showInlineHoverRestore = isDeleted && !!onRestore;
   const showToolbar =
     !isStreaming &&
-    ((isDeleted && !!onRestore) ||
-      (!isDeleted && (!isUser || (!!onDelete && !showInlineHoverDelete))));
+    !showInlineHoverRestore &&
+    (!isDeleted && (!isUser || (!!onDelete && !showInlineHoverDelete)));
 
-  const renderAssistantContent = (content: string) => (
+  // Normalize LaTeX delimiters: AI thường dùng \(...\) và \[...\], remark-math chỉ nhận $...$ và $$...$$
+function preprocessLatex(text: string): string {
+  // \[...\] → display math $$...$$
+  text = text.replace(/\\\[([\s\S]*?)\\\]/g, (_, inner) => `\n$$\n${inner.trim()}\n$$\n`);
+  // \(...\) → inline math $...$
+  text = text.replace(/\\\(([\s\S]*?)\\\)/g, (_, inner) => `$${inner}$`);
+  return text;
+}
+
+const renderAssistantContent = (content: string) => (
     <div
       className={cn(
         "prose dark:prose-invert max-w-none",
@@ -436,52 +437,217 @@ export function ChatMessage({
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[[rehypeKatex, { throwOnError: false }]]}
+        rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: false }]]}
         components={markdownComponents}
       >
-        {content}
+        {preprocessLatex(content)}
       </ReactMarkdown>
     </div>
   );
 
-  const renderUserContent = () => (
-    <div className="space-y-3">
-      {messageAttachments.length > 0 && (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {messageAttachments.map((attachment) => (
-            <div
-              key={attachment.id}
-              className="overflow-hidden rounded-2xl border border-white/20 bg-black/10 text-left shadow-sm"
-            >
-              <div className="relative h-28 bg-black/10">
-                <img
-                  src={attachment.url}
-                  alt={attachment.filename}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
-                <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-1 text-[8px] font-black uppercase tracking-[0.16em] text-white">
-                  OCR
-                </span>
-              </div>
-              {(attachment.ocr_preview || attachment.ocr_text) && (
-                <p className="line-clamp-3 px-3 py-2 text-[11px] leading-4 text-primary-foreground/80">
-                  {attachment.ocr_preview || attachment.ocr_text}
-                </p>
-              )}
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+
+  const renderAttachmentGrid = () => {
+    const atts = messageAttachments;
+    const count = atts.length;
+
+    const imgCell = (idx: number, className: string, showOverlay?: boolean) => {
+      const att = atts[idx];
+      const extra = count - 4;
+      return (
+        <div
+          key={att.id}
+          className={cn("group/cell relative overflow-hidden cursor-pointer", className)}
+          onClick={() => setLightboxIdx(idx)}
+        >
+          <img
+            src={att.url}
+            alt={att.filename}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover/cell:scale-[0.96]"
+            loading="lazy"
+          />
+          {/* OCR badge — chỉ ở ảnh đầu */}
+          {idx === 0 && (att.ocr_text || att.ocr_preview) && (
+            <span className="absolute left-2.5 top-2.5 rounded-full bg-black/60 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-white z-10">
+              OCR
+            </span>
+          )}
+          {/* "+N còn thêm" overlay ở ô cuối khi 4+ ảnh */}
+          {showOverlay && extra > 0 && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/55 backdrop-blur-[1px] z-10">
+              <span className="text-2xl font-black text-white">+{extra}</span>
             </div>
-          ))}
+          )}
+          {/* Hover: dim + kính lúp */}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/cell:bg-black/30 transition-colors duration-200 z-20">
+            <ZoomIn
+              size={22}
+              className="text-white opacity-0 group-hover/cell:opacity-100 transition-opacity duration-200 drop-shadow-lg"
+            />
+          </div>
         </div>
+      );
+    };
+
+    if (count === 1) {
+      return (
+        <div className="overflow-hidden rounded-t-[1.5rem] rounded-tr-sm">
+          {imgCell(0, "h-52 w-full")}
+        </div>
+      );
+    }
+
+    if (count === 2) {
+      return (
+        <div className="grid grid-cols-2 gap-0.5 overflow-hidden rounded-t-[1.5rem] rounded-tr-sm">
+          {imgCell(0, "h-44")}
+          {imgCell(1, "h-44")}
+        </div>
+      );
+    }
+
+    if (count === 3) {
+      return (
+        <div className="overflow-hidden rounded-t-[1.5rem] rounded-tr-sm">
+          {imgCell(0, "h-36 w-full")}
+          <div className="grid grid-cols-2 gap-0.5 mt-0.5">
+            {imgCell(1, "h-28")}
+            {imgCell(2, "h-28")}
+          </div>
+        </div>
+      );
+    }
+
+    // 4+: 2x2, ô cuối có overlay +N
+    return (
+      <div className="grid grid-cols-2 gap-0.5 overflow-hidden rounded-t-[1.5rem] rounded-tr-sm">
+        {imgCell(0, "h-36")}
+        {imgCell(1, "h-36")}
+        {imgCell(2, "h-36")}
+        {imgCell(3, "h-36", true)}
+      </div>
+    );
+  };
+
+  const renderUserContent = () => (
+    <div>
+      {messageAttachments.length > 0 && renderAttachmentGrid()}
+      {messageContent && (
+        <span
+          className={cn(
+            "whitespace-pre-wrap block",
+            messageAttachments.length > 0 && "px-5 py-3",
+          )}
+        >
+          {messageContent}
+        </span>
       )}
-      {messageContent && <span className="whitespace-pre-wrap">{messageContent}</span>}
     </div>
   );
 
+  // Lightbox modal — dùng AnimatePresence để có exit animation
+  const renderLightbox = () => {
+    const att = lightboxIdx !== null ? messageAttachments[lightboxIdx] : null;
+    const ocrText = att ? (att.ocr_text || att.ocr_preview) : null;
+
+    return (
+      <AnimatePresence>
+        {lightboxIdx !== null && att && (
+          <motion.div
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => setLightboxIdx(null)}
+          >
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/85 backdrop-blur-md" />
+
+            {/* Close */}
+            <button
+              className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/22 transition-colors"
+              onClick={() => setLightboxIdx(null)}
+            >
+              <X size={17} />
+            </button>
+
+            {/* Prev / Next */}
+            {messageAttachments.length > 1 && (
+              <>
+                <button
+                  className="absolute left-3 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors disabled:opacity-20"
+                  disabled={lightboxIdx === 0}
+                  onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => (i ?? 0) - 1); }}
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  className="absolute right-3 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors disabled:opacity-20"
+                  disabled={lightboxIdx === messageAttachments.length - 1}
+                  onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => (i ?? 0) + 1); }}
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
+
+            {/* Content: w-fit để OCR text luôn bằng chiều ngang ảnh */}
+            <motion.div
+              className="relative z-10 flex w-fit max-w-[90vw] flex-col items-stretch gap-3"
+              initial={{ scale: 0.86, opacity: 0, y: 24 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.88, opacity: 0, y: 16 }}
+              transition={{ type: "spring", stiffness: 300, damping: 26 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={att.url}
+                alt={att.filename}
+                className="max-h-[65vh] rounded-2xl object-contain shadow-2xl"
+                style={{ display: "block" }}
+              />
+
+              {ocrText && (
+                <div className="max-h-40 w-full overflow-y-auto rounded-xl bg-black/55 px-4 py-3 border border-white/10 backdrop-blur-sm">
+                  <p className="mb-1.5 text-[9px] font-black uppercase tracking-[0.18em] text-white/40">
+                    Văn bản nhận diện (OCR)
+                  </p>
+                  <p className="text-[12.5px] leading-relaxed text-white/85 whitespace-pre-wrap">
+                    {ocrText}
+                  </p>
+                </div>
+              )}
+
+              {/* Dot indicators */}
+              {messageAttachments.length > 1 && (
+                <div className="flex justify-center gap-1.5 pt-0.5">
+                  {messageAttachments.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setLightboxIdx(i)}
+                      className={cn(
+                        "rounded-full transition-all duration-200",
+                        i === lightboxIdx ? "w-4 h-2 bg-white" : "w-2 h-2 bg-white/30 hover:bg-white/60",
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  };
+
   return (
+    <>
+    {renderLightbox()}
     <div
       className={cn(
         "group/chat-row flex w-full flex-col gap-4 py-8 animate-in fade-in duration-700",
-        isUser ? "items-end" : "items-start border-b border-border/50",
+        isUser ? "items-end pr-8 md:pr-10" : "items-start border-b border-border/50",
       )}
     >
       <div
@@ -490,22 +656,13 @@ export function ChatMessage({
           isUser ? "flex-row-reverse" : "flex-row",
         )}
       >
-        <div className="flex flex-col items-center gap-2">
-          <div
-            className={cn(
-              "flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-xl border transition-all duration-500",
-              isUser
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-muted text-primary border-border",
-            )}
-          >
-            {isUser ? (
-              <User size={20} />
-            ) : (
+        {!isUser && (
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-xl border transition-all duration-500 bg-muted text-primary border-border">
               <Zap size={20} className="fill-primary" />
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div
           className={cn(
@@ -551,6 +708,8 @@ export function ChatMessage({
                 isUser
                   ? isDeleted
                     ? "bg-muted/40 text-muted-foreground px-6 py-4 rounded-[2rem] rounded-tr-sm border border-dashed border-border/70 text-[15px] leading-[1.65]"
+                    : messageAttachments.length > 0
+                    ? "bg-primary text-primary-foreground rounded-[1.5rem] rounded-tr-sm border border-primary/20 shadow-sm text-[15px] leading-[1.65] overflow-hidden"
                     : "bg-primary text-primary-foreground px-6 py-4 rounded-[2rem] rounded-tr-sm border border-primary/20 shadow-sm text-[15px] leading-[1.65]"
                   : isDeleted
                     ? "w-full max-w-2xl rounded-2xl border border-dashed border-border/70 bg-muted/20 px-5 py-4 text-muted-foreground"
@@ -559,55 +718,7 @@ export function ChatMessage({
             >
               {isStreaming ? (
                 <div className="w-full max-w-2xl space-y-4">
-                  <div className="overflow-hidden rounded-2xl border border-border/70 bg-muted/20">
-                    <button
-                      type="button"
-                      onClick={() => setShowThinkingDetails((open) => !open)}
-                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                      aria-expanded={showThinkingDetails}
-                      title={
-                        showThinkingDetails
-                          ? "An phan tich AI"
-                          : "Mo phan tich AI"
-                      }
-                    >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-                        <Zap size={16} className="fill-primary" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <AIThinkingIndicator status={streamStatus} />
-                      </span>
-                      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-background/70 text-muted-foreground">
-                        {showThinkingDetails ? (
-                          <ChevronUp size={15} />
-                        ) : (
-                          <ChevronDown size={15} />
-                        )}
-                      </span>
-                    </button>
-
-                    {showThinkingDetails && (
-                      <div className="border-t border-border/60 px-4 py-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                        <div className="space-y-3">
-                          {visibleThinkingInsights.map((insight, index) => (
-                            <div
-                              key={`${index}-${insight}`}
-                              className="relative pl-5 animate-in fade-in slide-in-from-bottom-1 duration-200"
-                            >
-                              <span className="absolute left-0 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
-                              {index < visibleThinkingInsights.length - 1 && (
-                                <span className="absolute left-[3px] top-5 bottom-[-0.75rem] w-px bg-border" />
-                              )}
-                              <p className="text-sm leading-6 text-muted-foreground">
-                                {insight}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
+                  <AIThinkingPanel />
                   {messageContent && renderAssistantContent(messageContent)}
                 </div>
               ) : isDeleted ? (
@@ -619,6 +730,28 @@ export function ChatMessage({
                 >
                   <Trash2 size={14} className="shrink-0 opacity-70" />
                   <span>Tin nhắn này đã bị xóa</span>
+                  {showInlineHoverRestore && (
+                    <button
+                      onClick={handleRestore}
+                      disabled={actionPending}
+                      className={cn(
+                        "ml-auto flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-bold",
+                        "opacity-0 pointer-events-none transition-all duration-200",
+                        "group-hover/chat-row:opacity-100 group-hover/chat-row:pointer-events-auto",
+                        "hover:bg-background/60 hover:text-foreground",
+                        "disabled:opacity-40",
+                        isUser ? "text-primary-foreground/70" : "text-muted-foreground",
+                      )}
+                      title="Hoàn tác"
+                    >
+                      {actionPending ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <RotateCcw size={12} />
+                      )}
+                      <span>Hoàn tác</span>
+                    </button>
+                  )}
                 </div>
               ) : isUser ? (
                 renderUserContent()
@@ -949,5 +1082,6 @@ export function ChatMessage({
         </div>
       </div>
     </div>
+    </>
   );
 }

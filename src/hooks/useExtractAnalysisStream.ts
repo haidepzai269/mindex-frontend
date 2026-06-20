@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import Cookies from "js-cookie";
 import { API_BASE_URL, handleRefreshToken } from "@/lib/api";
 
 export type ExtractAnalysisType = "keywords" | "formulas" | "timeline" | "mindmap" | "compare";
@@ -50,32 +49,23 @@ export function useExtractAnalysisStream() {
 
   const openStream = useCallback(
     async (type: ExtractAnalysisType, payload: Record<string, unknown>, retryCount = 0): Promise<Response | null> => {
-      const token = Cookies.get("access_token");
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
-
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "text/event-stream",
-      };
-
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
 
       const response = await fetch(`${API_BASE_URL}/extract/${type}/stream`, {
         method: "POST",
         signal: abortController.signal,
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+          "X-Requested-With": "XMLHttpRequest",
+        },
         credentials: "include",
         body: JSON.stringify(payload),
       });
 
       if (response.status === 401 && retryCount < 1) {
-        const newToken = await handleRefreshToken();
-        if (newToken) {
-          Cookies.set("access_token", newToken, { expires: 1 / 24, sameSite: "lax" });
-        }
+        await handleRefreshToken();
         return openStream(type, payload, retryCount + 1);
       }
 
