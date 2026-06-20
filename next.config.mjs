@@ -37,6 +37,11 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  webpack(config) {
+    config.resolve.alias['@splinetool/react-spline'] =
+      '@splinetool/react-spline/dist/react-spline.js';
+    return config;
+  },
   async headers() {
     return [
       {

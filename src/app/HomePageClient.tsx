@@ -43,7 +43,7 @@ const LANG_KEY = "mindex-home-language";
 const SPLINE_URL =
   "https://prod.spline.design/qPES22RpqZYjLUM7/scene.splinecode";
 
-const Spline = dynamic(() => import("@splinetool/react-spline/next"), {
+const Spline = dynamic(() => import("@splinetool/react-spline"), {
   ssr: false,
   loading: () => (
     <div className="flex h-full w-full items-center justify-center">
