@@ -1,3 +1,5 @@
+import path from 'path';
+
 /** @type {import('next').NextConfig} */
 
 // Extract origin only (strip path) so CSP connect-src matches all subpaths
@@ -38,8 +40,10 @@ const securityHeaders = [
 
 const nextConfig = {
   webpack(config) {
-    config.resolve.alias['@splinetool/react-spline'] =
-      '@splinetool/react-spline/dist/react-spline.js';
+    config.resolve.alias['@splinetool/react-spline'] = path.resolve(
+      process.cwd(),
+      'node_modules/@splinetool/react-spline/dist/react-spline.js'
+    );
     return config;
   },
   async headers() {
