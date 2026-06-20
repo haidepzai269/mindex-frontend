@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type SpeechRecognitionAlternativeLike = {
   transcript: string;
@@ -75,7 +75,11 @@ export function useSpeechToText({
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
-  const isSupported = useMemo(() => getSpeechRecognitionCtor() !== null, []);
+  const [isSupported, setIsSupported] = useState(false);
+
+  useEffect(() => {
+    setIsSupported(getSpeechRecognitionCtor() !== null);
+  }, []);
 
   const stopListening = useCallback(() => {
     recognitionRef.current?.stop();

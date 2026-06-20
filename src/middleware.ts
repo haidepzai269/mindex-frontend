@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
 // Define which routes require authentication
-const protectedRoutes = ['/library', '/upload', '/settings', '/doc', '/rooms', '/planner', '/analytics', '/collection', '/community', '/chat'];
+const protectedRoutes = ['/library', '/upload', '/settings', '/doc', '/rooms', '/planner', '/analytics', '/collection', '/community', '/chat', '/dashboard'];
 const authRoutes = ['/login', '/register'];
 const adminRoutes = ['/admin'];
 
@@ -70,21 +70,21 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 3. Redirect to library if accessing login/register while ALREADY authenticated
+  // 3. Redirect to dashboard if accessing login/register while ALREADY authenticated
   if (isAuthRoute) {
     if (token) {
       try {
         await jwtVerify(token, secret);
-        return NextResponse.redirect(new URL('/library', request.url));
+        return NextResponse.redirect(new URL('/dashboard', request.url));
       } catch {
         // access_token expired — nếu còn refresh_token thì vẫn đang đăng nhập
         if (refreshToken) {
-          return NextResponse.redirect(new URL('/library', request.url));
+          return NextResponse.redirect(new URL('/dashboard', request.url));
         }
       }
     } else if (refreshToken) {
       // Không có access_token nhưng còn refresh_token (remember me còn hạn)
-      return NextResponse.redirect(new URL('/library', request.url));
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   }
 

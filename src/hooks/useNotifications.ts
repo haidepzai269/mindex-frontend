@@ -10,6 +10,8 @@ export function useNotifications() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const confirm = useConfirmStore((state) => state.confirm);
   const { mutate } = useSWRConfig();
+  const deleteDialogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deletedCountRef = useRef(0);
 
   // 1. Fetch initial history (Ngầm để đồng bộ với server)
   useEffect(() => {
@@ -51,45 +53,48 @@ export function useNotifications() {
           const notification = JSON.parse(event.data);
           const docId = notification?.data?.doc_id as string | undefined;
           addNotification(notification);
-          
-          // Toast mượt mà
-          toast(notification.title, {
-            description: notification.message,
-            duration: 5000,
-          });
 
-          // Nếu là sự kiện xóa tài liệu, hiển thị Dialog thông báo dọn dẹp
+          if (notification.type === 'quota_update') {
+              mutate("/documents");
+              mutate("/collections");
+              mutate('/auth/me');
+              return;
+          }
+
           if (notification.type === 'document_deleted') {
               mutate("/documents");
               mutate("/collections");
-              if (docId) {
-                mutate(`/documents/${docId}`);
-              }
-              confirm({
-                  title: "Dọn dẹp hệ thống",
-                  message: "Tài liệu của bạn đã được dọn dẹp sau khi hết hạn.",
-                  confirmLabel: "Tôi đã hiểu",
-                  hideCancel: true,
-                  onConfirm: () => {}
-              });
+              if (docId) mutate(`/documents/${docId}`);
+
+              // Gộp nhiều thông báo xóa thành 1 dialog duy nhất (debounce 2s)
+              deletedCountRef.current += 1;
+              if (deleteDialogTimerRef.current) clearTimeout(deleteDialogTimerRef.current);
+              deleteDialogTimerRef.current = setTimeout(() => {
+                const count = deletedCountRef.current;
+                deletedCountRef.current = 0;
+                confirm({
+                    title: "Dọn dẹp hệ thống",
+                    message: count === 1
+                      ? "Một tài liệu đã được dọn dẹp sau khi hết hạn."
+                      : `${count} tài liệu đã được dọn dẹp sau khi hết hạn.`,
+                    confirmLabel: "Tôi đã hiểu",
+                    hideCancel: true,
+                    onConfirm: () => {}
+                });
+              }, 2000);
+              return;
           }
 
           if (notification.type === 'document_expired') {
               mutate("/documents");
               mutate("/collections");
-              if (docId) {
-                mutate(`/documents/${docId}`);
-              }
+              if (docId) mutate(`/documents/${docId}`);
           }
 
-          // Case: Quota update (pinned docs) - Silent update
-          if (notification.type === 'quota_update') {
-              console.log("🔄 SSE: Quota updated, refreshing user data...");
-              mutate("/documents");
-              mutate("/collections");
-              mutate('/auth/me');
-              return; // Tránh hiển thị thông báo ghim trùng lặp nếu không cần
-          }
+          toast(notification.title, {
+            description: notification.message,
+            duration: 5000,
+          });
         } catch (err) {
           console.error("Error parsing notification data", err);
         }
@@ -109,6 +114,7 @@ export function useNotifications() {
         eventSourceRef.current.close();
       }
       clearTimeout(reconnectTimeout);
+      if (deleteDialogTimerRef.current) clearTimeout(deleteDialogTimerRef.current);
     };
   }, [addNotification, confirm]);
 

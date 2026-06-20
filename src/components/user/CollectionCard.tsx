@@ -98,10 +98,11 @@ export function CollectionCard({ collection, viewMode = "grid", onDelete, onEdit
           </Button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <button className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
-                <MoreVertical size={16} />
-              </button>
+            <DropdownMenuTrigger
+              onClick={(e) => e.stopPropagation()}
+              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <MoreVertical size={16} />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="border-border bg-popover text-popover-foreground">
               <DropdownMenuItem onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddDoc(collection.id); }} className="flex gap-2">
@@ -132,10 +133,11 @@ export function CollectionCard({ collection, viewMode = "grid", onDelete, onEdit
 
           <div className="flex flex-col items-end gap-1">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <button className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
-                  <MoreVertical size={16} />
-                </button>
+              <DropdownMenuTrigger
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <MoreVertical size={16} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="border-border bg-popover text-popover-foreground">
                 <DropdownMenuItem onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddDoc(collection.id); }} className="flex gap-2">

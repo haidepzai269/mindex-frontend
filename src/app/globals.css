@@ -471,3 +471,19 @@
     animation: dialog-fade-close 120ms ease-out forwards;
   }
 }
+
+/* Collapsible slide-down animation (base-ui) */
+[data-slot="collapsible-content"] {
+  overflow: hidden;
+  height: var(--collapsible-panel-height);
+  opacity: 1;
+  transition:
+    height 280ms cubic-bezier(0.33, 1, 0.68, 1),
+    opacity 200ms ease;
+}
+
+[data-slot="collapsible-content"][data-starting-style],
+[data-slot="collapsible-content"][data-ending-style] {
+  height: 0;
+  opacity: 0;
+}
