@@ -27,7 +27,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://unpkg.com blob:",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com",
+      "img-src 'self' data: blob: https: http://openweathermap.org",
       `connect-src 'self' ${apiOrigin} ${wsOrigin} https://prod.spline.design https://unpkg.com https://apis.spline.design https://hooks.spline.design https://www.gstatic.com https://relayserver.spline.design`,
       "worker-src 'self' blob:",
       "frame-src https://accounts.google.com",

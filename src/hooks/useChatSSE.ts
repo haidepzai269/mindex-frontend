@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useChatStore, type ChatAttachment } from '@/store/useChatStore';
+import type { RichContentMessage } from '@/types/rich-content';
 import { API_BASE_URL, handleRefreshToken } from '@/lib/api';
 
 type ChatMode = 'document' | 'collection' | 'global_ai';
@@ -45,12 +46,14 @@ export function useChatSSE() {
   } = useChatStore();
 
 
-  const sendMessage = useCallback(async (targetId: string, question: string, forkId?: string, isCollection: boolean = false, model?: string, thinking: boolean = false, mode?: ChatMode, attachments: ChatAttachment[] = []) => {
+  const sendMessage = useCallback(async (targetId: string, question: string, forkId?: string, isCollection: boolean = false, model?: string, thinking: boolean = false, mode?: ChatMode, attachments: ChatAttachment[] = [], videoAttachmentIds?: string[]) => {
     if (!targetId || !question) return;
 
     const chatMode: ChatMode = mode ?? (isCollection ? 'collection' : 'document');
     const isGlobalAI = chatMode === 'global_ai';
-    const readyAttachments = isGlobalAI ? [] : attachments.filter((attachment) => attachment.status !== 'error');
+    const readyAttachments = isGlobalAI
+      ? attachments.filter((attachment) => attachment.type === 'video' && attachment.status !== 'error')
+      : attachments.filter((attachment) => attachment.status !== 'error');
 
     setError(null);
     setIsStreaming(true);
@@ -91,6 +94,10 @@ export function useChatSSE() {
                     question: question,
                     ...(model ? { model: model } : {}),
                     ...(thinking ? { thinking: true } : {}),
+                    ...(videoAttachmentIds && videoAttachmentIds.length > 0 ? {
+                        video_attachment_id: videoAttachmentIds[0],
+                        video_attachment_ids: videoAttachmentIds,
+                    } : {}),
                 }
                 : {
                     ...(isCollection ? { collection_id: targetId } : { document_id: targetId }),
@@ -171,6 +178,8 @@ export function useChatSSE() {
       const decoder = new TextDecoder();
       let fullAnswerText = '';
       let buffer = '';
+      let pendingRichContent: RichContentMessage | null = null;
+      let pendingRichContents: RichContentMessage[] = [];
 
       while (true) {
         const { done, value } = await reader.read();
@@ -244,6 +253,16 @@ export function useChatSSE() {
                 } catch (e) {
                     console.warn("JSON error in insight:", dataStr);
                 }
+            } else if (eventType === 'rich_content') {
+                try {
+                    const parsed = JSON.parse(dataStr) as RichContentMessage;
+                    if (parsed.type && parsed.data) {
+                        pendingRichContent = parsed;
+                        pendingRichContents.push(parsed);
+                    }
+                } catch (e) {
+                    console.warn("JSON error in rich_content:", dataStr);
+                }
             } else if (eventType === 'done') {
                 try {
                     const parsed = JSON.parse(dataStr);
@@ -284,7 +303,9 @@ export function useChatSSE() {
                         content: finalAnswerText,
                         sources: parsed.sources || [],
                         timestamp: new Date().toISOString(),
-                        log_id: parsed.log_id || undefined, // Gắn log_id để thumbs rating UI
+                        log_id: parsed.log_id || undefined,
+                        ...(pendingRichContent ? { rich_content: pendingRichContent } : {}),
+                        ...(pendingRichContents.length > 0 ? { rich_contents: pendingRichContents } : {}),
                     });
                     setIsStreaming(false);
                     setCurrentStreamText('');
@@ -313,6 +334,8 @@ export function useChatSSE() {
           role: 'assistant',
           content: fullAnswerText,
           timestamp: new Date().toISOString(),
+          ...(pendingRichContent ? { rich_content: pendingRichContent } : {}),
+          ...(pendingRichContents.length > 0 ? { rich_contents: pendingRichContents } : {}),
         });
         setCurrentStreamText('');
       }
@@ -328,7 +351,7 @@ export function useChatSSE() {
       setIsStreaming(false);
       setStreamStatus('thinking');
     }
-  }, [addMessage, updateLastAssistantLogId, setIsStreaming, setCurrentStreamText, setStreamInsights, appendStreamInsight, setStreamStatus, appendStreamText, sessionId, setSessionId]);
+  }, [addMessage, setIsStreaming, setCurrentStreamText, setStreamInsights, appendStreamInsight, setStreamStatus, appendStreamText, sessionId, setSessionId]);
 
 
   const stopStreaming = useCallback(() => {

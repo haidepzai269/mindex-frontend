@@ -608,7 +608,7 @@ export default function RoomPage() {
   };
 
   return (
-    <div className="flex flex-col h-full max-h-full bg-background text-foreground overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)] bg-background text-foreground overflow-hidden">
       {/* HEADER */}
       <header className="h-16 border-b border-border/50 bg-card/80 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-10">
         <div className="flex items-center gap-2 md:gap-4">
@@ -878,7 +878,7 @@ export default function RoomPage() {
                       )}>
                         <div className="relative w-fit">
                           <div className={cn(
-                            "text-sm leading-relaxed whitespace-pre-wrap p-3 px-4 rounded-[20px] shadow-sm",
+                            "text-sm leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] p-3 px-4 rounded-[20px] shadow-sm",
                             isMe ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-muted text-foreground rounded-tl-none",
                             msg.is_ai ? "bg-primary/10 border border-primary/20 text-foreground p-4" : ""
                           )}>
@@ -989,7 +989,7 @@ export default function RoomPage() {
                   </div>
                   <div className="flex flex-col gap-1 items-start min-w-0 flex-1">
                     <span className="text-[11px] font-bold text-violet-600 dark:text-violet-400 px-1">MindexAI</span>
-                    <div className="text-sm leading-relaxed whitespace-pre-wrap p-4 rounded-[20px] rounded-tl-none bg-primary/10 border border-primary/20 text-foreground max-w-[85%]">
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] p-4 rounded-[20px] rounded-tl-none bg-primary/10 border border-primary/20 text-foreground max-w-[85%]">
                       {aiStreamingText}
                       <span className="inline-block w-0.5 h-4 bg-violet-500 dark:bg-violet-400 ml-0.5 animate-pulse rounded-full" />
                     </div>

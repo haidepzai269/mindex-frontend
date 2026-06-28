@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useRef } from "react";
 import useWebSocket from "react-use-websocket";
-import { MessageSquare, Plus, Send, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { MessageSquare, Plus, Send, Clock, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import NewFeedbackDialog from "@/components/settings/NewFeedbackDialog";
+import EmailComposer from "@/components/settings/EmailComposer";
 import { API_BASE_URL, WS_FEEDBACK_URL } from "@/lib/api";
 
 interface FeedbackSession {
@@ -38,6 +41,7 @@ export default function FeedbacksPage() {
   const [messages, setMessages] = useState<FeedbackMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEmailMode, setIsEmailMode] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { sendJsonMessage, lastJsonMessage } = useWebSocket(WS_FEEDBACK_URL, {
@@ -137,6 +141,22 @@ export default function FeedbacksPage() {
           <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground">
             <MessageSquare className="text-primary" />
             Ý kiến đóng góp
+            <Tooltip>
+              <TooltipTrigger
+                  onClick={() => setIsEmailMode(true)}
+                  className={cn(
+                    "ml-1 flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200",
+                    isEmailMode
+                      ? "bg-primary/15 text-primary shadow-sm"
+                      : "text-muted-foreground hover:bg-accent hover:text-primary"
+                  )}
+                >
+                  <RefreshCw size={18} className={isEmailMode ? "animate-spin" : ""} />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                Gửi email ngay !
+              </TooltipContent>
+            </Tooltip>
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">Gửi phản hồi cho chúng tôi để cải thiện sản phẩm.</p>
         </div>
@@ -159,7 +179,10 @@ export default function FeedbacksPage() {
                 sessions.map((session) => (
                   <button
                     key={session.id}
-                    onClick={() => setSelectedSessionId(session.id)}
+                    onClick={() => {
+                      setSelectedSessionId(session.id);
+                      setIsEmailMode(false);
+                    }}
                     className={cn(
                       "group relative w-full rounded-2xl border p-4 text-left transition-all",
                       selectedSessionId === session.id
@@ -191,72 +214,78 @@ export default function FeedbacksPage() {
           </ScrollArea>
         </div>
 
-        <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/90 backdrop-blur md:col-span-8">
-          {selectedSessionId ? (
-            <>
-              <div className="flex items-center justify-between border-b border-border/70 bg-muted/30 p-4">
-                <div>
-                  <h3 className="flex items-center gap-2 font-bold text-foreground">{selectedSession?.subject}</h3>
-                  <p className="text-[11px] text-muted-foreground">ID: {selectedSessionId.split("-")[0]}...</p>
-                </div>
-                <Badge variant="outline" className="border-border text-muted-foreground">
-                  Hỗ trợ viên: {selectedSession?.admin_id ? "Đã nhận" : "Đang chờ..."}
-                </Badge>
-              </div>
-
-              <ScrollArea className="flex-1 p-6" ref={scrollRef}>
-                <div className="space-y-6">
-                  {messages.map((msg, i) => {
-                    const isMe = msg.role === "user";
-                    return (
-                      <div key={msg.id || i} className={cn("flex max-w-[80%] flex-col", isMe ? "ml-auto items-end" : "mr-auto items-start")}>
-                        <div className="mb-1 flex items-center gap-2 px-1">
-                          <span className="text-[10px] font-medium text-muted-foreground">{isMe ? "Bạn" : "Hỗ trợ viên"}</span>
-                          <span className="text-[10px] text-muted-foreground">{format(new Date(msg.created_at), "HH:mm")}</span>
-                        </div>
-                        <div
-                          className={cn(
-                            "rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
-                            isMe
-                              ? "rounded-tr-none bg-primary text-primary-foreground shadow-sm"
-                              : "rounded-tl-none border border-border/70 bg-background text-foreground"
-                          )}
-                        >
-                          {msg.content}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-
-              <div className="border-t border-border/70 bg-muted/30 p-4">
-                <div className="relative flex gap-2">
-                  <Input
-                    placeholder="Nhập phản hồi..."
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    className="h-12 rounded-xl border-border bg-background pr-12"
-                  />
-                  <Button onClick={handleSendMessage} size="icon" className="absolute right-1 top-1 h-10 w-10 rounded-lg">
-                    <Send size={18} />
-                  </Button>
-                </div>
-              </div>
-            </>
+        <AnimatePresence mode="wait">
+          {isEmailMode ? (
+            <EmailComposer key="email" onBack={() => setIsEmailMode(false)} />
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center p-10 text-center">
-              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-                <MessageSquare size={40} className="text-primary" />
-              </div>
-              <h3 className="mb-2 text-xl font-bold text-foreground">Trung tâm phản hồi</h3>
-              <p className="max-w-sm text-muted-foreground">
-                Chọn một cuộc hội thoại bên trái hoặc tạo mới để bắt đầu trao đổi với ban quản trị.
-              </p>
+            <div key="chat" className="flex h-full flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/90 backdrop-blur md:col-span-8">
+              {selectedSessionId ? (
+                <>
+                  <div className="flex items-center justify-between border-b border-border/70 bg-muted/30 p-4">
+                    <div>
+                      <h3 className="flex items-center gap-2 font-bold text-foreground">{selectedSession?.subject}</h3>
+                      <p className="text-[11px] text-muted-foreground">ID: {selectedSessionId.split("-")[0]}...</p>
+                    </div>
+                    <Badge variant="outline" className="border-border text-muted-foreground">
+                      Hỗ trợ viên: {selectedSession?.admin_id ? "Đã nhận" : "Đang chờ..."}
+                    </Badge>
+                  </div>
+
+                  <ScrollArea className="flex-1 p-6" ref={scrollRef}>
+                    <div className="space-y-6">
+                      {messages.map((msg, i) => {
+                        const isMe = msg.role === "user";
+                        return (
+                          <div key={msg.id || i} className={cn("flex max-w-[80%] flex-col", isMe ? "ml-auto items-end" : "mr-auto items-start")}>
+                            <div className="mb-1 flex items-center gap-2 px-1">
+                              <span className="text-[10px] font-medium text-muted-foreground">{isMe ? "Bạn" : "Hỗ trợ viên"}</span>
+                              <span className="text-[10px] text-muted-foreground">{format(new Date(msg.created_at), "HH:mm")}</span>
+                            </div>
+                            <div
+                              className={cn(
+                                "rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+                                isMe
+                                  ? "rounded-tr-none bg-primary text-primary-foreground shadow-sm"
+                                  : "rounded-tl-none border border-border/70 bg-background text-foreground"
+                              )}
+                            >
+                              {msg.content}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+
+                  <div className="border-t border-border/70 bg-muted/30 p-4">
+                    <div className="relative flex gap-2">
+                      <Input
+                        placeholder="Nhập phản hồi..."
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                        className="h-12 rounded-xl border-border bg-background pr-12"
+                      />
+                      <Button onClick={handleSendMessage} size="icon" className="absolute right-1 top-1 h-10 w-10 rounded-lg">
+                        <Send size={18} />
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-1 flex-col items-center justify-center p-10 text-center">
+                  <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+                    <MessageSquare size={40} className="text-primary" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold text-foreground">Trung tâm phản hồi</h3>
+                  <p className="max-w-sm text-muted-foreground">
+                    Chọn một cuộc hội thoại bên trái hoặc tạo mới để bắt đầu trao đổi với ban quản trị.
+                  </p>
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </AnimatePresence>
       </div>
 
       <NewFeedbackDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} onSuccess={fetchSessions} />

@@ -20,6 +20,11 @@ export interface ChatAttachment {
     w: number;
     h: number;
   }>;
+  type?: 'image' | 'video';
+  duration_seconds?: number;
+  video_status?: 'uploading' | 'processing' | 'done' | 'error';
+  has_audio?: boolean;
+  frame_count?: number;
 }
 
 export interface ChatMessage {
@@ -29,9 +34,11 @@ export interface ChatMessage {
   attachments?: ChatAttachment[];
   sources?: any[];
   timestamp: string;
-  log_id?: string; // AI response log ID - dùng cho thumbs rating
+  log_id?: string;
   is_deleted?: boolean;
   deleted_at?: string;
+  rich_content?: import('@/types/rich-content').RichContentMessage;
+  rich_contents?: import('@/types/rich-content').RichContentMessage[];
 }
 
 interface ChatStore {

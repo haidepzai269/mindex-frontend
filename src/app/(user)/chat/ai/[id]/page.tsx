@@ -182,19 +182,29 @@ export default function GlobalAIChatPage({
     }
   }, [id, sessionId, router]);
 
+  const handleSessionReady = useCallback((newSessionId: string) => {
+    setSessionId(newSessionId);
+    sessionStorage.setItem("mindex_ai_active_session", newSessionId);
+    justCreatedRef.current = true;
+    router.replace(`/chat/ai/${newSessionId}`);
+    swrMutate("/chat/ai/sessions");
+  }, [router, setSessionId]);
+
   const handleSendMessage = (
     question: string,
     model: string = "Mindex-1",
-    thinking: boolean = false
+    thinking: boolean = false,
+    attachments?: import("@/store/useChatStore").ChatAttachment[],
+    videoAttachmentIds?: string[],
   ) => {
     if (id === "new") {
       awaitingSessionRef.current = true;
     }
-    sendMessage(id, question, undefined, false, model, thinking, "global_ai");
+    sendMessage(id, question, undefined, false, model, thinking, "global_ai", attachments ?? [], videoAttachmentIds);
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
+    <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/40 md:hidden"
@@ -367,6 +377,10 @@ export default function GlobalAIChatPage({
               disabled={isStreaming}
               isLoading={isStreaming}
               placeholder="Nhắn cho Mindex AI..."
+              allowVideoAttachments
+              targetId={sessionId || id}
+              sessionId={sessionId}
+              onSessionReady={handleSessionReady}
             />
           </div>
           <div className="mt-2 flex items-center justify-center gap-2 text-[10px] font-medium text-muted-foreground/60">
@@ -409,7 +423,7 @@ function SessionSidebar({
   return (
     <aside
       className={cn(
-        "flex w-[260px] shrink-0 flex-col border-r border-border/50 bg-background z-40",
+        "flex w-[260px] shrink-0 flex-col overflow-hidden border-r border-border/50 bg-background z-40",
         "fixed inset-y-0 left-0 transition-transform duration-200 md:relative md:translate-x-0",
         open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}
@@ -440,7 +454,7 @@ function SessionSidebar({
       </div>
 
       {/* Session list */}
-      <ScrollArea className="flex-1 px-2">
+      <ScrollArea className="min-h-0 flex-1 px-2">
         {sessions.length === 0 ? (
           <p className="py-8 text-center text-xs text-muted-foreground">Chưa có lịch sử chat</p>
         ) : (

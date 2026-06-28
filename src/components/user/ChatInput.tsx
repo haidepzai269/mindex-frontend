@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   BrainCircuit,
   CheckCircle2,
+  Film,
   ImagePlus,
   Loader2,
   RotateCcw,
@@ -23,13 +25,24 @@ import {
   uploadChatImage,
   validateChatImage,
 } from "@/lib/chat-attachments";
+import {
+  CHAT_VIDEO_ACCEPT,
+  CHAT_VIDEO_MAX_FILES,
+  ensureSessionForVideoUpload,
+  fetchVideoQuota,
+  uploadChatVideo,
+  validateChatVideo,
+  pollVideoStatus,
+  type VideoQuotaResult,
+} from "@/lib/chat-video";
 
 interface ChatInputProps {
-  onSendMessage: (message: string, model: string, thinking: boolean, attachments?: ChatAttachment[]) => void;
+  onSendMessage: (message: string, model: string, thinking: boolean, attachments?: ChatAttachment[], videoAttachmentIds?: string[]) => void;
   disabled?: boolean;
   isLoading?: boolean;
   placeholder?: string;
   allowImageAttachments?: boolean;
+  allowVideoAttachments?: boolean;
   targetId?: string;
   sessionId?: string | null;
   isCollection?: boolean;
@@ -46,12 +59,27 @@ type LocalImageAttachment = {
   error?: string;
 };
 
+type LocalVideoAttachment = {
+  localId: string;
+  file: File;
+  previewUrl: string;
+  status: "uploading" | "processing" | "done" | "error";
+  progress: number;
+  attachmentId?: string;
+  durationSeconds?: number;
+  hasAudio?: boolean;
+  frameCount?: number;
+  storageUrl?: string;
+  error?: string;
+};
+
 export function ChatInput({
   onSendMessage,
   disabled,
   isLoading,
   placeholder,
   allowImageAttachments = false,
+  allowVideoAttachments = false,
   targetId,
   sessionId,
   isCollection = false,
@@ -64,13 +92,20 @@ export function ChatInput({
   const [showMainPlaceholder, setShowMainPlaceholder] = useState(true);
   const [imageAttachments, setImageAttachments] = useState<LocalImageAttachment[]>([]);
   const [imageError, setImageError] = useState("");
+  const [videoAttachments, setVideoAttachments] = useState<LocalVideoAttachment[]>([]);
+  const [videoError, setVideoError] = useState("");
+  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
+  const [videoQuota, setVideoQuota] = useState<VideoQuotaResult | null>(null);
   const user = useAuthStore((state) => state.user);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const videoPollAbortRefs = useRef<Map<string, AbortController>>(new Map());
   const previewUrlsRef = useRef<Set<string>>(new Set());
   const shouldAnimatePlaceholder = !placeholder;
   const canUseImageAttachments = allowImageAttachments && !!targetId;
-  const hasBlockingAttachment = imageAttachments.some((item) => item.status !== "done");
+  const canUseVideoAttachments = allowVideoAttachments;
+  const hasBlockingAttachment = imageAttachments.some((item) => item.status !== "done") || videoAttachments.some((item) => item.status !== "done");
   const thinkingAvailable =
     user?.role === "admin" ||
     user?.tier === "PRO" ||
@@ -87,11 +122,27 @@ export function ChatInput({
   }, [shouldAnimatePlaceholder]);
 
   useEffect(() => {
+    if (!allowVideoAttachments) return;
+    fetchVideoQuota().then(setVideoQuota).catch(() => {});
+  }, [allowVideoAttachments]);
+
+  useEffect(() => {
     return () => {
       previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       previewUrlsRef.current.clear();
+      videoPollAbortRefs.current.forEach((ac) => ac.abort());
+      videoPollAbortRefs.current.clear();
     };
   }, []);
+
+  useEffect(() => {
+    if (!previewVideoUrl) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPreviewVideoUrl(null);
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [previewVideoUrl]);
 
   const updateInput = useCallback((value: string) => {
     setInput(value);
@@ -105,7 +156,7 @@ export function ChatInput({
 
   const uploadLocalImage = useCallback(async (item: LocalImageAttachment, uploadSessionId?: string | null) => {
     if (!targetId) {
-      updateLocalImage(item.localId, { status: "error", error: "Thieu chat target." });
+      updateLocalImage(item.localId, { status: "error", error: "Thiếu chat target." });
       return uploadSessionId ?? null;
     }
 
@@ -143,7 +194,7 @@ export function ChatInput({
       updateLocalImage(item.localId, {
         status: "error",
         progress: 0,
-        error: error instanceof Error ? error.message : "Khong the upload anh.",
+        error: error instanceof Error ? error.message : "Không thể upload ảnh.",
       });
       return uploadSessionId ?? null;
     }
@@ -175,7 +226,7 @@ export function ChatInput({
 
     const remainingSlots = CHAT_IMAGE_MAX_FILES - imageAttachments.length;
     if (remainingSlots <= 0) {
-      setImageError(`Chi duoc dinh kem toi da ${CHAT_IMAGE_MAX_FILES} anh.`);
+      setImageError(`Chỉ được đính kèm tối đa ${CHAT_IMAGE_MAX_FILES} ảnh.`);
       return;
     }
 
@@ -200,7 +251,7 @@ export function ChatInput({
     }
 
     if (selected.length < Array.from(files).length) {
-      nextError = `Chi nhan ${remainingSlots} anh con lai.`;
+      nextError = `Chỉ nhận ${remainingSlots} ảnh còn lại.`;
     }
     setImageError(nextError);
     if (nextItems.length === 0) return;
@@ -236,6 +287,166 @@ export function ChatInput({
     void uploadLocalImage(item, sessionId);
   }, [imageAttachments, sessionId, uploadLocalImage]);
 
+  const handlePickVideo = useCallback(() => {
+    if (!canUseVideoAttachments || disabled || isLoading || videoAttachments.length >= CHAT_VIDEO_MAX_FILES) return;
+    videoInputRef.current?.click();
+  }, [canUseVideoAttachments, disabled, isLoading, videoAttachments.length]);
+
+  const updateVideoAttachment = useCallback((localId: string, patch: Partial<LocalVideoAttachment>) => {
+    setVideoAttachments((current) =>
+      current.map((item) => (item.localId === localId ? { ...item, ...patch } : item))
+    );
+  }, []);
+
+  const uploadSingleVideo = useCallback(async (item: LocalVideoAttachment, uploadSessionId?: string | null): Promise<string | null> => {
+    let currentSessionId = uploadSessionId;
+    if (!currentSessionId) {
+      try {
+        currentSessionId = await ensureSessionForVideoUpload();
+        onSessionReady?.(currentSessionId);
+      } catch {
+        updateVideoAttachment(item.localId, { status: "error", error: "Không thể tạo phiên chat. Vui lòng thử lại." });
+        return currentSessionId ?? null;
+      }
+    }
+
+    try {
+      const result = await uploadChatVideo({
+        file: item.file,
+        sessionId: currentSessionId,
+        onProgress: (progress) => {
+          updateVideoAttachment(item.localId, { progress });
+        },
+      });
+
+      if (result.cached && result.status === "done") {
+        updateVideoAttachment(item.localId, {
+          status: "done",
+          progress: 100,
+          attachmentId: result.attachment_id,
+          durationSeconds: result.duration_seconds,
+          hasAudio: result.has_audio,
+          frameCount: result.frame_count,
+          storageUrl: result.storage_url,
+        });
+        fetchVideoQuota().then(setVideoQuota).catch(() => {});
+      } else {
+        updateVideoAttachment(item.localId, {
+          status: "processing",
+          progress: 100,
+          attachmentId: result.attachment_id,
+          durationSeconds: result.duration_seconds,
+          storageUrl: result.storage_url,
+        });
+
+        const abortController = new AbortController();
+        videoPollAbortRefs.current.set(item.localId, abortController);
+
+        const statusResult = await pollVideoStatus(
+          result.attachment_id,
+          (status) => {
+            updateVideoAttachment(item.localId, {
+              status: status.status === "done" ? "done" : status.status === "error" ? "error" : "processing",
+            });
+          },
+          abortController.signal,
+        );
+
+        videoPollAbortRefs.current.delete(item.localId);
+
+        if (statusResult.status === "done") {
+          updateVideoAttachment(item.localId, {
+            status: "done",
+            hasAudio: statusResult.has_audio,
+            frameCount: statusResult.frame_count,
+          });
+          fetchVideoQuota().then(setVideoQuota).catch(() => {});
+        } else {
+          updateVideoAttachment(item.localId, {
+            status: "error",
+            error: statusResult.error_message || "Xử lý video thất bại.",
+          });
+        }
+      }
+    } catch (error) {
+      updateVideoAttachment(item.localId, {
+        status: "error",
+        error: error instanceof Error ? error.message : "Upload video thất bại.",
+      });
+    }
+    return currentSessionId;
+  }, [onSessionReady, updateVideoAttachment]);
+
+  const handleVideoFile = useCallback((files: FileList | null) => {
+    if (!files || files.length === 0 || !canUseVideoAttachments) return;
+
+    const remainingSlots = CHAT_VIDEO_MAX_FILES - videoAttachments.length;
+    if (remainingSlots <= 0) {
+      setVideoError(`Chỉ được đính kèm tối đa ${CHAT_VIDEO_MAX_FILES} video.`);
+      return;
+    }
+
+    const selected = Array.from(files).slice(0, remainingSlots);
+    const nextItems: LocalVideoAttachment[] = [];
+    let nextError = "";
+
+    for (const file of selected) {
+      const validation = validateChatVideo(file);
+      if (validation) {
+        nextError = validation;
+        continue;
+      }
+      if (videoQuota && videoQuota.remaining - nextItems.length <= 0) {
+        nextError = `Bạn đã đạt giới hạn ${videoQuota.limit} video/ngày. Nâng gói để sử dụng thêm.`;
+        break;
+      }
+      const previewUrl = URL.createObjectURL(file);
+      previewUrlsRef.current.add(previewUrl);
+      nextItems.push({
+        localId: `${Date.now()}-${file.name}-${Math.random().toString(36).slice(2)}`,
+        file,
+        previewUrl,
+        status: "uploading",
+        progress: 0,
+      });
+    }
+
+    if (selected.length < Array.from(files).length) {
+      nextError = `Chỉ nhận ${remainingSlots} video còn lại.`;
+    }
+    setVideoError(nextError);
+    if (nextItems.length === 0) return;
+
+    setVideoAttachments((current) => [...current, ...nextItems]);
+    void (async () => {
+      let nextSessionId = sessionId;
+      for (const item of nextItems) {
+        nextSessionId = await uploadSingleVideo(item, nextSessionId);
+      }
+    })();
+  }, [canUseVideoAttachments, sessionId, uploadSingleVideo, videoAttachments.length, videoQuota]);
+
+  const handleVideoInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    handleVideoFile(event.target.files);
+    event.target.value = "";
+  }, [handleVideoFile]);
+
+  const handleRemoveVideo = useCallback((localId: string) => {
+    const ac = videoPollAbortRefs.current.get(localId);
+    if (ac) {
+      ac.abort();
+      videoPollAbortRefs.current.delete(localId);
+    }
+    setVideoAttachments((current) => {
+      const item = current.find((v) => v.localId === localId);
+      if (item?.previewUrl) {
+        URL.revokeObjectURL(item.previewUrl);
+        previewUrlsRef.current.delete(item.previewUrl);
+      }
+      return current.filter((v) => v.localId !== localId);
+    });
+  }, []);
+
   const handleAttachmentTextChange = useCallback((localId: string, text: string) => {
     setImageAttachments((current) =>
       current.map((item) => {
@@ -257,19 +468,45 @@ export function ChatInput({
       const readyAttachments = imageAttachments
         .filter((item) => item.status === "done" && item.attachment)
         .map((item) => item.attachment as ChatAttachment);
-      onSendMessage(input.trim(), model, thinkingAvailable && thinking, readyAttachments);
+      const videoIds = videoAttachments
+        .filter((item) => item.status === "done" && item.attachmentId)
+        .map((item) => item.attachmentId as string);
+      const videoAsAttachments: ChatAttachment[] = videoAttachments
+        .filter((item) => item.status === "done" && item.attachmentId)
+        .map((item) => ({
+          id: item.attachmentId as string,
+          url: item.storageUrl || item.previewUrl,
+          filename: item.file.name,
+          mime_type: item.file.type,
+          size_bytes: item.file.size,
+          type: "video" as const,
+          status: "done" as const,
+          duration_seconds: item.durationSeconds,
+          has_audio: item.hasAudio,
+          frame_count: item.frameCount,
+        }));
+      onSendMessage(input.trim(), model, thinkingAvailable && thinking, [...readyAttachments, ...videoAsAttachments], videoIds.length > 0 ? videoIds : undefined);
       setInput("");
       setThinking(false);
       setVoiceBaseInput("");
       setImageError("");
+      setVideoError("");
       imageAttachments.forEach((item) => {
         URL.revokeObjectURL(item.previewUrl);
         previewUrlsRef.current.delete(item.previewUrl);
       });
       setImageAttachments([]);
+      videoAttachments.forEach((item) => {
+        URL.revokeObjectURL(item.previewUrl);
+        previewUrlsRef.current.delete(item.previewUrl);
+        const ac = videoPollAbortRefs.current.get(item.localId);
+        if (ac) ac.abort();
+      });
+      videoPollAbortRefs.current.clear();
+      setVideoAttachments([]);
       stopListening();
     }
-  }, [disabled, hasBlockingAttachment, imageAttachments, input, isLoading, model, onSendMessage, stopListening, thinking, thinkingAvailable]);
+  }, [disabled, hasBlockingAttachment, imageAttachments, input, isLoading, model, onSendMessage, stopListening, thinking, thinkingAvailable, videoAttachments]);
 
   const handleToggleVoice = useCallback(() => {
     if (!isListening) {
@@ -308,6 +545,16 @@ export function ChatInput({
             multiple
             className="hidden"
             onChange={handleFileInputChange}
+          />
+        )}
+        {canUseVideoAttachments && (
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept={CHAT_VIDEO_ACCEPT}
+            multiple
+            className="hidden"
+            onChange={handleVideoInputChange}
           />
         )}
 
@@ -374,7 +621,7 @@ export function ChatInput({
                       type="button"
                       onClick={() => handleRemoveImage(item.localId)}
                       className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white opacity-90 transition hover:bg-black"
-                      title="Bo anh"
+                      title="Bỏ ảnh"
                     >
                       <X size={12} />
                     </button>
@@ -389,7 +636,7 @@ export function ChatInput({
                         type="button"
                         onClick={() => handleRetryImage(item.localId)}
                         className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-white shadow-sm transition hover:bg-red-600"
-                        title="Thu lai OCR"
+                        title="Thử lại OCR"
                       >
                         <RotateCcw size={13} />
                       </button>
@@ -418,7 +665,7 @@ export function ChatInput({
                       <textarea
                         value={item.attachment.ocr_text || item.attachment.ocr_preview || ""}
                         onChange={(event) => handleAttachmentTextChange(item.localId, event.target.value)}
-                        placeholder="OCR khong co text. Ban co the nhap bo sung..."
+                        placeholder="OCR không có text. Bạn có thể nhập bổ sung..."
                         rows={2}
                         className="w-full resize-none rounded-lg border border-border/60 bg-background/70 px-2 py-1 text-[10.5px] leading-4 text-foreground outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
                       />
@@ -427,6 +674,178 @@ export function ChatInput({
                       <div className="flex items-start gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1.5 text-[10px] leading-4 text-red-600 dark:text-red-300">
                         <AlertTriangle size={12} className="mt-0.5 shrink-0" />
                         <span className="line-clamp-2">{item.error || "OCR failed"}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {videoAttachments.length > 0 && (
+          <div className="mb-2 flex gap-2 overflow-x-auto px-2 pt-1 pb-2 scrollbar-hide">
+            {videoAttachments.map((vid) => {
+              const isActive = vid.status === "uploading" || vid.status === "processing";
+              const isDone = vid.status === "done";
+              const isError = vid.status === "error";
+
+              return (
+                <div
+                  key={vid.localId}
+                  className="group/vcard relative flex w-[150px] shrink-0 flex-col overflow-hidden rounded-2xl border border-border/70 bg-muted/25 shadow-sm"
+                >
+                  <div className="group/vthumb relative h-[92px] overflow-hidden bg-zinc-900">
+                    <video
+                      src={vid.previewUrl}
+                      onLoadedData={(e) => {
+                        const v = e.currentTarget;
+                        v.currentTime = Math.min(0.5, v.duration * 0.1);
+                      }}
+                      className={cn(
+                        "absolute inset-0 h-full w-full object-cover transition-all duration-500",
+                        vid.status === "uploading" && "scale-110 blur-[4px] brightness-[0.35]",
+                        vid.status === "processing" && "brightness-[0.45] saturate-[0.7]",
+                        isDone && "brightness-75",
+                        isError && "brightness-[0.3] grayscale"
+                      )}
+                      muted
+                      playsInline
+                      preload="auto"
+                    />
+
+                    {isActive && <div className="absolute inset-0 bg-black/40" />}
+
+                    {vid.status === "uploading" && (
+                      <>
+                        <div className="absolute inset-0 overflow-hidden">
+                          <div className="chat-video-shimmer absolute left-0 top-0 h-full w-[45%]" />
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="h-[26px] w-[26px] animate-spin rounded-full border-2 border-white/15 border-t-indigo-400" />
+                        </div>
+                      </>
+                    )}
+
+                    {vid.status === "processing" && (
+                      <>
+                        <div className="absolute inset-0 overflow-hidden">
+                          <div className="chat-video-shimmer-indigo absolute left-0 top-0 h-full w-[45%]" />
+                        </div>
+                        <div className="chat-video-scan-line absolute left-0 h-[2px] w-full" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <svg className="chat-video-pulse" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" strokeWidth="1.5" style={{ filter: "drop-shadow(0 0 6px rgba(99,102,241,0.4))" }}>
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 7v5l3 3" />
+                          </svg>
+                        </div>
+                      </>
+                    )}
+
+                    {isDone && (
+                      <>
+                        <div className="chat-video-check-pop absolute right-[5px] top-[5px] z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-emerald-500">
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <path d="M2 5.5L4 7.5L8 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                        {vid.durationSeconds != null && (
+                          <div className="absolute bottom-[5px] right-[5px] z-10 rounded bg-black/70 px-[5px] py-[1px] text-[10px] font-medium text-zinc-300">
+                            {Math.floor(vid.durationSeconds / 60)}:{String(Math.round(vid.durationSeconds % 60)).padStart(2, "0")}
+                          </div>
+                        )}
+                        <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center gap-[3px] bg-gradient-to-t from-black/55 to-transparent px-[7px] pb-1 pt-[18px]">
+                          {vid.frameCount != null && (
+                            <>
+                              <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                                <path d="M1 7.5V6L1.5 4.5L3 3.5L4.5 5L6 2.5L8 6V7.5H1Z" fill="#6366f1" opacity="0.5" />
+                              </svg>
+                              <span className="text-[9px] text-zinc-400">{vid.frameCount}f</span>
+                            </>
+                          )}
+                          {vid.hasAudio && (
+                            <>
+                              <span className="inline-block h-[3px] w-[3px] rounded-full bg-zinc-600" />
+                              <span className="text-[9px] text-zinc-400">audio</span>
+                            </>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewVideoUrl(vid.previewUrl)}
+                          className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center opacity-0 transition-opacity duration-200 group-hover/vthumb:opacity-100"
+                        >
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-transform duration-150 active:scale-90">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="#fff">
+                              <path d="M3 1.5L10 6L3 10.5V1.5Z" />
+                            </svg>
+                          </div>
+                        </button>
+                      </>
+                    )}
+
+                    {isError && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <AlertTriangle size={20} className="text-red-400" />
+                      </div>
+                    )}
+
+                    <div className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-full border border-white/50 bg-black/55 px-2 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-white backdrop-blur">
+                      {vid.status === "uploading" && "UPLOAD"}
+                      {vid.status === "processing" && "SCAN"}
+                      {isDone && "DONE"}
+                      {isError && "ERR"}
+                      {isActive && (
+                        <span className="chat-ocr-dots flex gap-0.5">
+                          <span /><span /><span />
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveVideo(vid.localId)}
+                      className="absolute right-2 top-2 z-30 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white opacity-0 transition-opacity hover:bg-black group-hover/vcard:opacity-90"
+                      title="Bỏ video"
+                    >
+                      <X size={12} />
+                    </button>
+
+                    {isActive && (
+                      <div className="absolute inset-x-2 bottom-2 z-10 h-1 overflow-hidden rounded-full bg-black/15">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all duration-300",
+                            vid.status === "processing" ? "w-full bg-indigo-400 chat-video-progress-pulse" : "bg-indigo-500"
+                          )}
+                          style={vid.status === "uploading" ? { width: `${Math.max(12, vid.progress)}%` } : undefined}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1 px-2.5 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-[10px] font-black text-foreground">
+                        {vid.file.name}
+                      </span>
+                      <span className="text-[9px] font-bold text-muted-foreground">
+                        {Math.max(1, Math.round(vid.file.size / 1024 / 1024))}MB
+                      </span>
+                    </div>
+                    {isDone && (
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] text-muted-foreground">
+                        {vid.durationSeconds != null && (
+                          <span>{Math.floor(vid.durationSeconds / 60)}:{String(Math.round(vid.durationSeconds % 60)).padStart(2, "0")}</span>
+                        )}
+                        {vid.frameCount != null && <span>{vid.frameCount} frames</span>}
+                        {vid.hasAudio != null && <span>{vid.hasAudio ? "Có âm thanh" : "Không âm thanh"}</span>}
+                      </div>
+                    )}
+                    {isError && (
+                      <div className="flex items-start gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1.5 text-[10px] leading-4 text-red-600 dark:text-red-300">
+                        <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                        <span className="line-clamp-2">{vid.error || "Xử lý thất bại"}</span>
                       </div>
                     )}
                   </div>
@@ -472,6 +891,16 @@ export function ChatInput({
             {imageError}
           </p>
         )}
+        {videoError && (
+          <p className="px-4 pb-1 text-[11px] font-medium text-amber-600 dark:text-amber-300">
+            {videoError}
+          </p>
+        )}
+        {canUseVideoAttachments && videoQuota && videoQuota.remaining <= 0 && videoAttachments.length === 0 && (
+          <p className="px-4 pb-1 text-[11px] font-medium text-amber-600 dark:text-amber-300">
+            Bạn đã đạt giới hạn {videoQuota.limit} video/ngày. Nâng gói để sử dụng thêm.
+          </p>
+        )}
 
         <div className="flex min-w-0 items-center justify-between gap-2 px-2 pb-1 pt-1 border-t border-border/20 mt-1">
           <div className="flex min-w-0 items-center gap-1.5">
@@ -486,8 +915,8 @@ export function ChatInput({
                  type="button"
                  onClick={handlePickImages}
                  disabled={disabled || isLoading || imageAttachments.length >= CHAT_IMAGE_MAX_FILES}
-                 title="Dinh kem anh OCR"
-                 aria-label="Dinh kem anh OCR"
+                 title="Đính kèm ảnh OCR"
+                 aria-label="Đính kèm ảnh OCR"
                  className={cn(
                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-200",
                    imageAttachments.length > 0
@@ -499,6 +928,26 @@ export function ChatInput({
                  )}
                >
                  <ImagePlus size={15} />
+               </button>
+             )}
+             {canUseVideoAttachments && !(videoQuota && videoQuota.remaining <= 0) && (
+               <button
+                 type="button"
+                 onClick={handlePickVideo}
+                 disabled={disabled || isLoading || videoAttachments.length >= CHAT_VIDEO_MAX_FILES}
+                 title="Đính kèm video"
+                 aria-label="Đính kèm video"
+                 className={cn(
+                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-all duration-200",
+                   videoAttachments.length > 0
+                     ? "border-blue-400/50 bg-blue-400/10 text-blue-600 dark:text-blue-300"
+                     : "border-border/50 bg-muted/40 text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                   disabled || isLoading || videoAttachments.length >= CHAT_VIDEO_MAX_FILES
+                     ? "cursor-not-allowed opacity-50"
+                     : "active:scale-95"
+                 )}
+               >
+                 <Film size={15} />
                </button>
              )}
              {thinkingAvailable && (
@@ -578,6 +1027,47 @@ export function ChatInput({
         </div>
       </div>
       <style>{`
+        @keyframes chatVideoShimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(250%); }
+        }
+        @keyframes chatVideoScanDown {
+          0% { top: -2px; opacity: 0; }
+          8% { opacity: 0.8; }
+          92% { opacity: 0.8; }
+          100% { top: calc(100% - 2px); opacity: 0; }
+        }
+        @keyframes chatVideoPulseGlow {
+          0%, 100% { opacity: 0.35; }
+          50% { opacity: 0.85; }
+        }
+        @keyframes chatVideoCheckPop {
+          0% { transform: scale(0); }
+          65% { transform: scale(1.2); }
+          100% { transform: scale(1); }
+        }
+        .chat-video-shimmer {
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06), transparent);
+          animation: chatVideoShimmer 1.8s ease-in-out infinite;
+        }
+        .chat-video-shimmer-indigo {
+          background: linear-gradient(90deg, transparent, rgba(99,102,241,0.06), rgba(99,102,241,0.14), rgba(99,102,241,0.06), transparent);
+          animation: chatVideoShimmer 1.4s ease-in-out infinite;
+        }
+        .chat-video-scan-line {
+          background: linear-gradient(90deg, transparent 0%, #6366f1 30%, #818cf8 50%, #6366f1 70%, transparent 100%);
+          animation: chatVideoScanDown 2s ease-in-out infinite;
+          opacity: 0.8;
+        }
+        .chat-video-pulse {
+          animation: chatVideoPulseGlow 1.6s ease-in-out infinite;
+        }
+        .chat-video-check-pop {
+          animation: chatVideoCheckPop 0.4s ease-out both;
+        }
+        .chat-video-progress-pulse {
+          animation: chatVideoPulseGlow 1.6s ease-in-out infinite;
+        }
         @keyframes chatOcrSweep {
           0% { transform: translateX(-115%) skewX(-12deg); }
           100% { transform: translateX(115%) skewX(-12deg); }
@@ -628,6 +1118,36 @@ export function ChatInput({
         .chat-ocr-dots span:nth-child(2) { animation-delay: 0.18s; }
         .chat-ocr-dots span:nth-child(3) { animation-delay: 0.36s; }
       `}</style>
+
+      {previewVideoUrl && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md"
+          onClick={() => setPreviewVideoUrl(null)}
+        >
+          <div
+            className="relative flex h-[90vh] w-[94vw] items-center justify-center md:h-[88vh] md:w-[85vw]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <video
+              key={previewVideoUrl}
+              src={previewVideoUrl}
+              className="h-full w-full rounded-xl bg-black object-contain"
+              controls
+              autoPlay
+              playsInline
+              preload="auto"
+            />
+            <button
+              type="button"
+              onClick={() => setPreviewVideoUrl(null)}
+              className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white shadow-lg transition hover:bg-black/80 md:right-4 md:top-4"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }

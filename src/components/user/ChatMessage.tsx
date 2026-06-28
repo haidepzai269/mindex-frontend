@@ -8,6 +8,10 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { cn } from "@/lib/utils";
 import { ChatMessage as ChatMessageType } from "@/store/useChatStore";
+import type { RichContentMessage, WeatherData, NewsResult, CryptoPrice } from "@/types/rich-content";
+import { WeatherCard } from "@/components/user/rich-content/WeatherCard";
+import { NewsCarousel } from "@/components/user/rich-content/NewsCarousel";
+import { CryptoCard } from "@/components/user/rich-content/CryptoCard";
 import {
   Zap,
   FileText,
@@ -85,6 +89,19 @@ function CopyButton({
       {copied ? "Copied" : "Copy"}
     </button>
   );
+}
+
+function RichContentBlock({ data }: { data: RichContentMessage }) {
+  switch (data.type) {
+    case "weather":
+      return <WeatherCard data={data.data as WeatherData} className="my-3" />;
+    case "news":
+      return <NewsCarousel data={data.data as NewsResult} className="my-3" />;
+    case "crypto":
+      return <CryptoCard data={data.data as CryptoPrice} className="my-3" />;
+    default:
+      return null;
+  }
 }
 
 const markdownComponents: any = {
@@ -447,8 +464,12 @@ const renderAssistantContent = (content: string) => (
 
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
+  const imageAttachments = messageAttachments.filter((a) => a.type !== "video");
+  const videoAttachmentsList = messageAttachments.filter((a) => a.type === "video");
+  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
+
   const renderAttachmentGrid = () => {
-    const atts = messageAttachments;
+    const atts = imageAttachments;
     const count = atts.length;
 
     const imgCell = (idx: number, className: string, showOverlay?: boolean) => {
@@ -466,19 +487,16 @@ const renderAssistantContent = (content: string) => (
             className="h-full w-full object-cover transition-transform duration-300 group-hover/cell:scale-[0.96]"
             loading="lazy"
           />
-          {/* OCR badge — chỉ ở ảnh đầu */}
           {idx === 0 && (att.ocr_text || att.ocr_preview) && (
             <span className="absolute left-2.5 top-2.5 rounded-full bg-black/60 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] text-white z-10">
               OCR
             </span>
           )}
-          {/* "+N còn thêm" overlay ở ô cuối khi 4+ ảnh */}
           {showOverlay && extra > 0 && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/55 backdrop-blur-[1px] z-10">
               <span className="text-2xl font-black text-white">+{extra}</span>
             </div>
           )}
-          {/* Hover: dim + kính lúp */}
           <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/cell:bg-black/30 transition-colors duration-200 z-20">
             <ZoomIn
               size={22}
@@ -518,7 +536,6 @@ const renderAssistantContent = (content: string) => (
       );
     }
 
-    // 4+: 2x2, ô cuối có overlay +N
     return (
       <div className="grid grid-cols-2 gap-0.5 overflow-hidden rounded-t-[1.5rem] rounded-tr-sm">
         {imgCell(0, "h-36")}
@@ -529,9 +546,89 @@ const renderAssistantContent = (content: string) => (
     );
   };
 
+  const renderVideoAttachments = () => {
+    if (videoAttachmentsList.length === 0) return null;
+    return (
+      <div className={cn("flex gap-2 overflow-x-auto", imageAttachments.length > 0 ? "px-5 pt-2" : "rounded-t-[1.5rem] rounded-tr-sm overflow-hidden")}>
+        {videoAttachmentsList.map((vid) => {
+          const dur = vid.duration_seconds;
+          return (
+            <div
+              key={vid.id}
+              className="group/vid relative flex w-[200px] shrink-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-zinc-900 cursor-pointer"
+              onClick={() => setPreviewVideoUrl(vid.url)}
+            >
+              <div className="relative h-[120px] overflow-hidden">
+                <video
+                  src={vid.url}
+                  onLoadedData={(e) => {
+                    const v = e.currentTarget;
+                    v.currentTime = Math.min(0.5, v.duration * 0.1);
+                  }}
+                  className="h-full w-full object-cover brightness-90"
+                  muted
+                  playsInline
+                  preload="auto"
+                />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/vid:opacity-100 transition-opacity duration-200 bg-black/30">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
+                    <svg width="14" height="14" viewBox="0 0 12 12" fill="#fff">
+                      <path d="M3 1.5L10 6L3 10.5V1.5Z" />
+                    </svg>
+                  </div>
+                </div>
+                {dur != null && (
+                  <div className="absolute bottom-1.5 right-1.5 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-zinc-300">
+                    {Math.floor(dur / 60)}:{String(Math.round(dur % 60)).padStart(2, "0")}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 px-2.5 py-1.5">
+                <span className="truncate text-[10px] font-bold text-primary-foreground/80">{vid.filename}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderVideoPreviewModal = () => {
+    if (!previewVideoUrl) return null;
+    return (
+      <div
+        className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md"
+        onClick={() => setPreviewVideoUrl(null)}
+      >
+        <div
+          className="relative flex h-[90vh] w-[94vw] items-center justify-center md:h-[88vh] md:w-[85vw]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <video
+            key={previewVideoUrl}
+            src={previewVideoUrl}
+            className="h-full w-full rounded-xl bg-black object-contain"
+            controls
+            autoPlay
+            playsInline
+            preload="auto"
+          />
+          <button
+            type="button"
+            onClick={() => setPreviewVideoUrl(null)}
+            className="absolute right-2 top-2 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white shadow-lg transition hover:bg-black/80 md:right-4 md:top-4"
+          >
+            <X size={20} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderUserContent = () => (
     <div>
-      {messageAttachments.length > 0 && renderAttachmentGrid()}
+      {imageAttachments.length > 0 && renderAttachmentGrid()}
+      {renderVideoAttachments()}
       {messageContent && (
         <span
           className={cn(
@@ -644,6 +741,7 @@ const renderAssistantContent = (content: string) => (
   return (
     <>
     {renderLightbox()}
+    {renderVideoPreviewModal()}
     <div
       className={cn(
         "group/chat-row flex w-full flex-col gap-4 py-8 animate-in fade-in duration-700",
@@ -719,6 +817,10 @@ const renderAssistantContent = (content: string) => (
               {isStreaming ? (
                 <div className="w-full max-w-2xl space-y-4">
                   <AIThinkingPanel />
+                  {message.rich_contents && message.rich_contents.length > 0
+                    ? message.rich_contents.map((rc, i) => <RichContentBlock key={i} data={rc} />)
+                    : message.rich_content && <RichContentBlock data={message.rich_content} />
+                  }
                   {messageContent && renderAssistantContent(messageContent)}
                 </div>
               ) : isDeleted ? (
@@ -756,7 +858,13 @@ const renderAssistantContent = (content: string) => (
               ) : isUser ? (
                 renderUserContent()
               ) : (
-                renderAssistantContent(messageContent)
+                <>
+                  {message.rich_contents && message.rich_contents.length > 0
+                    ? message.rich_contents.map((rc, i) => <RichContentBlock key={i} data={rc} />)
+                    : message.rich_content && <RichContentBlock data={message.rich_content} />
+                  }
+                  {renderAssistantContent(messageContent)}
+                </>
               )}
             </div>
           </div>
